@@ -180,8 +180,10 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res .ft{position:absolute;left:max(10px,calc(12px*var(--z)));right:max(5px,calc(8px*var(--z)));bottom:max(3px,calc(5px*var(--z)));display:flex;align-items:center;justify-content:flex-end;gap:6px;z-index:1}
 .res .out{margin-right:auto;font-size:max(9px,calc(10.5px*var(--z)));font-weight:700;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .res.short .out{display:none}
+.res.short.multi .out{display:inline}
 .res{container-type:inline-size}
-@container (max-width:126px){.res:not(.peek) .out{display:none}}
+@container (max-width:132px){.res:not(.peek) .src{display:none}}
+@container (max-width:60px){.res:not(.peek) .out{display:none}}
 .res .src{font-size:max(8px,calc(9.5px*var(--z)));font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:5px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);z-index:1}
 .res .src.booking{color:#0B4EA2;border-color:#0B4EA2}
 .res .src.airbnb{color:#E0445D;border-color:#E0445D}
@@ -250,7 +252,6 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.has-alert .rooms{right:max(20px,calc(26px*var(--z)))}
 .res.t2 .m1,.res.t2 .nt{display:none}
 .res.t3 .nt{display:none}
-@container (max-width:112px){.res:not(.peek) .src{display:none}}
 @container (max-width:104px){.res:not(.peek) .m1 .px{display:none}}
 @container (max-width:96px){.res:not(.peek) .m2 .rest,.res:not(.peek) .m2 .okp,.res:not(.peek) .m2 .sep{display:none}}
 @container (max-width:74px){.res:not(.peek) .g{padding-right:0}.res:not(.peek) .pay{display:none}}
@@ -1003,6 +1004,10 @@ window.addEventListener('pointermove', e => {
   }
   drag.el.classList.toggle('invalid', !drag.valid);
   showDragTip(drag);
+  { const c = drag.cand, o = drag.el.querySelector('.out'), n = diffDays(c.checkIn, c.checkOut);
+    if (o) o.textContent = `→ ${fmtD(c.checkOut)}`;
+    const m1 = drag.el.querySelector('.m1'); if (m1) m1.firstChild.textContent = `${n} ${n === 1 ? 'noapte' : 'nopți'}`;
+    const x = drag.el.querySelector('.x b:nth-of-type(1)'), y = drag.el.querySelector('.x b:nth-of-type(2)'); if (x) x.textContent = fmtD(c.checkIn); if (y) y.textContent = fmtD(c.checkOut); }
 });
 window.addEventListener('pointerup', e => {
   clearTimeout(lpTimer);
