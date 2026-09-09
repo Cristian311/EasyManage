@@ -407,6 +407,25 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .toast button{margin-left:6px;background:rgba(255,255,255,.18);color:inherit;padding:3px 10px;border-radius:6px;font-weight:800;font-size:12.5px}
 .toast button:hover{background:rgba(255,255,255,.3)}
 /* Today bar */
+.propbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 2px 10px}
+.propbar .pb-l{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:800;margin-right:2px}
+.propbar .seg button{padding:6px 12px}
+.propbar .seg button.all{color:var(--ink-3)}
+.propbar .seg button.on.all{color:var(--accent)}
+.propbar .sep{width:1px;height:22px;background:var(--line)}
+.rh .fl{position:absolute;top:8px;left:10px;right:-120px;z-index:1;font-size:10px;font-weight:800;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh.fsep{border-left:2px solid var(--ink-3)}
+.rh.fsep .fl{color:var(--ink-2)}
+.fsep-line{position:absolute;top:0;bottom:0;width:2px;background:var(--ink-3);opacity:.45;pointer-events:none;z-index:2}
+.floors{display:flex;flex-direction:column;gap:10px;margin-bottom:14px}
+.floors .pcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.floors .ph1{display:flex;align-items:center;gap:8px;font-family:var(--font-d);font-weight:600;font-size:15px}
+.floors .ph1 small{font-family:var(--font);font-weight:500;color:var(--ink-3);font-size:12px}
+.floors .fchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.floors .fchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:99px;padding:4px 6px 4px 11px;font-weight:700;font-size:12.5px;background:var(--surface-2)}
+.floors .fchip small{color:var(--ink-3);font-weight:600}
+.floors .fchip button{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);font-size:12px}
+.floors .fchip button:hover{background:var(--surface-3);color:var(--ink)}
 .todaybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 2px 10px}
 .todaybar .tb-d{font-family:var(--font-d);font-weight:600;font-size:14px;margin-right:4px}
 .tb-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-weight:600;font-size:12.5px;color:var(--ink-2);cursor:pointer;transition:border-color .12s,color .12s}
@@ -501,7 +520,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
     <!-- Calendar page -->
     <section class="page on" id="page-calendar">
       <div class="topbar">
-        <h1>Calendar <small id="propName">Pensiunea Ta · Brașov</small></h1>
+        <h1>Calendar <small id="propName"></small></h1>
         <div class="spacer"></div>
         <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" placeholder="Caută oaspete…"></div>
         <button class="btn icon" id="prevBtn" title="Perioada anterioară"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -512,6 +531,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <button class="btn primary" id="newResBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă <span class="kbd kbd-hint" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.4);background:transparent">N</span></button>
       </div>
       <div class="chart-wrap">
+        <div class="propbar" id="propbar"></div>
         <div class="todaybar" id="todaybar"></div>
         <div class="legend" style="padding:0 2px 10px">
           <span><i style="background:var(--st-confirmed)"></i>Confirmată</span>
@@ -553,7 +573,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
     <!-- Rooms page -->
     <section class="page" id="page-rooms">
       <div class="topbar"><h1>Camere</h1><div class="spacer"></div><button class="btn primary" onclick="openRoomModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Cameră nouă</button></div>
-      <div class="scroll" id="roomBody"></div>
+      <div class="scroll"><div id="floorBody"></div><div id="roomBody"></div></div>
     </section>
 
     <section class="page" id="page-payments"><div class="topbar"><h1>Plăți</h1></div><div class="scroll"><div class="ph"><h2>Plățile se înregistrează direct din rezervare</h2><p>Deschide o rezervare din calendar și adaugă plata în sertarul din dreapta. Un raport separat de încasări vine în MVP.</p></div></div></section>
@@ -631,6 +651,10 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
       </div>
       <div class="f"><label>Descriere</label><input id="rDesc" placeholder="ex: vedere la munte, balcon"></div>
       <div class="f"><label>Culoare în calendar</label><div class="swatches" id="rColors"></div><span class="hint">Opțional. Colorează antetul și coloana camerei, ca să o găsești dintr-o privire.</span></div>
+      <div class="g2">
+        <div class="f"><label>Proprietate</label><select id="rProp"></select></div>
+        <div class="f"><label>Etaj / secțiune</label><select id="rFloor"></select><span class="hint">Alege „+ Etaj nou” ca să creezi unul pe loc.</span></div>
+      </div>
       <div class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="rActive" checked style="width:auto"><label for="rActive" style="margin:0">Activă (apare în calendar și poate fi rezervată)</label></div>
     </div>
     <div class="ft"><button class="btn" onclick="closeRoomModal()">Renunță</button><button class="btn primary" onclick="saveRoom()">Salvează</button></div>
@@ -692,10 +716,12 @@ function toast(msg, kind='') {
 }
 
 /* ---------- State ---------- */
-const KEY = 'velora-stay-demo-v4';
+const KEY = 'velora-stay-demo-v5';
 const ROOM_COLORS = ['#3A7BD5','#0E7C86','#2F8F5B','#B8862B','#D9761B','#C9453A','#6B5BD6','#B3437C','#5E7C8A','#8E5A3C'];
 let S;            // {rooms, guests, reservations}
-let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '' };
+let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '', prop: 'all', floor: 'all' };
+try { const v = JSON.parse(localStorage.getItem('velora-stay-demo-view')); if (v) { view.prop = v.prop || 'all'; view.floor = v.floor || 'all'; } } catch(e){}
+function saveView() { try { localStorage.setItem('velora-stay-demo-view', JSON.stringify({ prop: view.prop, floor: view.floor })); } catch(e){} }
 
 function seed() {
   const g = (f, l, phone, email, country, notes='') => ({ id: uid('g_'), firstName: f, lastName: l, phone, email, country, notes });
@@ -709,7 +735,11 @@ function seed() {
     g('Radu','Marin','0766 999 000','radu.marin@gmail.com','România'),
     g('Ioana','Stan','0740 222 333','ioana.stan@gmail.com','România'),
   ];
-  const r = (name, type, cap, price, desc='', active=true) => ({ id: uid('r_'), name, type, capacity: cap, price, desc, active, parentId: null });
+  const properties = [{ id: uid('p_'), name: 'Pensiunea Ta', city: 'Brașov' }, { id: uid('p_'), name: 'Vila Doi', city: 'Râșnov' }];
+  const P1 = properties[0].id, P2 = properties[1].id;
+  const floors = [{ id: uid('f_'), propertyId: P1, name: 'Etaj 1 M' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 1 I' }, { id: uid('f_'), propertyId: P1, name: 'Mansardă' },
+                  { id: uid('f_'), propertyId: P2, name: 'Parter' }, { id: uid('f_'), propertyId: P2, name: 'Etaj' }];
+  const r = (name, type, cap, price, desc='', active=true) => ({ id: uid('r_'), name, type, capacity: cap, price, desc, active, parentId: null, propertyId: P1, floorId: null });
   const rooms = [
     r('101','Dublă',2,250,'Vedere la grădină'),
     r('102','Dublă',2,250,'Balcon'),
@@ -721,9 +751,12 @@ function seed() {
     r('Ap. 2','Apartament',4,520,'Mansardă'),
   ];
   ['#3A7BD5','#3A7BD5','#3A7BD5','#5E7C8A','#2F8F5B','#2F8F5B','#B8862B','#D9761B'].forEach((c, i) => rooms[i].color = c);
+  [0,0,0,0,1,1,2,2].forEach((f, i) => rooms[i].floorId = floors[f].id);
+  const v = (name, type, cap, price, f, color) => ({ id: uid('r_'), name, type, capacity: cap, price, desc: '', active: true, parentId: null, propertyId: P2, floorId: floors[f].id, color });
+  const vila = [v('V1','Dublă',2,220,3,'#6B5BD6'), v('V2','Dublă',2,220,3,'#6B5BD6'), v('V3','Familială',4,340,4,'#B3437C'), v('V4','Studio',2,260,4,'#B3437C')];
   // Split Ap. 1 into two units to show the feature off
   const ap1 = rooms[6];
-  const units = ['A','B'].map(l => ({ id: uid('r_'), name: `${ap1.name} · ${l}`, type: 'Dormitor', capacity: 2, price: 280, desc: '', active: true, parentId: ap1.id, label: l, color: ap1.color }));
+  const units = ['A','B'].map(l => ({ id: uid('r_'), name: `${ap1.name} · ${l}`, type: 'Dormitor', capacity: 2, price: 280, desc: '', active: true, parentId: ap1.id, label: l, color: ap1.color, propertyId: ap1.propertyId, floorId: ap1.floorId }));
   rooms.splice(7, 0, ...units);
 
   const R = (gi, room, inOff, nights, opts={}) => {
@@ -753,10 +786,20 @@ function seed() {
     R(6, 5, -1, 2, { status:'confirmed', src:'phone', notes:'A sunat că ajunge târziu.' }),
     R(3, 0, 12, 2, { status:'confirmed', src:'phone', rooms:[0, 1], pax:4, total:1000, pay:[[400,'transfer']], notes:'Familie cu copii, două camere alăturate, o singură plată.' }),
   ];
-  return { rooms, guests, reservations };
+  reservations.push(
+    R(1, vila[0], 0, 3, { status:'checked_in', src:'airbnb', pay:[[660,'card']] }),
+    R(7, vila[2], 2, 4, { status:'confirmed', src:'booking', pax:4, pay:[[600,'card']] }),
+    R(5, vila[3], -1, 2, { status:'checked_in', src:'direct', pay:[[520,'cash']] }),
+    R(4, vila[1], 5, 2, { status:'pending', src:'phone' }));
+  rooms.push(...vila);
+  return { properties, floors, rooms, guests, reservations };
 }
 function load() { let s = null; try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.rooms && j.reservations) s = j; } catch(e){} if (!s) s = seed();
-  s.reservations.forEach(r => { if (!r.roomIds || !r.roomIds.length) r.roomIds = [r.roomId]; r.roomId = r.roomIds[0]; }); return s; }
+  s.reservations.forEach(r => { if (!r.roomIds || !r.roomIds.length) r.roomIds = [r.roomId]; r.roomId = r.roomIds[0]; });
+  if (!s.properties || !s.properties.length) s.properties = [{ id: uid('p_'), name: 'Pensiunea Ta', city: '' }];
+  if (!s.floors) s.floors = [];
+  s.rooms.forEach(r => { if (!s.properties.some(x => x.id === r.propertyId)) r.propertyId = s.properties[0].id; if (r.floorId && !s.floors.some(f => f.id === r.floorId)) r.floorId = null; });
+  return s; }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
 function resetDemo() { localStorage.removeItem(KEY); S = seed(); view.start = addDays(TODAY, -2); renderAll(); toast('Datele demo au fost resetate'); }
 
@@ -797,9 +840,19 @@ function quickAction(r) {
   return null;
 }
 // Column list = top-level rooms in order; a split room contributes its units instead of itself
+const propById = id => S.properties.find(x => x.id === id);
+const floorById = id => S.floors.find(x => x.id === id);
+// top-level rooms in display order: property, then floor (rooms without a floor last), then the manual order
+function orderedTops() {
+  const pIdx = Object.fromEntries(S.properties.map((x, i) => [x.id, i])), fIdx = Object.fromEntries(S.floors.map((x, i) => [x.id, i]));
+  return S.rooms.filter(r => !r.parentId).map((r, i) => ({ r, i })).sort((a, b) => (pIdx[a.r.propertyId] ?? 99) - (pIdx[b.r.propertyId] ?? 99) || (fIdx[a.r.floorId] ?? 999) - (fIdx[b.r.floorId] ?? 999) || a.i - b.i).map(x => x.r);
+}
+function visibleTops() {
+  return orderedTops().filter(r => (view.prop === 'all' || r.propertyId === view.prop) && (view.floor === 'all' || r.floorId === view.floor));
+}
 function columns() {
   const out = [];
-  S.rooms.filter(r => !r.parentId).forEach(p => {
+  visibleTops().forEach(p => {
     const units = S.rooms.filter(u => u.parentId === p.id);
     if (units.length) units.forEach((u, i) => out.push({ room: u, parent: p, pos: i === 0 ? 'unit-first' : i === units.length-1 ? 'unit-last' : 'unit-mid' }));
     else out.push({ room: p, parent: null, pos: '' });
@@ -843,10 +896,14 @@ function renderChart() {
   $('#periodLbl').textContent = `${fmtD(d0)} – ${fmtD(d1)} ${fromIso(d1).getFullYear()}`;
 
   // Room headers
+  const groupKey = c => (c.parent || c.room).propertyId + '/' + ((c.parent || c.room).floorId || '');
+  const showFloors = view.floor === 'all';
   rhead.innerHTML = cols.map((c, i) => {
-    const r = c.room, grp = c.parent ? `<div class="grp">${esc(c.parent.name)} · ${esc(c.parent.type)}</div>` : '';
+    const r = c.room, top = c.parent || r, sep = i > 0 && groupKey(c) !== groupKey(cols[i - 1]);
+    const fl = !c.parent && showFloors && (sep || i === 0) ? `<div class="fl">${esc((view.prop === 'all' ? (propById(top.propertyId)?.name || '') + ' · ' : '') + (floorById(top.floorId)?.name || 'fără etaj'))}</div>` : '';
+    const grp = c.parent ? `<div class="grp">${esc(c.parent.name)} · ${esc(c.parent.type)}</div>` : fl;
     const nm = c.parent ? esc(r.label || r.name.split('·').pop().trim()) : esc(r.name);
-    return `<div class="rh ${c.pos} ${r.active ? '' : 'inactive'} ${r.color ? 'colored' : ''}" data-col="${i}" data-room="${r.id}" data-top="${c.parent ? c.parent.id : r.id}" style="${r.color ? `--rc:${r.color}` : ''}">
+    return `<div class="rh ${c.pos} ${r.active ? '' : 'inactive'} ${r.color ? 'colored' : ''} ${sep ? 'fsep' : ''}" data-col="${i}" data-room="${r.id}" data-top="${c.parent ? c.parent.id : r.id}" style="${r.color ? `--rc:${r.color}` : ''}">
       ${grp}<div class="rn">${nm}</div><div class="rt">${esc(r.type)} · ${r.capacity}p · <b class="num">${r.price}</b> lei</div>
       <button class="menu-btn" data-menu="${r.id}" title="Opțiuni cameră"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
     </div>`;
@@ -863,6 +920,7 @@ function renderChart() {
   days.forEach((d, i) => { const dt = fromIso(d), wk = dt.getDay() === 0 || dt.getDay() === 6;
     if (d === TODAY) html += `<div class="rowbg today" style="top:${i*ROWH}px"></div><div class="todayline" style="top:${i*ROWH}px"></div>`;
     else if (wk) html += `<div class="rowbg wk" style="top:${i*ROWH}px"></div>`; });
+  cols.forEach((c, i) => { if (i > 0 && groupKey(c) !== groupKey(cols[i - 1])) html += `<div class="fsep-line" style="left:${i*COLW - 1}px"></div>`; });
   cols.forEach((c, i) => { if (c.room.color) html += `<div class="colbg tint" style="left:${i*COLW}px;background:color-mix(in srgb,${c.room.color} 5%,transparent)"></div>`; if (!c.room.active) html += `<div class="colbg inactive" style="left:${i*COLW}px"></div>`; });
   html += `<div class="dragband" id="dragband"></div><div class="dragcol" id="dragcol"></div><div class="selbox" id="selbox"><span class="lab"></span></div>`;
   body.innerHTML = html;
@@ -1167,6 +1225,8 @@ rhead.addEventListener('pointerup', e => {
   moveTop(h.top, h.target, h.side);
 });
 function moveTop(id, targetId, side) {
+  const mv = roomById(id), tg = roomById(targetId);
+  if (mv && tg && (mv.propertyId !== tg.propertyId || mv.floorId !== tg.floorId)) { mv.propertyId = tg.propertyId; mv.floorId = tg.floorId; S.rooms.filter(u => u.parentId === mv.id).forEach(u => { u.propertyId = mv.propertyId; u.floorId = mv.floorId; }); toast(`${mv.name} mutată pe ${floorById(tg.floorId)?.name || 'fără etaj'}`, 'ok'); }
   const tops = S.rooms.filter(r => !r.parentId), others = S.rooms.filter(r => r.parentId);
   const from = tops.findIndex(r => r.id === id); const [m] = tops.splice(from, 1);
   let to = tops.findIndex(r => r.id === targetId); if (side === 'after') to++;
@@ -1243,7 +1303,7 @@ function doSplit() {
   const p = roomById(splitRoomId), n = Math.max(2, Math.min(6, +$('#sCount').value || 2)), price = +$('#sPrice').value || 0;
   let labels = $('#sLabels').value.split(',').map(s => s.trim()).filter(Boolean);
   while (labels.length < n) labels.push(String.fromCharCode(65 + labels.length));
-  const units = labels.slice(0, n).map(l => ({ id: uid('r_'), name: `${p.name} · ${l}`, label: l, type: 'Unitate', capacity: Math.max(1, Math.round(p.capacity / n)), price, desc: '', active: true, parentId: p.id, color: p.color }));
+  const units = labels.slice(0, n).map(l => ({ id: uid('r_'), name: `${p.name} · ${l}`, label: l, type: 'Unitate', capacity: Math.max(1, Math.round(p.capacity / n)), price, desc: '', active: true, parentId: p.id, color: p.color, propertyId: p.propertyId, floorId: p.floorId }));
   S.reservations.filter(r => resRoomIds(r).includes(p.id)).forEach(r => setRooms(r, resRoomIds(r).map(id => id === p.id ? units[0].id : id)));
   S.rooms.push(...units); closeOverlay('splitOverlay'); save(); renderAll(); toast(`${p.name} împărțită în ${n} unități`, 'ok');
 }
@@ -1417,16 +1477,27 @@ function openRoomModal(id = null) { editRoomId = id; const r = id ? roomById(id)
   F('roomTitle').textContent = r ? `Editează ${r.name}` : 'Cameră nouă';
   F('rName').value = r?.name || ''; F('rType').value = r?.type || ''; roomColorSel = r?.color || ''; renderSwatches();
   F('rCap').value = r?.capacity || 2; F('rPrice').value = r?.price ?? 250; F('rDesc').value = r?.desc || ''; F('rActive').checked = r ? r.active : true;
+  const pid = r?.propertyId || (view.prop !== 'all' ? view.prop : S.properties[0].id);
+  F('rProp').innerHTML = S.properties.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join(''); F('rProp').value = pid;
+  fillFloorSelect(pid, r?.floorId || (view.floor !== 'all' && view.prop === pid ? view.floor : ''));
+  F('rProp').onchange = () => fillFloorSelect(F('rProp').value, '');
+  F('rFloor').onchange = () => { if (F('rFloor').value === '__new') { const nm = prompt('Numele etajului sau secțiunii (ex: Etaj 1 M):'); if (nm && nm.trim()) { const f = { id: uid('f_'), propertyId: F('rProp').value, name: nm.trim() }; S.floors.push(f); save(); fillFloorSelect(f.propertyId, f.id); } else fillFloorSelect(F('rProp').value, ''); } };
   F('roomOverlay').classList.add('open'); setTimeout(() => F('rName').focus(), 50); }
 let roomColorSel = '';
 function renderSwatches() {
   F('rColors').innerHTML = `<button type="button" class="none ${roomColorSel ? '' : 'on'}" data-c="" title="Fără culoare">×</button>` + ROOM_COLORS.map(c => `<button type="button" class="${roomColorSel === c ? 'on' : ''}" data-c="${c}" style="--sw:${c}"></button>`).join('');
   $$('#rColors button').forEach(b => b.onclick = () => { roomColorSel = b.dataset.c; renderSwatches(); });
 }
+function fillFloorSelect(pid, sel) {
+  F('rFloor').innerHTML = `<option value="">Fără etaj</option>` + S.floors.filter(f => f.propertyId === pid).map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('') + `<option value="__new">+ Etaj nou…</option>`;
+  F('rFloor').value = sel || '';
+}
 function closeRoomModal() { F('roomOverlay').classList.remove('open'); }
 function saveRoom() { const name = F('rName').value.trim(); if (!name) { F('rName').classList.add('err'); return; }
   const data = { name, type: F('rType').value.trim() || 'Cameră', capacity: +F('rCap').value || 1, price: +F('rPrice').value || 0, desc: F('rDesc').value.trim(), active: F('rActive').checked, color: roomColorSel || '' };
-  if (editRoomId) { Object.assign(roomById(editRoomId), data); toast(`Camera ${name} actualizată`, 'ok'); } else { S.rooms.push({ id: uid('r_'), parentId: null, ...data }); toast(`Camera ${name} adăugată`, 'ok'); }
+  data.propertyId = F('rProp').value || S.properties[0].id; data.floorId = F('rFloor').value || null;
+  if (editRoomId) { const rm = roomById(editRoomId); Object.assign(rm, data); S.rooms.filter(u => u.parentId === rm.id).forEach(u => { u.propertyId = rm.propertyId; u.floorId = rm.floorId; }); toast(`Camera ${name} actualizată`, 'ok'); }
+  else { S.rooms.push({ id: uid('r_'), parentId: null, ...data }); toast(`Camera ${name} adăugată`, 'ok'); }
   save(); closeRoomModal(); renderAll(); }
 
 /* ---------- Other pages ---------- */
@@ -1470,13 +1541,41 @@ function renderGuests() {
       return `<tr onclick="${rs[0] ? `go('calendar');view.start='${addDays(rs[0].checkIn, -2)}';renderChart();openDrawer('${rs[0].id}')` : ''}"><td><b>${esc(guestName(g))}</b></td><td>${esc(g.phone || '—')}</td><td>${esc(g.email || '—')}</td><td>${esc(g.country || '—')}</td><td class="r">${rs.length}</td><td>${rs[0] ? fmtD(rs[0].checkIn) + ' · ' + esc(roomById(rs[0].roomId).name) : '—'}</td><td style="white-space:normal;max-width:260px;color:var(--ink-2)">${esc(g.notes || '')}</td></tr>`; }).join('')}
     </tbody></table></div>`;
 }
+function addProperty() { const nm = prompt('Numele proprietății (ex: Vila Doi):'); if (!nm || !nm.trim()) return; const city = prompt('Localitatea (opțional):') || ''; S.properties.push({ id: uid('p_'), name: nm.trim(), city: city.trim() }); save(); renderAll(); toast(`${nm.trim()} adăugată`, 'ok'); }
+function renameProperty(id) { const p = propById(id); const nm = prompt('Nume nou:', p.name); if (!nm || !nm.trim()) return; p.name = nm.trim(); save(); renderAll(); }
+function deleteProperty(id) { if (S.properties.length < 2) { toast('Trebuie să rămână cel puțin o proprietate', 'bad'); return; } if (S.rooms.some(r => r.propertyId === id)) { toast('Mută sau șterge întâi camerele acestei proprietăți', 'bad'); return; } S.properties = S.properties.filter(x => x.id !== id); S.floors = S.floors.filter(f => f.propertyId !== id); if (view.prop === id) view.prop = 'all'; save(); renderAll(); }
+function addFloor(pid) { const nm = prompt('Numele etajului sau secțiunii (ex: Etaj 1 M):'); if (!nm || !nm.trim()) return; S.floors.push({ id: uid('f_'), propertyId: pid, name: nm.trim() }); save(); renderAll(); }
+function renameFloor(id) { const f = floorById(id); const nm = prompt('Nume nou:', f.name); if (!nm || !nm.trim()) return; f.name = nm.trim(); save(); renderAll(); }
+function deleteFloor(id) { const n = S.rooms.filter(r => r.floorId === id).length; if (n && !confirm(`${n} camere sunt pe acest etaj. Le las fără etaj și șterg etajul?`)) return; S.rooms.forEach(r => { if (r.floorId === id) r.floorId = null; }); S.floors = S.floors.filter(f => f.id !== id); if (view.floor === id) view.floor = 'all'; save(); renderAll(); }
+function moveFloor(id, dir) { const i = S.floors.findIndex(f => f.id === id), j = i + dir; if (j < 0 || j >= S.floors.length || S.floors[j].propertyId !== S.floors[i].propertyId) return; [S.floors[i], S.floors[j]] = [S.floors[j], S.floors[i]]; save(); renderAll(); }
+function renderFloors() {
+  $('#floorBody').innerHTML = `<div class="floors">${S.properties.map(p => `<div class="pcard"><div class="ph1">${esc(p.name)} <small>${esc(p.city || '')} · ${S.rooms.filter(r => r.propertyId === p.id && !r.parentId).length} camere</small>
+      <button class="btn sm ghost" onclick="renameProperty('${p.id}')">Redenumește</button><button class="btn sm ghost" onclick="deleteProperty('${p.id}')" style="color:var(--bad)">Șterge</button></div>
+      <div class="fchips">${S.floors.filter(f => f.propertyId === p.id).map(f => `<span class="fchip">${esc(f.name)} <small>${S.rooms.filter(r => r.floorId === f.id && !r.parentId).length}</small>
+        <button title="Mută în stânga" onclick="moveFloor('${f.id}',-1)">‹</button><button title="Mută în dreapta" onclick="moveFloor('${f.id}',1)">›</button><button title="Redenumește" onclick="renameFloor('${f.id}')">✎</button><button title="Șterge" onclick="deleteFloor('${f.id}')">×</button></span>`).join('')}
+        <button class="btn sm" onclick="addFloor('${p.id}')">+ Etaj</button></div></div>`).join('')}
+    <div><button class="btn" onclick="addProperty()">+ Proprietate nouă</button> <span class="hint" style="color:var(--ink-3);font-size:12px;margin-left:8px">Camerele se mută între etaje din fereastra camerei sau trăgând antetul lor în calendar peste o cameră de pe alt etaj.</span></div></div>`;
+}
 function renderRooms() {
-  const cols = columns();
-  $('#roomBody').innerHTML = `<div class="card tbl-wrap"><table class="t"><thead><tr><th>Cameră</th><th>Tip</th><th class="r">Capacitate</th><th class="r">Preț / noapte</th><th>Descriere</th><th>Stare</th><th></th></tr></thead><tbody>
+  renderFloors();
+  const saved = { p: view.prop, f: view.floor }; view.prop = 'all'; view.floor = 'all'; const cols = columns(); view.prop = saved.p; view.floor = saved.f;
+  $('#roomBody').innerHTML = `<div class="card tbl-wrap"><table class="t"><thead><tr><th>Cameră</th><th>Proprietate · etaj</th><th>Tip</th><th class="r">Capacitate</th><th class="r">Preț / noapte</th><th>Descriere</th><th>Stare</th><th></th></tr></thead><tbody>
     ${cols.map(c => { const r = c.room, cnt = S.reservations.filter(x => resRoomIds(x).includes(r.id) && isActiveRes(x) && x.checkOut > TODAY).length;
-      return `<tr onclick="openRoomModal('${r.id}')"><td>${r.color ? `<span class="rdot" style="background:${r.color}"></span>` : ''}<b>${esc(r.name)}</b>${c.parent ? `<div style="font-size:11px;color:var(--accent)">unitate din ${esc(c.parent.name)}</div>` : ''}</td><td>${esc(r.type)}</td><td class="r">${r.capacity}</td><td class="r">${r.price} RON</td><td style="white-space:normal;color:var(--ink-2)">${esc(r.desc || '')}</td><td><span class="pill ${r.active ? 'checked_in' : 'checked_out'}">${r.active ? 'Activă' : 'Inactivă'}</span> <small style="color:var(--ink-3)">${cnt} rez. viitoare</small></td>
+      return `<tr onclick="openRoomModal('${r.id}')"><td>${r.color ? `<span class="rdot" style="background:${r.color}"></span>` : ''}<b>${esc(r.name)}</b>${c.parent ? `<div style="font-size:11px;color:var(--accent)">unitate din ${esc(c.parent.name)}</div>` : ''}</td><td><span style="color:var(--ink-3)">${esc(propById(r.propertyId)?.name || '')}</span> · ${esc(floorById(r.floorId)?.name || 'fără etaj')}</td><td>${esc(r.type)}</td><td class="r">${r.capacity}</td><td class="r">${r.price} RON</td><td style="white-space:normal;color:var(--ink-2)">${esc(r.desc || '')}</td><td><span class="pill ${r.active ? 'checked_in' : 'checked_out'}">${r.active ? 'Activă' : 'Inactivă'}</span> <small style="color:var(--ink-3)">${cnt} rez. viitoare</small></td>
         <td><button class="btn sm" onclick="event.stopPropagation();openRoomMenu('${r.id}', this)">⋯</button></td></tr>`; }).join('')}
     </tbody></table></div>`;
+}
+function renderPropBar() {
+  const props = S.properties, curP = view.prop === 'all' ? null : propById(view.prop);
+  const floors = S.floors.filter(f => view.prop === 'all' || f.propertyId === view.prop);
+  if (view.floor !== 'all' && !floors.some(f => f.id === view.floor)) view.floor = 'all';
+  const pb = props.length > 1 ? `<span class="pb-l">Proprietate</span><div class="seg" id="pbProp"><button class="all ${view.prop === 'all' ? 'on' : ''}" data-p="all">Toate</button>${props.map(x => `<button class="${view.prop === x.id ? 'on' : ''}" data-p="${x.id}">${esc(x.name)}</button>`).join('')}</div><span class="sep"></span>` : '';
+  const fb = floors.length ? `<span class="pb-l">Etaj</span><div class="seg" id="pbFloor"><button class="all ${view.floor === 'all' ? 'on' : ''}" data-f="all">Toate</button>${floors.map(f => `<button class="${view.floor === f.id ? 'on' : ''}" data-f="${f.id}">${esc((view.prop === 'all' && props.length > 1 ? (propById(f.propertyId)?.name || '').split(' ')[0] + ' · ' : '') + f.name)}</button>`).join('')}</div>` : '';
+  $('#propbar').innerHTML = pb + fb + `<button class="btn sm ghost" onclick="go('rooms')">Etaje și proprietăți…</button>`;
+  $('#propbar').onclick = e => { const b = e.target.closest('button[data-p],button[data-f]'); if (!b) return;
+    if (b.dataset.p) { view.prop = b.dataset.p; view.floor = 'all'; } else view.floor = b.dataset.f;
+    saveView(); renderAll(); };
+  $('#propName').textContent = curP ? `${curP.name}${curP.city ? ' · ' + curP.city : ''}${view.floor !== 'all' ? ' · ' + (floorById(view.floor)?.name || '') : ''}` : (props.length > 1 ? `${props.length} proprietăți` : `${props[0]?.name || ''}${props[0]?.city ? ' · ' + props[0].city : ''}`);
 }
 function renderTodayBar() {
   const act = S.reservations.filter(isActiveRes);
@@ -1516,7 +1615,7 @@ function focusRes(id) {
   el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400);
   openDrawer(id);
 }
-function renderAll() { renderChart(); renderTodayBar(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
+function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
 
 /* ---------- Navigation, shortcuts, theme ---------- */
 function go(page) { view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); }
