@@ -211,6 +211,20 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .rh.hl .rn{color:var(--accent)}
 .rh.hl.bad{background:var(--bad-soft)}
 .rh.hl.bad .rn{color:var(--bad)}
+.peekcard{position:fixed;z-index:150;pointer-events:none;width:280px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c,var(--accent));border-radius:12px;box-shadow:var(--shadow-lg);padding:11px 13px 9px;opacity:0;transform:translateY(5px);transition:opacity .16s ease,transform .16s ease;font-size:12.5px;color:var(--ink-2)}
+.peekcard.on{opacity:1;transform:none}
+.peekcard .pc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.peekcard .pc-h b{font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--ink);white-space:normal}
+.peekcard .pc-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-variant-numeric:tabular-nums}
+.peekcard .pc-row span:last-child{color:var(--ink-3);text-align:right}
+.peekcard .pc-money{display:flex;justify-content:space-between;gap:8px;margin:7px 0 4px;padding:7px 9px;background:var(--surface-2);border-radius:8px;font-size:12px}
+.peekcard .pc-money b{color:var(--ink);font-variant-numeric:tabular-nums}
+.peekcard .pc-money .unpaid b,.peekcard .pc-money .partial b{color:var(--bad)}
+.peekcard .pc-money .paid b{color:var(--ok)}
+.peekcard .pc-notes{font-style:italic;border-left:3px solid var(--brass);padding:3px 8px;margin:6px 0 2px;color:var(--ink-2);white-space:pre-wrap}
+.peekcard .pc-al{font-weight:700;color:var(--bad);background:var(--bad-soft);padding:4px 8px;border-radius:7px;margin-bottom:6px}
+.peekcard .pc-al.warn{color:var(--warn);background:var(--warn-soft)}
+.peekcard .pc-hint{margin-top:7px;padding-top:6px;border-top:1px solid var(--line-2);font-size:11px;color:var(--ink-3)}
 .dragtip{position:fixed;z-index:400;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 11px;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(6px) scale(.97);transition:opacity .22s ease,transform .22s ease}
 .dragtip.on{opacity:1;transform:none}
 .dragtip b{font-family:var(--font-d);font-size:15px;font-weight:600;margin-right:4px}
@@ -493,7 +507,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
           <span><i style="background:var(--st-out)"></i>Plecat</span>
           <span><i style="background:var(--st-cancel)"></i>Anulată</span>
           <span style="font-weight:700;color:var(--ink-2)">1 rând = 1 noapte (data sosirii)</span>
-          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Trage blocul pentru a muta · marginea de jos prelungește · trage pe celule libere, și în lateral, pentru o rezervare pe mai multe camere · click dreapta pe bloc pentru acțiuni</span>
+          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Trage blocul pentru a muta · marginea de jos prelungește · marginea din dreapta întinde pe camere · trage pe celule libere pentru rezervare nouă · click dreapta pe bloc pentru acțiuni</span>
           <div class="seg" id="zoomSeg" title="Zoom calendar (Ctrl + rotiță sau tastele + / −)" style="margin-left:6px"><button id="zoomOut" aria-label="Micșorează" style="padding:4px 9px">−</button><button id="zoomLbl" class="num" style="min-width:48px;padding:4px 6px">100%</button><button id="zoomIn" aria-label="Mărește" style="padding:4px 9px">+</button></div>
         </div>
         <div class="chart" id="chart">
@@ -628,6 +642,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 <div class="ctx" id="ctx"></div>
 <div class="toasts" id="toasts"></div>
 <div class="dragtip" id="dragtip"></div>
+<div class="peekcard" id="peekcard"></div>
 
 <script>
 /* =========================================================
@@ -914,7 +929,7 @@ body.addEventListener('pointerdown', e => {
     const r = S.reservations.find(x => x.id === resEl.dataset.id);
     const mode = e.target.classList.contains('rs') ? 'resize' : e.target.classList.contains('rsx') ? 'resizex' : 'move';
     drag = { mode, r, el: resEl, x0: e.clientX, y0: e.clientY, in0: r.checkIn, out0: r.checkOut, room0: r.roomId, rooms0: resRoomIds(r).slice(), moved: false, valid: true };
-    resEl.setPointerCapture(e.pointerId);
+    resEl.setPointerCapture(e.pointerId); clearTimeout(peekT); hideCard();
     if (e.pointerType === 'touch') { clearTimeout(lpTimer); lpTimer = setTimeout(() => { if (drag && !drag.moved) { drag = null; openBlockMenu(r.id, e.clientX, e.clientY); } }, 550); }
   } else {
     // range-select on empty cells
@@ -944,7 +959,7 @@ window.addEventListener('pointermove', e => {
   }
   const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
   if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
-  drag.moved = true; clearTimeout(lpTimer); drag.el.classList.add('dragging'); clearTimeout(peekT); if (drag.el.classList.contains('peek')) { drag.el.classList.remove('peek','unpeek'); drag.el.style.transition = 'none'; drag.el.style.width = drag.el.dataset.w0 + 'px'; drag.el.style.height = drag.el.dataset.h0 + 'px'; drag.el.style.marginLeft = ''; }
+  drag.moved = true; clearTimeout(lpTimer); clearTimeout(peekT); hideCard(); drag.el.classList.add('dragging');
   const dRows = Math.round(dy / ROWH), dCols = Math.round(dx / COLW);
   const cols = columns(), idxs = drag.rooms0.map(id => cols.findIndex(c => c.room.id === id)).filter(i => i >= 0);
   const idx0 = Math.min(...idxs), span0 = Math.max(...idxs) - idx0 + 1;
@@ -1045,34 +1060,40 @@ function undoToast(msg, undo, kind = '') {
   $('#toasts').appendChild(t);
 }
 
-/* Hover peek: expand a block over its neighbours after a short pause */
-let peekT = null;
+/* Hover card: full details float next to the block; the block itself never changes size */
+let peekT = null, cardEl = null;
 body.addEventListener('pointerover', e => {
   const el = e.target.closest('.res'); if (!el || drag || e.pointerType === 'touch') return;
-  clearTimeout(peekT); peekT = setTimeout(() => { if (drag || el.classList.contains('peek')) return;
-    const w0 = el.offsetWidth, h0 = el.offsetHeight, bw = body.clientWidth;
-    el.dataset.h0 = h0; el.style.transition = 'none';
-    el.classList.add('peek'); el.style.width = 'max-content'; el.style.maxWidth = '240px'; el.style.height = 'auto';
-    const w1 = Math.max(w0 + 36, Math.ceil(el.getBoundingClientRect().width) + 2); el.style.width = w1 + 'px';
-    const h1 = Math.max(h0, Math.ceil(el.getBoundingClientRect().height));
-    el.style.width = w0 + 'px'; el.style.height = h0 + 'px'; el.style.maxWidth = ''; void el.offsetWidth;
-    el.style.transition = 'width .28s cubic-bezier(.2,.8,.2,1), height .28s cubic-bezier(.2,.8,.2,1), margin-left .28s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s';
-    el.style.width = w1 + 'px'; el.style.height = h1 + 'px';
-    // grow to the left (right edge stays where the resize handle is); only grow right when there is no room on the left
-    el.style.marginLeft = (el.offsetLeft - (w1 - w0) >= 0 || el.offsetLeft + w1 + 8 > bw) ? (-(w1 - w0)) + 'px' : '';
-  }, 240);
+  if (cardEl === el) return;
+  clearTimeout(peekT); peekT = setTimeout(() => { if (!drag) showCard(el); }, 320);
 });
 body.addEventListener('pointerout', e => {
   const el = e.target.closest('.res'); if (!el) return;
   if (e.relatedTarget && el.contains(e.relatedTarget)) return;
-  clearTimeout(peekT); unpeek(el);
+  clearTimeout(peekT); hideCard();
 });
-function unpeek(el) {
-  if (!el.classList.contains('peek')) return;
-  el.style.width = el.dataset.w0 + 'px'; el.style.height = el.dataset.h0 + 'px'; el.style.marginLeft = '';
-  el.classList.add('unpeek');
-  setTimeout(() => { el.classList.remove('peek', 'unpeek'); el.style.transition = ''; }, 280);
+function showCard(el) {
+  const r = S.reservations.find(x => x.id === el.dataset.id); if (!r) return;
+  const card = $('#peekcard'), g = guestById(r.guestId), n = nights(r), rem = remaining(r), ps = payStatus(r), al = alertFor(r);
+  cardEl = el;
+  card.style.setProperty('--c', getComputedStyle(el).getPropertyValue('--c'));
+  card.innerHTML = `
+    <div class="pc-h"><b>${esc(resGuest(r))}</b><span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span></div>
+    ${al ? `<div class="pc-al ${al.level}">${esc(al.text)}</div>` : ''}
+    <div class="pc-row"><span>${esc(roomLabel(r))}</span><span>${resRoomIds(r).length > 1 ? resRoomIds(r).length + ' camere' : esc(roomById(r.roomId)?.type || '')}</span></div>
+    <div class="pc-row"><span>${fmtDL(r.checkIn)}</span><span>→ ${fmtDL(r.checkOut)}</span></div>
+    <div class="pc-row"><span>${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers.</span><span>${SRC[r.source]}</span></div>
+    <div class="pc-money"><span>Total <b>${money(r.total)}</b></span><span>Încasat <b>${money(paid(r))}</b></span><span class="${ps}">${rem > 0 ? 'Rest <b>' + money(rem) + '</b>' : '<b>Achitat</b>'}</span></div>
+    ${r.notes ? `<div class="pc-notes">${esc(r.notes)}</div>` : ''}
+    ${g?.phone ? `<div class="pc-row"><span>${esc(g.phone)}</span><span>${esc(g.email || '')}</span></div>` : ''}
+    <div class="pc-hint">click: detalii · click dreapta: acțiuni · trage: mută</div>`;
+  const rc = el.getBoundingClientRect(), cw = 280, ch = card.offsetHeight || 200;
+  let left = rc.right + 10; if (left + cw > innerWidth - 8) left = rc.left - cw - 10; if (left < 8) left = 8;
+  let top = rc.top; if (top + ch > innerHeight - 8) top = Math.max(8, innerHeight - ch - 8);
+  card.style.left = left + 'px'; card.style.top = top + 'px'; card.classList.add('on');
 }
+function hideCard() { $('#peekcard').classList.remove('on'); cardEl = null; }
+function unpeek() {}
 
 /* Column reorder by dragging room headers */
 let hdrag = null;
