@@ -306,6 +306,21 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .gs .dd button small{color:var(--ink-3);font-size:11.5px}
 .gs .dd button.new{color:var(--accent);font-weight:700}
 .chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);padding:4px 10px;border-radius:99px;font-weight:700;font-size:12.5px}
+.roomchips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:38px;border:1px solid var(--line);border-radius:9px;padding:5px 6px;background:var(--surface)}
+.roomchips .rc{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);padding:4px 6px 4px 10px;border-radius:8px;font-weight:700;font-size:12.5px;white-space:nowrap}
+.roomchips .rc small{color:var(--ink-2);font-weight:500}
+.roomchips .rc button{width:18px;height:18px;border-radius:5px;color:inherit;font-size:14px;line-height:1;display:grid;place-items:center}
+.roomchips .rc button:hover{background:rgba(0,0,0,.08)}
+.roomchips select{border:1px dashed var(--line);background:transparent;border-radius:8px;padding:4px 8px;font-weight:700;font-size:12.5px;color:var(--ink-2);cursor:pointer;max-width:220px}
+.roomchips select:hover{border-color:var(--accent);color:var(--accent)}
+.moneyrow input{font-weight:800;font-size:15px;font-variant-numeric:tabular-nums}
+.f .hint.manual{color:var(--brass);font-weight:700}
+details.more{border-top:1px solid var(--line-2);padding-top:10px}
+details.more summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--ink-2);list-style:none;display:flex;align-items:center;gap:8px}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::before{content:"\203A";display:inline-block;transition:transform .15s;font-size:16px;color:var(--ink-3)}
+details.more[open] summary::before{transform:rotate(90deg)}
+details.more summary:hover{color:var(--accent)}
 .chip button{color:inherit;font-size:14px;line-height:1}
 .alert{background:var(--bad-soft);color:var(--bad);border-radius:9px;padding:8px 12px;font-weight:600;font-size:13px;display:none}
 .alert.on{display:block}
@@ -525,19 +540,18 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <input id="fGuest" placeholder="Caută după nume sau telefon… sau scrie un nume nou" autocomplete="off">
         <div class="dd" id="guestDD"></div>
       </div>
+      <div class="f">
+        <label>Camere <span class="hint" id="fRoomHint" style="font-weight:500;margin-left:6px"></span></label>
+        <div class="roomchips" id="fRooms"></div>
+      </div>
       <div class="g3">
-        <div class="f"><label>Cameră</label><select id="fRoom"></select><span class="hint" id="fRoomHint"></span></div>
         <div class="f"><label>Check-in</label><input type="date" id="fIn"></div>
         <div class="f"><label>Check-out</label><input type="date" id="fOut"><span class="hint" id="fOutHint"></span></div>
-      </div>
-      <div class="g3">
         <div class="f"><label>Persoane</label><input type="number" id="fPax" min="1" value="2"></div>
-        <div class="f"><label>Preț / noapte</label><input type="number" id="fRate" min="0" step="10"></div>
-        <div class="f"><label>Preț total</label><input type="number" id="fTotal" min="0" step="10"></div>
       </div>
-      <div class="g3">
-        <div class="f"><label>Sursă</label><select id="fSrc"><option value="direct">Direct</option><option value="booking">Booking.com</option><option value="airbnb">Airbnb</option><option value="phone">Telefon</option><option value="other">Altă sursă</option></select></div>
-        <div class="f"><label>Status</label><select id="fStatus"><option value="confirmed">Confirmată</option><option value="pending">În așteptare</option><option value="checked_in">Cazat</option><option value="checked_out">Plecat</option><option value="cancelled">Anulată</option></select></div>
+      <div class="g3 moneyrow">
+        <div class="f"><label>Preț / noapte</label><input type="number" id="fRate" min="0" step="10"><span class="hint" id="fRateHint"></span></div>
+        <div class="f"><label>Preț total</label><input type="number" id="fTotal" min="0" step="10"><span class="hint" id="fTotalHint"></span></div>
         <div class="f" id="fPaidWrap"><label>Avans încasat</label><input type="number" id="fPaid" min="0" step="10" value="0"></div>
       </div>
       <div class="calc">
@@ -546,7 +560,13 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <div><label>Încasat</label><b id="cPaid">–</b></div>
         <div class="rem" id="cRemWrap"><label>Rest de plată</label><b id="cRem">–</b></div>
       </div>
-      <div class="f"><label>Observații</label><textarea id="fNotes" placeholder="Ex: pat suplimentar, vine cu câinele, factură pe firmă…"></textarea></div>
+      <details class="more" id="fMore"><summary>Mai multe: sursă, status, observații</summary>
+      <div class="g2" style="margin-top:10px">
+        <div class="f"><label>Sursă</label><select id="fSrc"><option value="direct">Direct</option><option value="booking">Booking.com</option><option value="airbnb">Airbnb</option><option value="phone">Telefon</option><option value="other">Altă sursă</option></select></div>
+        <div class="f"><label>Status</label><select id="fStatus"><option value="confirmed">Confirmată</option><option value="pending">În așteptare</option><option value="checked_in">Cazat</option><option value="checked_out">Plecat</option><option value="cancelled">Anulată</option></select></div>
+      </div>
+      <div class="f" style="margin-top:10px"><label>Observații</label><textarea id="fNotes" placeholder="Ex: pat suplimentar, vine cu câinele, factură pe firmă…"></textarea></div>
+      </details>
     </div>
     <div class="ft"><span class="hint" style="margin-right:auto;font-size:12px;color:var(--ink-3)"><span class="kbd">Esc</span> închide · <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> salvează</span><button class="btn" onclick="closeResModal()">Renunță</button><button class="btn primary" id="resSave" onclick="saveRes()">Salvează rezervarea</button></div>
   </div>
@@ -1187,32 +1207,42 @@ function saveInvoice() { const r = cur(); r.invoiceNo = $('#invNo').value.trim()
 function deleteRes() { const r = cur(); if (!confirm('Ștergi definitiv această rezervare?')) return; S.reservations = S.reservations.filter(x => x.id !== r.id); save(); closeDrawer(); renderAll(); toast('Rezervare ștearsă'); }
 
 /* ---------- Reservation modal ---------- */
-let editId = null, selGuest = null, pendingRoomIds = null;
+let editId = null, selGuest = null, mRooms = [], totalManual = false;
 const F = id => $('#' + id);
 function openResModal(pre = null, id = null) {
-  editId = id; selGuest = null; pendingRoomIds = pre?.roomIds && pre.roomIds.length > 1 ? pre.roomIds.slice() : null; F('resAlert').classList.remove('on');
+  editId = id; selGuest = null; totalManual = false; F('resAlert').classList.remove('on');
   const rooms = bookableRooms();
-  F('fRoom').innerHTML = rooms.map(r => `<option value="${r.id}">${esc(r.name)} · ${esc(r.type)} · ${r.price} RON</option>`).join('');
   const r = id ? S.reservations.find(x => x.id === id) : null;
   F('resTitle').textContent = r ? 'Editează rezervarea' : 'Rezervare nouă';
   F('resSave').textContent = r ? 'Salvează modificările' : 'Salvează rezervarea';
   F('fPaidWrap').style.display = r ? 'none' : '';
-  if (r) { const rm = roomById(r.roomId); if (!rooms.includes(rm)) F('fRoom').insertAdjacentHTML('afterbegin', `<option value="${rm.id}">${esc(rm.name)}</option>`);
-    F('fRoom').value = r.roomId; F('fRoomHint').textContent = resRoomIds(r).length > 1 ? `Acoperă ${roomLabel(r)}. Dacă schimbi camera, rămâne o singură cameră; întinde-o din calendar.` : ''; F('fIn').value = r.checkIn; F('fOut').value = r.checkOut; F('fPax').value = r.pax; F('fTotal').value = r.total; F('fRate').value = Math.round(r.total / nights(r));
-    F('fSrc').value = r.source; F('fStatus').value = r.status; F('fNotes').value = r.notes; pickGuest(guestById(r.guestId)); }
-  else { const rid = pre?.roomId || rooms[0]?.id; F('fRoom').value = rid; F('fIn').value = pre?.checkIn || TODAY; F('fOut').value = pre?.checkOut || addDays(F('fIn').value, 1);
-    const prs = pendingRoomIds ? pendingRoomIds.map(roomById).filter(Boolean) : [roomById(rid)].filter(Boolean);
-    F('fRoomHint').textContent = pendingRoomIds ? `Acoperă ${prs.map(x => x.name).join(' + ')} (${prs.length} camere). Prețul pe noapte e suma camerelor.` : '';
-    F('fPax').value = pendingRoomIds ? prs.reduce((t, x) => t + x.capacity, 0) : Math.min(2, roomById(rid)?.capacity || 2); F('fRate').value = prs.reduce((t, x) => t + x.price, 0); F('fTotal').value = ''; F('fSrc').value = 'direct'; F('fStatus').value = 'confirmed'; F('fPaid').value = 0; F('fNotes').value = ''; F('fGuest').value = ''; showChip(); }
-  recalc(true); F('resOverlay').classList.add('open'); closeDrawer();
-  setTimeout(() => (selGuest ? F('fRoom') : F('fGuest')).focus(), 50);
+  if (r) { mRooms = resRoomIds(r).slice(); totalManual = true;
+    F('fIn').value = r.checkIn; F('fOut').value = r.checkOut; F('fPax').value = r.pax; F('fTotal').value = r.total; F('fRate').value = Math.round(r.total / nights(r));
+    F('fSrc').value = r.source; F('fStatus').value = r.status; F('fNotes').value = r.notes; pickGuest(guestById(r.guestId));
+    F('fMore').open = !!(r.notes || r.source !== 'direct' || r.status !== 'confirmed'); }
+  else { mRooms = (pre?.roomIds && pre.roomIds.length ? pre.roomIds : [pre?.roomId || rooms[0]?.id]).filter(Boolean);
+    F('fIn').value = pre?.checkIn || TODAY; F('fOut').value = pre?.checkOut || addDays(F('fIn').value, 1);
+    const prs = mRooms.map(roomById).filter(Boolean);
+    F('fPax').value = prs.length > 1 ? prs.reduce((t, x) => t + x.capacity, 0) : Math.min(2, prs[0]?.capacity || 2);
+    F('fRate').value = prs.reduce((t, x) => t + x.price, 0); F('fTotal').value = ''; F('fSrc').value = 'direct'; F('fStatus').value = 'confirmed'; F('fPaid').value = 0; F('fNotes').value = ''; F('fGuest').value = ''; showChip();
+    F('fMore').open = false; }
+  renderRoomChips(); recalc(true); F('resOverlay').classList.add('open'); closeDrawer();
+  setTimeout(() => (selGuest ? F('fIn') : F('fGuest')).focus(), 50);
 }
-// rooms the modal will save: the multi-room set stays as long as its first room is still selected
-function modalRoomIds() {
-  const sel = F('fRoom').value, old = editId ? S.reservations.find(x => x.id === editId) : null;
-  if (old && resRoomIds(old)[0] === sel) return resRoomIds(old);
-  if (pendingRoomIds && pendingRoomIds[0] === sel) return pendingRoomIds;
-  return [sel];
+const modalRoomIds = () => mRooms.slice();
+function renderRoomChips() {
+  const box = F('fRooms'), rooms = bookableRooms(), free = rooms.filter(rm => !mRooms.includes(rm.id));
+  box.innerHTML = mRooms.map(id => { const rm = roomById(id); return rm ? `<span class="rc">${esc(rm.name)} <small>${esc(rm.type)} · ${rm.price} lei</small>${mRooms.length > 1 ? `<button type="button" data-rm="${id}" title="Scoate ${esc(rm.name)}">×</button>` : ''}</span>` : ''; }).join('')
+    + (free.length ? `<select id="fRoomAdd"><option value="">+ adaugă cameră</option>${free.map(rm => `<option value="${rm.id}">${esc(rm.name)} · ${esc(rm.type)} · ${rm.price} lei</option>`).join('')}</select>` : '');
+  F('fRoomHint').textContent = mRooms.length > 1 ? `${mRooms.length} camere, o singură rezervare și o singură plată` : '';
+  box.querySelectorAll('button[data-rm]').forEach(b => b.onclick = () => { mRooms = mRooms.filter(x => x !== b.dataset.rm); roomsChanged(); });
+  const add = box.querySelector('#fRoomAdd'); if (add) add.onchange = () => { if (add.value) { mRooms.push(add.value); roomsChanged(); } };
+}
+function roomsChanged() {
+  const prs = mRooms.map(roomById).filter(Boolean);
+  F('fRate').value = prs.reduce((t, x) => t + x.price, 0);
+  if (!editId) F('fPax').value = prs.length > 1 ? prs.reduce((t, x) => t + x.capacity, 0) : Math.min(+F('fPax').value || 2, prs[0]?.capacity || 2);
+  renderRoomChips(); recalc(!totalManual);
 }
 function closeResModal() { F('resOverlay').classList.remove('open'); F('guestDD').classList.remove('open'); }
 function closeOverlay(id) { F(id).classList.remove('open'); }
@@ -1220,18 +1250,21 @@ function recalc(fromRate = false) {
   const n = diffDays(F('fIn').value, F('fOut').value);
   const okN = Number.isFinite(n) && n >= 1;
   F('fOutHint').textContent = okN ? `${n} ${n === 1 ? 'noapte' : 'nopți'}` : 'Check-out trebuie să fie după check-in'; F('fOutHint').className = 'hint' + (okN ? '' : ' bad');
-  if (fromRate && okN) F('fTotal').value = (+F('fRate').value || 0) * n;
+  if (fromRate && okN && !totalManual) F('fTotal').value = (+F('fRate').value || 0) * n;
+  F('fTotalHint').textContent = totalManual ? 'Preț introdus manual' : (okN ? `${+F('fRate').value || 0} × ${n} ${n === 1 ? 'noapte' : 'nopți'}, îl poți modifica` : 'Se calculează, dar îl poți scrie tu'); F('fTotalHint').classList.toggle('manual', totalManual);
+  F('fRateHint').textContent = mRooms.length > 1 ? 'suma camerelor, editabil' : '';
   const total = +F('fTotal').value || 0, p = editId ? paid(S.reservations.find(x => x.id === editId)) : (+F('fPaid').value || 0), rem = Math.max(0, total - p);
   F('cNights').textContent = okN ? n : '–'; F('cTotal').textContent = money(total); F('cPaid').textContent = money(p); F('cRem').textContent = rem === 0 && total > 0 ? 'Achitat' : money(rem);
   F('cRemWrap').classList.toggle('zero', rem === 0 && total > 0);
   // live availability check
-  const room = F('fRoom').value, c = okN ? conflictAny(modalRoomIds(), F('fIn').value, F('fOut').value, editId) : null;
+  const c = okN ? conflictAny(modalRoomIds(), F('fIn').value, F('fOut').value, editId) : null;
   if (c) { F('resAlert').textContent = `${roomLabel(c)} este ocupată: ${resGuest(c)}, ${fmtD(c.checkIn)} – ${fmtD(c.checkOut)}. Alege altă cameră sau altă perioadă.`; F('resAlert').classList.add('on'); }
   else F('resAlert').classList.remove('on');
 }
-['fIn','fOut','fRoom'].forEach(id => F(id).addEventListener('change', () => { if (id === 'fRoom') F('fRate').value = roomById(F('fRoom').value)?.price || F('fRate').value; if (id === 'fIn' && F('fOut').value <= F('fIn').value) F('fOut').value = addDays(F('fIn').value, 1); recalc(true); }));
-F('fRate').addEventListener('input', () => recalc(true));
-['fTotal','fPaid'].forEach(id => F(id).addEventListener('input', () => recalc(false)));
+['fIn','fOut'].forEach(id => F(id).addEventListener('change', () => { if (id === 'fIn' && F('fOut').value <= F('fIn').value) F('fOut').value = addDays(F('fIn').value, 1); recalc(true); }));
+F('fRate').addEventListener('input', () => { totalManual = false; recalc(true); });   // typing a rate goes back to the automatic total
+F('fTotal').addEventListener('input', () => { totalManual = F('fTotal').value !== ''; recalc(false); });
+F('fPaid').addEventListener('input', () => recalc(false));
 function showChip() { const c = F('guestChip'); if (selGuest) { c.style.display = ''; c.innerHTML = `<span class="chip">${esc(guestName(selGuest))} · ${esc(selGuest.phone || '')}<button onclick="clearGuest()" title="Schimbă">×</button></span>`; F('fGuest').style.display = 'none'; } else { c.style.display = 'none'; F('fGuest').style.display = ''; } }
 function pickGuest(g) { selGuest = g; showChip(); F('guestDD').classList.remove('open'); }
 function clearGuest() { selGuest = null; showChip(); F('fGuest').value = ''; F('fGuest').focus(); }
@@ -1244,7 +1277,8 @@ F('fGuest').addEventListener('input', () => {
   dd.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.g) pickGuest(guestById(b.dataset.g)); else dd.classList.remove('open'); };
 });
 function saveRes() {
-  const inD = F('fIn').value, outD = F('fOut').value, n = diffDays(inD, outD), roomId = F('fRoom').value, total = +F('fTotal').value;
+  const inD = F('fIn').value, outD = F('fOut').value, n = diffDays(inD, outD), roomId = mRooms[0], total = +F('fTotal').value;
+  if (!roomId) { F('resAlert').textContent = 'Alege cel puțin o cameră.'; F('resAlert').classList.add('on'); return; }
   const err = m => { F('resAlert').textContent = m; F('resAlert').classList.add('on'); };
   if (!selGuest && !F('fGuest').value.trim()) return err('Alege sau scrie numele oaspetelui.');
   if (!(n >= 1)) return err('Check-out trebuie să fie după check-in.');
@@ -1257,7 +1291,7 @@ function saveRes() {
   if (editId) { Object.assign(S.reservations.find(x => x.id === editId), data); toast('Rezervare actualizată', 'ok'); }
   else { const r = { id: uid('res_'), ...data, payments: [], invoiceNo: '', createdAt: Date.now() }; const adv = +F('fPaid').value || 0; if (adv > 0) r.payments.push({ id: uid('p_'), amount: adv, method: 'cash', date: TODAY, note: 'Avans' }); S.reservations.push(r);
     if (inD < view.start || inD > addDays(view.start, shownDays - 1)) view.start = addDays(inD, -2);
-    toast(`Rezervare creată: ${guestName(g)}, ${roomById(roomId).name}`, 'ok'); }
+    toast(`Rezervare creată: ${guestName(g)}, ${roomLabel(r)}`, 'ok'); }
   save(); closeResModal(); renderAll();
 }
 
