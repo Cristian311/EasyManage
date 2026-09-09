@@ -526,7 +526,9 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <button class="btn icon" id="prevBtn" title="Perioada anterioară"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
         <button class="btn" id="todayBtn">Azi</button>
         <button class="btn icon" id="nextBtn" title="Perioada următoare"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
-        <label class="period num" id="periodLbl" for="jumpDate" title="Click: sari la o dată" style="cursor:pointer"></label><input type="date" id="jumpDate" style="width:0;height:0;opacity:0;position:absolute;pointer-events:none">
+        <label class="period num" id="periodLbl" for="jumpDate" title="Click: sari la o dată" style="cursor:pointer"></label>
+        <button class="btn icon" id="jumpBtn" title="Sari la o dată"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg></button>
+        <input type="date" id="jumpDate" style="width:0;height:0;opacity:0;position:absolute;pointer-events:none">
         <div class="seg" id="rangeSeg" title="Minimul de zile afișate; calendarul continuă cât încape pe ecran"><button data-n="7">7 zile</button><button data-n="14" class="on">14 zile</button><button data-n="30">30 zile</button></div>
         <button class="btn primary" id="newResBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă <span class="kbd kbd-hint" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.4);background:transparent">N</span></button>
       </div>
@@ -540,7 +542,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
           <span><i style="background:var(--st-out)"></i>Plecat</span>
           <span><i style="background:var(--st-cancel)"></i>Anulată</span>
           <span style="font-weight:700;color:var(--ink-2)">1 rând = 1 noapte (data sosirii)</span>
-          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Trage blocul pentru a muta · marginea de jos prelungește · marginea din dreapta întinde pe camere · trage pe celule libere pentru rezervare nouă · click dreapta pe bloc pentru acțiuni</span>
+          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Derulează în jos sau în sus pentru zilele următoare sau anterioare · trage blocul pentru a muta · marginea de jos prelungește · marginea din dreapta întinde pe camere · click dreapta pe bloc pentru acțiuni</span>
           <div class="seg" id="zoomSeg" title="Zoom calendar (Ctrl + rotiță sau tastele + / −)" style="margin-left:6px"><button id="zoomOut" aria-label="Micșorează" style="padding:4px 9px">−</button><button id="zoomLbl" class="num" style="min-width:48px;padding:4px 6px">100%</button><button id="zoomIn" aria-label="Mărește" style="padding:4px 9px">+</button></div>
         </div>
         <div class="chart" id="chart">
@@ -719,7 +721,7 @@ function toast(msg, kind='') {
 const KEY = 'velora-stay-demo-v7';
 const ROOM_COLORS = ['#3A7BD5','#0E7C86','#2F8F5B','#B8862B','#D9761B','#C9453A','#6B5BD6','#B3437C','#5E7C8A','#8E5A3C'];
 let S;            // {rooms, guests, reservations}
-let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '', prop: 'all', floor: 'all' };
+let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '', prop: 'all', floor: 'all', extra: 0 };
 try { const v = JSON.parse(localStorage.getItem('velora-stay-demo-view')); if (v) { view.prop = v.prop || 'all'; view.floor = v.floor || 'all'; } } catch(e){}
 function saveView() { try { localStorage.setItem('velora-stay-demo-view', JSON.stringify({ prop: view.prop, floor: view.floor })); } catch(e){} }
 
@@ -904,7 +906,7 @@ const px = v => parseFloat(getComputedStyle(chart).getPropertyValue(v));
 
 function renderChart() {
   applyZoom();
-  shownDays = daysThatFit();
+  shownDays = daysThatFit() + view.extra;
   const cols = columns(), days = dayList();
   const COLW = px('--colw'), ROWH = px('--rowh');
   const d0 = days[0], d1 = days[days.length-1];
@@ -1001,7 +1003,8 @@ function renderChart() {
   });
 
   // if the layout ended up taller than measured (scrollbars, resize), fill the rest once
-  if (!refilling) { const want = daysThatFit(); if (want > shownDays) { refilling = true; shownDays = want; renderChart(); refilling = false; } }
+  if (!refilling) { const want = daysThatFit() + view.extra; if (want > shownDays) { refilling = true; shownDays = want; renderChart(); refilling = false; } }
+  updatePeriodLabel();
 }
 
 /* ---------- Pointer interactions on the chart ---------- */
@@ -1645,12 +1648,28 @@ try { history.replaceState(navState(), ''); } catch(e){}
 window.addEventListener('popstate', e => { const st = e.state; if (!st) return; view.prop = st.prop || 'all'; view.floor = st.floor || 'all'; saveView(); go(st.page || 'calendar', true); renderAll(); });
 function goBack() { if (history.length > 1) history.back(); else toast('Nu este niciun ecran anterior'); }
 document.addEventListener('keydown', e => { if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); goBack(); } });
-$('#prevBtn').onclick = () => { view.start = addDays(view.start, -shownDays); renderChart(); };
-$('#nextBtn').onclick = () => { view.start = addDays(view.start, shownDays); renderChart(); };
-$('#todayBtn').onclick = () => { view.start = addDays(TODAY, -2); renderChart(); };
+function jumpTo(d) { view.start = d; view.extra = 0; renderChart(); chart.scrollTop = 0; }
+$('#prevBtn').onclick = () => jumpTo(addDays(view.start, -daysThatFit()));
+$('#nextBtn').onclick = () => jumpTo(addDays(view.start, daysThatFit()));
+$('#todayBtn').onclick = () => jumpTo(addDays(TODAY, -2));
+$('#jumpBtn').onclick = () => { const d = $('#jumpDate'); d.value = view.start; if (d.showPicker) d.showPicker(); else d.click(); };
+// infinite scroll: more days appear below as you scroll down, earlier days appear above as you scroll up
+let lastST = 0, scrollBusy = false;
+chart.addEventListener('scroll', () => {
+  if (scrollBusy) return;
+  const ROWH = px('--rowh'), st = chart.scrollTop, up = st < lastST; lastST = st;
+  if (st + chart.clientHeight > chart.scrollHeight - ROWH * 3) { scrollBusy = true; view.extra += 14; renderChart(); scrollBusy = false; }
+  else if (up && st < ROWH * 2) { scrollBusy = true; view.start = addDays(view.start, -14); view.extra += 14; renderChart(); chart.scrollTop = st + 14 * ROWH; lastST = chart.scrollTop; scrollBusy = false; }
+  updatePeriodLabel();
+}, { passive: true });
+function updatePeriodLabel() {
+  const ROWH = px('--rowh'), a = Math.max(0, Math.floor(chart.scrollTop / ROWH)), b = Math.min(shownDays - 1, Math.floor((chart.scrollTop + chart.clientHeight - px('--headh') - 1) / ROWH));
+  const d0 = addDays(view.start, a), d1 = addDays(view.start, Math.max(a, b));
+  $('#periodLbl').textContent = `${fmtD(d0)} – ${fmtD(d1)} ${fromIso(d1).getFullYear()}`;
+}
 $('#periodLbl').onclick = e => { e.preventDefault(); const d = $('#jumpDate'); d.value = view.start; if (d.showPicker) d.showPicker(); else d.click(); };
-$('#jumpDate').addEventListener('change', e => { if (e.target.value) { view.start = e.target.value; renderChart(); } });
-$('#rangeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $$('#rangeSeg button').forEach(x => x.classList.toggle('on', x === b)); view.days = +b.dataset.n; renderChart(); });
+$('#jumpDate').addEventListener('change', e => { if (e.target.value) jumpTo(e.target.value); });
+$('#rangeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $$('#rangeSeg button').forEach(x => x.classList.toggle('on', x === b)); view.days = +b.dataset.n; view.extra = 0; renderChart(); });
 $('#newResBtn').onclick = () => openResModal();
 $('#zoomIn').onclick = () => setZoom(zoom + 0.1);
 $('#zoomOut').onclick = () => setZoom(zoom - 0.1);
@@ -1676,7 +1695,7 @@ document.addEventListener('keydown', e => {
 });
 window.addEventListener('resize', () => { clearTimeout(window._rt); window._rt = setTimeout(renderChart, 120); });
 if (window.ResizeObserver) new ResizeObserver(() => {
-  clearTimeout(window._ro); window._ro = setTimeout(() => { if (daysThatFit() !== shownDays) renderChart(); }, 60);
+  clearTimeout(window._ro); window._ro = setTimeout(() => { if (daysThatFit() + view.extra !== shownDays) renderChart(); }, 60);
 }).observe(chart);
 
 /* ---------- Init ---------- */
