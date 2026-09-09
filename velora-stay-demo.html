@@ -320,7 +320,40 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 
 /* ---------- Toast ---------- */
 .toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:300;pointer-events:none}
-.toast{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);animation:up .2s ease;display:flex;gap:8px;align-items:center;max-width:90vw}
+.toast{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);animation:up .2s ease;display:flex;gap:8px;align-items:center;max-width:90vw;pointer-events:auto}
+.toast button{margin-left:6px;background:rgba(255,255,255,.18);color:inherit;padding:3px 10px;border-radius:6px;font-weight:800;font-size:12.5px}
+.toast button:hover{background:rgba(255,255,255,.3)}
+/* Today bar */
+.todaybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 2px 10px}
+.todaybar .tb-d{font-family:var(--font-d);font-weight:600;font-size:14px;margin-right:4px}
+.tb-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-weight:600;font-size:12.5px;color:var(--ink-2);cursor:pointer;transition:border-color .12s,color .12s}
+.tb-chip:hover{border-color:var(--accent);color:var(--ink)}
+.tb-chip b{font-family:var(--font-d);font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
+.tb-chip.warn{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
+.tb-chip.warn b{color:var(--bad)}
+.tb-chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+/* Quick actions, alerts, focus flash */
+.res .qa{font-size:max(9px,calc(10.5px*var(--z)));font-weight:800;padding:2px 9px;border-radius:99px;color:#fff;background:var(--ok);margin-right:auto;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.2);cursor:pointer;line-height:1.5}
+.res .qa.leave{background:var(--accent)}
+.res .qa:hover{filter:brightness(1.1)}
+.res.short .ft:has(.qa) .src{display:none}
+.res .al{position:absolute;top:4px;right:4px;width:16px;height:16px;border-radius:50%;background:var(--bad);color:#fff;font-size:10.5px;font-weight:900;display:grid;place-items:center;z-index:3;box-shadow:0 0 0 2px var(--surface)}
+.res .al.warn{background:var(--warn)}
+.res.has-alert{outline:2px solid var(--bad);outline-offset:-1px}
+.res.has-alert.warnlvl{outline-color:var(--warn)}
+.res.has-alert .g{padding-right:20px}
+.res.short.has-alert .g{padding-right:84px}
+.res.flash{animation:flash 1.3s ease}
+@keyframes flash{0%,100%{box-shadow:none}25%,60%{box-shadow:0 0 0 4px var(--accent),0 14px 34px -8px var(--accent)}}
+.ctx .lh{padding:6px 10px 4px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.ctx button .rm{min-width:46px;color:var(--accent);font-family:var(--font-d);font-weight:600}
+.ctx button .lb{flex:1;min-width:0}
+.ctx button .lb small{display:block;color:var(--ink-3);font-weight:500;font-size:11.5px}
+.ctx button b{font-variant-numeric:tabular-nums}
+.hist{display:flex;flex-direction:column;gap:4px;margin-top:8px}
+.hist .hi{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:5px 8px;border:1px solid var(--line-2);border-radius:8px}
+.hist .hi b{color:var(--accent);font-family:var(--font-d);font-weight:600}
+.hist .lead{font-weight:700;color:var(--ink);font-size:13px;margin-top:8px}
 .toast.bad{background:var(--bad);color:#fff}.toast.ok{background:var(--ok);color:#fff}
 @keyframes up{from{transform:translateY(8px);opacity:0}}
 
@@ -397,6 +430,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <button class="btn primary" id="newResBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă <span class="kbd kbd-hint" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.4);background:transparent">N</span></button>
       </div>
       <div class="chart-wrap">
+        <div class="todaybar" id="todaybar"></div>
         <div class="legend" style="padding:0 2px 10px">
           <span><i style="background:var(--st-confirmed)"></i>Confirmată</span>
           <span><i style="background:var(--st-pending);outline:1px dashed var(--st-pending);outline-offset:1px"></i>În așteptare</span>
@@ -568,7 +602,7 @@ function toast(msg, kind='') {
 }
 
 /* ---------- State ---------- */
-const KEY = 'velora-stay-demo-v1';
+const KEY = 'velora-stay-demo-v2';
 let S;            // {rooms, guests, reservations}
 let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '' };
 
@@ -622,6 +656,8 @@ function seed() {
     R(6, 4, 7, 2, { status:'cancelled', src:'airbnb' }),
     R(1, 2, 9, 4, { status:'confirmed', src:'direct' }),
     R(5, 3, -4, 3, { status:'checked_out', src:'booking', pay:[[540,'card']], inv:'VS-2026-0141' }),
+    R(7, 3, -2, 2, { status:'checked_in', src:'direct', pay:[[180,'cash']], notes:'Pleacă azi, rest de plată la plecare.' }),
+    R(6, 5, -1, 2, { status:'confirmed', src:'phone', notes:'A sunat că ajunge târziu.' }),
   ];
   return { rooms, guests, reservations };
 }
@@ -643,6 +679,23 @@ const isActiveRes = r => r.status !== 'cancelled';
 // Double-booking rule: overlap when a.in < b.out && b.in < a.out (back-to-back is fine)
 function conflict(roomId, checkIn, checkOut, exceptId=null) {
   return S.reservations.find(r => r.id !== exceptId && r.roomId === roomId && isActiveRes(r) && checkIn < r.checkOut && r.checkIn < checkOut) || null;
+}
+// Alerts shown on the block (the receptionist should see these without opening anything)
+function alertFor(r) {
+  if (!isActiveRes(r)) return null;
+  const notIn = r.status === 'confirmed' || r.status === 'pending';
+  if (notIn && r.checkIn < TODAY && r.checkOut > TODAY) return { level: 'bad', text: `Trebuia să sosească pe ${fmtD(r.checkIn)} și nu e cazat` };
+  if (r.status === 'checked_in' && r.checkOut < TODAY) return { level: 'bad', text: `Trebuia să plece pe ${fmtD(r.checkOut)}` };
+  if (r.checkOut === TODAY && r.status !== 'checked_out' && remaining(r) > 0) return { level: 'bad', text: `Pleacă azi cu rest de plată ${money(remaining(r))}` };
+  if (notIn && r.checkIn === TODAY && new Date().getHours() >= 14) return { level: 'warn', text: 'A trecut ora de check-in (14:00) și nu e cazat' };
+  return null;
+}
+// One-click action available on the block today
+function quickAction(r) {
+  if (!isActiveRes(r)) return null;
+  if ((r.status === 'confirmed' || r.status === 'pending') && r.checkIn <= TODAY && r.checkOut > TODAY) return { label: 'Cazează', status: 'checked_in' };
+  if (r.status === 'checked_in' && r.checkOut <= TODAY) return { label: 'Pleacă', status: 'checked_out', cls: 'leave' };
+  return null;
 }
 // Column list = top-level rooms in order; a split room contributes its units instead of itself
 function columns() {
@@ -715,13 +768,14 @@ function renderChart() {
     const top = startIdx * ROWH, h = n * ROWH;
     const el = document.createElement('div');
     const c = { confirmed:'var(--st-confirmed)', pending:'var(--st-pending)', checked_in:'var(--st-in)', checked_out:'var(--st-out)', cancelled:'var(--st-cancel)' }[r.status];
-    el.className = `res ${r.status} ${n < 2 ? 'short' : n < 3 ? 'two' : ''}`;
+    const al = alertFor(r), qa = quickAction(r);
+    el.className = `res ${r.status} ${n < 2 ? 'short' : n < 3 ? 'two' : ''} ${al ? 'has-alert ' + (al.level === 'warn' ? 'warnlvl' : '') : ''}`;
     el.style.cssText = `--c:${c};left:${ci*COLW + 4}px;top:${top + 2}px;height:${h - 4}px`;
     const gn = resGuest(r);
     if (q && !gn.toLowerCase().includes(q)) el.style.opacity = .18;
     el.dataset.id = r.id;
     const rem = remaining(r), ps = payStatus(r);
-    el.title = `${gn}
+    el.title = `${al ? '⚠ ' + al.text + '\n' : ''}${gn}
 ${roomById(r.roomId).name} · ${fmtD(r.checkIn)} → ${fmtD(r.checkOut)} · ${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers
 Total ${money(r.total)} · încasat ${money(paid(r))} · rest ${money(rem)}
 ${STATUS[r.status]} · ${SRC[r.source]}${r.notes ? '\n' + r.notes : ''}`;
@@ -731,7 +785,8 @@ ${STATUS[r.status]} · ${SRC[r.source]}${r.notes ? '\n' + r.notes : ''}`;
       <div class="m"><b>${Number(r.total).toLocaleString('ro-RO')} lei</b> · ${rem > 0 ? `<span class="rest">rest ${Number(rem).toLocaleString('ro-RO')}</span>` : `<span class="okp">achitat</span>`}</div>
       ${r.notes ? `<div class="nt">${esc(r.notes)}</div>` : ''}
       <div class="x">Încasat <b>${money(paid(r))}</b> · ${SRC[r.source]}</div>
-      <div class="ft"><span class="out" title="Check-out ${fmtDL(r.checkOut)}">→ ${fmtD(r.checkOut)}</span><span class="src ${r.source}">${SRC_SHORT[r.source]}</span><span class="pay ${ps}" title="${PAY_L[ps]}"></span></div>
+      ${al ? `<span class="al ${al.level === 'warn' ? 'warn' : ''}" title="${esc(al.text)}">!</span>` : ''}
+      <div class="ft">${qa ? `<button class="qa ${qa.cls || ''}" data-qa="${r.id}" title="${qa.label} cu un click">${qa.label}</button>` : `<span class="out" title="Check-out ${fmtDL(r.checkOut)}">→ ${fmtD(r.checkOut)}</span>`}<span class="src ${r.source}">${SRC_SHORT[r.source]}</span><span class="pay ${ps}" title="${PAY_L[ps]}"></span></div>
       <div class="rs" title="Trage pentru a schimba check-out"></div>`;
     body.appendChild(el);
   });
@@ -740,7 +795,7 @@ ${STATUS[r.status]} · ${SRC[r.source]}${r.notes ? '\n' + r.notes : ''}`;
 /* ---------- Pointer interactions on the chart ---------- */
 let drag = null;
 body.addEventListener('pointerdown', e => {
-  if (e.button !== 0) return;
+  if (e.button !== 0 || e.target.closest('.qa')) return;
   const COLW = px('--colw'), ROWH = px('--rowh');
   const resEl = e.target.closest('.res');
   const rect = body.getBoundingClientRect();
@@ -812,10 +867,29 @@ window.addEventListener('pointerup', e => {
     toast(c ? `Suprapunere cu ${resGuest(c)} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)})` : 'Camera este dezactivată', 'bad');
     renderChart(); return;
   }
+  const prev = { roomId: d.room0, checkIn: d.in0, checkOut: d.out0 };
   Object.assign(d.r, d.cand); save(); renderAll();
-  toast(d.mode === 'move' ? `${resGuest(d.r)} → ${roomById(d.r.roomId).name}, ${fmtD(d.r.checkIn)} – ${fmtD(d.r.checkOut)}` : `Check-out mutat la ${fmtD(d.r.checkOut)} (${nights(d.r)} nopți)`, 'ok');
+  undoToast(d.mode === 'move' ? `${resGuest(d.r)} → ${roomById(d.r.roomId).name}, ${fmtD(d.r.checkIn)} – ${fmtD(d.r.checkOut)}` : `Check-out mutat la ${fmtD(d.r.checkOut)} (${nights(d.r)} nopți)`, () => Object.assign(d.r, prev), 'ok');
 });
 window.addEventListener('pointercancel', () => { if (drag) { drag = null; renderChart(); } });
+
+/* One-click check-in / check-out from the block */
+body.addEventListener('click', e => { const b = e.target.closest('.qa'); if (!b) return; e.stopPropagation(); doQuick(b.dataset.qa); });
+function doQuick(id) {
+  const r = S.reservations.find(x => x.id === id), qa = r && quickAction(r); if (!qa) return;
+  if (qa.status === 'checked_out' && remaining(r) > 0) { openDrawer(r.id); toast(`Rest de plată ${money(remaining(r))}. Încasează sau confirmă plecarea din sertar.`, 'bad'); return; }
+  changeStatus(r, qa.status);
+}
+function changeStatus(r, s) {
+  const prev = r.status; r.status = s; save(); renderAll(); if (drawerId === r.id) openDrawer(r.id);
+  undoToast(`${resGuest(r)}: ${STATUS[s]}`, () => { r.status = prev; }, s === 'cancelled' ? '' : 'ok');
+}
+function undoToast(msg, undo, kind = '') {
+  const t = document.createElement('div'); t.className = 'toast ' + kind; t.innerHTML = `<span>${esc(msg)}</span><button type="button">Anulează</button>`;
+  const timer = setTimeout(() => t.remove(), 6000);
+  t.querySelector('button').onclick = () => { clearTimeout(timer); t.remove(); undo(); save(); renderAll(); if (drawerId) openDrawer(drawerId); toast('Anulat'); };
+  $('#toasts').appendChild(t);
+}
 
 /* Hover peek: expand a block over its neighbours after a short pause */
 let peekT = null;
@@ -893,6 +967,7 @@ function openRoomMenu(roomId, anchor) {
     ${isUnit ? `<button data-a="merge">⊞ Unește unitățile înapoi</button>` : ''}
     <button data-a="toggle">${r.active ? '◌ Dezactivează' : '● Activează'}</button>
     <hr><button data-a="del" class="dng" ${hasRes ? 'disabled title="Are rezervări"' : ''}>🗑 Șterge${hasRes ? ' (are rezervări)' : ''}</button>`;
+  ctx.style.minWidth = '190px';
   const rc = anchor.getBoundingClientRect();
   ctx.style.display = 'block'; ctx.style.left = Math.min(rc.left, innerWidth - 210) + 'px'; ctx.style.top = (rc.bottom + 4) + 'px';
   ctx.onclick = e => { const a = e.target.closest('button')?.dataset.a; ctx.style.display = 'none'; if (!a) return;
@@ -958,7 +1033,7 @@ function openDrawer(id) {
     <div><div class="sec-t">Factură</div><div style="margin-top:8px;display:flex;gap:6px;align-items:center">
       <input id="invNo" placeholder="Număr factură (ex: VS-2026-0142)" value="${esc(r.invoiceNo)}" style="flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--surface)">
       <button class="btn sm" onclick="saveInvoice()">${r.invoiceNo ? 'Actualizează' : 'Marchează facturat'}</button></div></div>
-    ${g?.notes ? `<div><div class="sec-t">Despre oaspete</div><div class="notes" style="margin-top:8px;border-color:var(--accent)">${esc(g.notes)}</div></div>` : ''}`;
+    ${guestHistoryHtml(g, r)}`;
   const acts = [];
   if (r.status === 'confirmed' || r.status === 'pending') acts.push(`<button class="btn ok" onclick="setStatus('checked_in')">Check-in</button>`);
   if (r.status === 'checked_in') acts.push(`<button class="btn primary" onclick="setStatus('checked_out')">Check-out</button>`);
@@ -969,12 +1044,22 @@ function openDrawer(id) {
   $('#dFoot').innerHTML = acts.join('');
   $('#drawer').classList.add('open');
 }
+function guestHistoryHtml(g, r) {
+  if (!g) return '';
+  const past = S.reservations.filter(x => x.guestId === g.id && x.id !== r.id && x.status !== 'cancelled').sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+  const last = past[0];
+  const lead = past.length ? `A mai stat de ${past.length} ${past.length === 1 ? 'dată' : 'ori'} · ultima dată în ${esc(roomById(last.roomId)?.name || '—')}, ${fmtD(last.checkIn)}` : 'Prima ședere la noi';
+  const owed = past.reduce((s, x) => s + remaining(x), 0);
+  return `<div><div class="sec-t">Oaspete</div><div class="hist"><div class="lead">${lead}${owed > 0 ? ` · <span style="color:var(--bad)">datorii vechi ${money(owed)}</span>` : ''}</div>
+    ${past.slice(0, 3).map(x => `<div class="hi"><span><b>${esc(roomById(x.roomId)?.name || '—')}</b> · ${fmtD(x.checkIn)} – ${fmtD(x.checkOut)} · ${nights(x)} ${nights(x) === 1 ? 'noapte' : 'nopți'}</span><span>${money(x.total)}${x.checkIn > TODAY ? ' · viitoare' : ''}</span></div>`).join('')}
+    ${g.notes ? `<div class="notes" style="margin-top:6px;border-color:var(--accent)">${esc(g.notes)}</div>` : ''}</div></div>`;
+}
 function closeDrawer() { $('#drawer').classList.remove('open'); drawerId = null; }
 function cur() { return S.reservations.find(x => x.id === drawerId); }
 function setStatus(s) { const r = cur(); if (!r) return;
   if (s === 'checked_out' && remaining(r) > 0 && !confirm(`Rest de plată ${money(remaining(r))}. Faci check-out oricum?`)) return;
   if (s === 'cancelled' && !confirm(`Anulezi rezervarea pentru ${resGuest(r)}?`)) return;
-  r.status = s; save(); renderAll(); openDrawer(r.id); toast(`${resGuest(r)}: ${STATUS[s]}`, s === 'cancelled' ? '' : 'ok'); }
+  changeStatus(r, s); }
 function addPayment() { const r = cur(); const amt = +$('#payAmt').value; if (!amt || amt <= 0) { toast('Introdu o sumă', 'bad'); return; }
   r.payments.push({ id: uid('p_'), amount: amt, method: $('#payMethod').value, date: TODAY, note: '' }); save(); renderAll(); openDrawer(r.id); toast(`Încasat ${money(amt)}`, 'ok'); }
 function saveInvoice() { const r = cur(); r.invoiceNo = $('#invNo').value.trim(); r.invoiceDate = r.invoiceNo ? TODAY : null; save(); openDrawer(r.id); toast(r.invoiceNo ? `Factura ${r.invoiceNo} salvată` : 'Număr factură șters'); }
@@ -1107,7 +1192,45 @@ function renderRooms() {
         <td><button class="btn sm" onclick="event.stopPropagation();openRoomMenu('${r.id}', this)">⋯</button></td></tr>`; }).join('')}
     </tbody></table></div>`;
 }
-function renderAll() { renderChart(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
+function renderTodayBar() {
+  const act = S.reservations.filter(isActiveRes);
+  const arr = act.filter(r => r.checkIn === TODAY && r.status !== 'checked_out');
+  const late = act.filter(r => (r.status === 'confirmed' || r.status === 'pending') && r.checkIn < TODAY && r.checkOut > TODAY);
+  const dep = act.filter(r => r.checkOut === TODAY && r.status !== 'checked_out');
+  const inh = act.filter(r => r.status === 'checked_in');
+  const rooms = bookableRooms(), occ = new Set(act.filter(r => r.checkIn <= TODAY && r.checkOut > TODAY).map(r => r.roomId));
+  const free = rooms.filter(r => !occ.has(r.id));
+  const owed = act.filter(r => r.status !== 'checked_out' && r.checkIn <= TODAY && remaining(r) > 0);
+  const owedSum = owed.reduce((s, r) => s + remaining(r), 0);
+  const item = r => ({ room: roomById(r.roomId)?.name || '—', label: resGuest(r), sub: `${fmtD(r.checkIn)} – ${fmtD(r.checkOut)} · ${STATUS[r.status]}${remaining(r) ? ' · rest ' + money(remaining(r)) : ''}`, go: () => focusRes(r.id) });
+  const chips = [
+    { k: 'arr', t: 'Sosiri', n: arr.length + late.length, c: 'var(--st-confirmed)', warn: late.length > 0, title: late.length ? `${late.length} întârziate` : '', items: [...late, ...arr].map(item) },
+    { k: 'dep', t: 'Plecări', n: dep.length, c: 'var(--st-out)', warn: dep.some(r => remaining(r) > 0), items: dep.map(item) },
+    { k: 'in', t: 'Cazați', n: inh.length, c: 'var(--st-in)', items: inh.map(item) },
+    { k: 'free', t: 'Libere', n: free.length, c: 'var(--line)', items: free.map(rm => ({ room: rm.name, label: `${rm.type} · ${rm.capacity} pers · ${rm.price} lei`, sub: 'Click: rezervare pentru azi', go: () => openResModal({ roomId: rm.id, checkIn: TODAY, checkOut: addDays(TODAY, 1) }) })) },
+    { k: 'owed', t: 'De încasat', n: owed.length, right: owedSum ? money(owedSum) : '', c: 'var(--warn)', warn: owed.length > 0, items: owed.map(item) },
+  ];
+  $('#todaybar').innerHTML = `<span class="tb-d">${fmtDL(TODAY)}</span>` + chips.map((c, i) => `<button class="tb-chip ${c.warn ? 'warn' : ''}" data-i="${i}" title="${esc(c.title || '')}"><i style="--c:${c.c}"></i>${c.t} <b>${c.n}</b>${c.right ? `<span style="color:var(--ink-3)">· ${c.right}</span>` : ''}</button>`).join('');
+  $('#todaybar').onclick = e => { const b = e.target.closest('.tb-chip'); if (!b) return; const c = chips[+b.dataset.i]; openList(b, c.t, c.items); };
+}
+function openList(anchor, title, items) {
+  ctx.style.minWidth = '280px';
+  ctx.innerHTML = `<div class="lh">${esc(title)}</div>` + (items.map((it, i) => `<button data-i="${i}"><span class="rm">${esc(it.room)}</span><span class="lb">${esc(it.label)}${it.sub ? `<small>${esc(it.sub)}</small>` : ''}</span></button>`).join('') || '<div class="empty" style="padding:10px">Nimic azi</div>');
+  const rc = anchor.getBoundingClientRect();
+  ctx.style.display = 'block'; ctx.style.left = Math.min(rc.left, innerWidth - 300) + 'px'; ctx.style.top = (rc.bottom + 6) + 'px';
+  ctx.onclick = e => { const b = e.target.closest('button'); ctx.style.display = 'none'; if (b) items[+b.dataset.i].go(); };
+}
+function focusRes(id) {
+  const r = S.reservations.find(x => x.id === id); if (!r) return;
+  go('calendar');
+  const end = addDays(view.start, view.days);
+  if (r.checkIn < view.start || r.checkIn >= end) { view.start = addDays(r.checkIn, -2); renderChart(); }
+  const el = body.querySelector(`.res[data-id="${id}"]`); if (!el) return;
+  el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+  el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400);
+  openDrawer(id);
+}
+function renderAll() { renderChart(); renderTodayBar(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
 
 /* ---------- Navigation, shortcuts, theme ---------- */
 function go(page) { view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); }
