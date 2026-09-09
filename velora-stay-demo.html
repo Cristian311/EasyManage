@@ -198,7 +198,24 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.t1 .m,.res.t1 .nt{display:none}
 .res .rsx{position:absolute;top:0;bottom:0;right:0;width:14px;cursor:ew-resize;z-index:2;border-radius:0 9px 9px 0;transition:background .12s}
 .res .rsx::after{content:"";position:absolute;top:50%;right:4px;width:4px;height:26px;margin-top:-13px;border-radius:3px;background:color-mix(in srgb,var(--c) 70%,transparent);box-shadow:0 0 0 1.5px var(--surface);opacity:0;transition:opacity .12s}
-.res:hover .rsx::after{opacity:1}
+.res:hover .rsx::after,.res.peek .rsx::after{opacity:1}
+.dragband{position:absolute;left:0;right:0;pointer-events:none;z-index:3;display:none;background:linear-gradient(to bottom,color-mix(in srgb,var(--accent) 16%,transparent),color-mix(in srgb,var(--accent) 6%,transparent));box-shadow:inset 0 2px 0 var(--accent),inset 0 -2px 0 var(--accent),0 10px 30px -14px color-mix(in srgb,var(--accent) 60%,transparent)}
+.dragcol{position:absolute;top:0;bottom:0;pointer-events:none;z-index:3;display:none;background:color-mix(in srgb,var(--accent) 7%,transparent)}
+.dragband.bad{background:linear-gradient(to bottom,color-mix(in srgb,var(--bad) 18%,transparent),color-mix(in srgb,var(--bad) 6%,transparent));box-shadow:inset 0 2px 0 var(--bad),inset 0 -2px 0 var(--bad)}
+.dragcol.bad{background:color-mix(in srgb,var(--bad) 7%,transparent)}
+.dc.hl{background:var(--accent-soft)}
+.dc.hl .d1,.dc.hl .d2{color:var(--accent)}
+.dc.hl.bad{background:var(--bad-soft)}
+.dc.hl.bad .d1,.dc.hl.bad .d2{color:var(--bad)}
+.rh.hl{background:var(--accent-soft)}
+.rh.hl .rn{color:var(--accent)}
+.rh.hl.bad{background:var(--bad-soft)}
+.rh.hl.bad .rn{color:var(--bad)}
+.dragtip{position:fixed;z-index:400;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 11px;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(6px) scale(.97);transition:opacity .22s ease,transform .22s ease}
+.dragtip.on{opacity:1;transform:none}
+.dragtip b{font-family:var(--font-d);font-size:15px;font-weight:600;margin-right:4px}
+.dragtip .sub{opacity:.75;font-weight:600}
+.dragtip.bad{background:var(--bad);color:#fff}
 .res .rsx:hover{background:color-mix(in srgb,var(--c) 22%,transparent)}
 .kv .roomrow,.roomrow{display:flex;flex-direction:row;align-items:center;gap:6px;flex-wrap:wrap}
 .roomrow .btn.sm{padding:3px 8px;font-size:11.5px}
@@ -610,6 +627,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="ctx" id="ctx"></div>
 <div class="toasts" id="toasts"></div>
+<div class="dragtip" id="dragtip"></div>
 
 <script>
 /* =========================================================
@@ -815,7 +833,7 @@ function renderChart() {
     if (d === TODAY) html += `<div class="rowbg today" style="top:${i*ROWH}px"></div><div class="todayline" style="top:${i*ROWH}px"></div>`;
     else if (wk) html += `<div class="rowbg wk" style="top:${i*ROWH}px"></div>`; });
   cols.forEach((c, i) => { if (!c.room.active) html += `<div class="colbg inactive" style="left:${i*COLW}px"></div>`; });
-  html += `<div class="selbox" id="selbox"><span class="lab"></span></div>`;
+  html += `<div class="dragband" id="dragband"></div><div class="dragcol" id="dragcol"></div><div class="selbox" id="selbox"><span class="lab"></span></div>`;
   body.innerHTML = html;
 
   // Reservation blocks
@@ -953,6 +971,7 @@ window.addEventListener('pointermove', e => {
     drag.el.style.height = (n * ROWH - 4) + 'px';
   }
   drag.el.classList.toggle('invalid', !drag.valid);
+  showDragTip(drag);
 });
 window.addEventListener('pointerup', e => {
   clearTimeout(lpTimer);
@@ -965,6 +984,7 @@ window.addEventListener('pointerup', e => {
     openResModal({ roomId: rooms[0].id, roomIds: rooms.map(rm => rm.id), checkIn: addDays(view.start, a), checkOut: addDays(view.start, b + 1) });
     return;
   }
+  hideDragTip();
   d.el.classList.remove('dragging');
   if (!d.moved) { openDrawer(d.r.id); return; }
   if (!d.cand || (d.cand.roomIds.join() === d.rooms0.join() && d.cand.checkIn === d.in0 && d.cand.checkOut === d.out0)) { renderChart(); return; }
@@ -978,7 +998,34 @@ window.addEventListener('pointerup', e => {
   const msg = d.mode === 'move' ? `${resGuest(d.r)} → ${roomLabel(d.r)}, ${fmtD(d.r.checkIn)} – ${fmtD(d.r.checkOut)}` : d.mode === 'resizex' ? `${resGuest(d.r)} ocupă acum ${roomLabel(d.r)}` : `Check-out mutat la ${fmtD(d.r.checkOut)} (${nights(d.r)} nopți)`;
   undoToast(msg, () => Object.assign(d.r, prev), 'ok');
 });
-window.addEventListener('pointercancel', () => { if (drag) { drag = null; renderChart(); } });
+window.addEventListener('pointercancel', () => { hideDragTip(); if (drag) { drag = null; renderChart(); } });
+const D = s => { const d = fromIso(s); return `${DOWS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+function showDragTip(d) {
+  const t = $('#dragtip'), c = d.cand; if (!c) return;
+  const n = diffDays(c.checkIn, c.checkOut), rooms = c.roomIds.map(id => roomById(id)?.name).join(' + ');
+  if (d.mode === 'resizex') t.innerHTML = `<b>${esc(rooms)}</b><span class="sub">${c.roomIds.length} ${c.roomIds.length === 1 ? 'cameră' : 'camere'}</span>`;
+  else if (d.mode === 'resize') t.innerHTML = `<b>→ ${D(c.checkOut)}</b><span class="sub">${n} ${n === 1 ? 'noapte' : 'nopți'}</span>`;
+  else t.innerHTML = `<b>${D(c.checkIn)}</b><span class="sub">→ ${D(c.checkOut)} · ${n} ${n === 1 ? 'noapte' : 'nopți'} · ${esc(rooms)}</span>`;
+  t.classList.toggle('bad', !d.valid);
+  lightTarget(c, d.valid);
+  const r = d.el.getBoundingClientRect(), th = t.offsetHeight || 30;
+  t.style.left = Math.max(8, Math.min(r.left, innerWidth - t.offsetWidth - 8)) + 'px';
+  t.style.top = (r.top - th - 8 > 60 ? r.top - th - 8 : r.bottom + 8) + 'px';
+  t.classList.add('on');
+}
+function hideDragTip() { $('#dragtip').classList.remove('on'); lightTarget(null); }
+function lightTarget(c, ok = true) {
+  const band = $('#dragband'), colb = $('#dragcol'); if (!band) return;
+  $$('.dc.hl', dcol).forEach(x => x.classList.remove('hl', 'bad')); $$('.rh.hl', rhead).forEach(x => x.classList.remove('hl', 'bad'));
+  if (!c) { band.style.display = 'none'; colb.style.display = 'none'; return; }
+  const COLW = px('--colw'), ROWH = px('--rowh'), cols = columns();
+  const r0 = diffDays(view.start, c.checkIn), n = diffDays(c.checkIn, c.checkOut);
+  const idxs = c.roomIds.map(id => cols.findIndex(x => x.room.id === id)).filter(i => i >= 0), i0 = Math.min(...idxs), i1 = Math.max(...idxs);
+  band.style.cssText = `display:block;top:${r0 * ROWH}px;height:${n * ROWH}px`; band.classList.toggle('bad', !ok);
+  colb.style.cssText = `display:block;left:${i0 * COLW}px;width:${(i1 - i0 + 1) * COLW}px`; colb.classList.toggle('bad', !ok);
+  const dcs = dcol.children; for (let i = Math.max(0, r0); i < Math.min(dcs.length, r0 + n); i++) { dcs[i].classList.add('hl'); if (!ok) dcs[i].classList.add('bad'); }
+  c.roomIds.forEach(id => { const h = rhead.querySelector(`.rh[data-room="${id}"]`); if (h) { h.classList.add('hl'); if (!ok) h.classList.add('bad'); } });
+}
 
 /* One-click check-in / check-out from the block */
 body.addEventListener('click', e => { const b = e.target.closest('.qa'); if (!b) return; e.stopPropagation(); doQuick(b.dataset.qa); });
@@ -1006,12 +1053,13 @@ body.addEventListener('pointerover', e => {
     const w0 = el.offsetWidth, h0 = el.offsetHeight, bw = body.clientWidth;
     el.dataset.h0 = h0; el.style.transition = 'none';
     el.classList.add('peek'); el.style.width = 'max-content'; el.style.maxWidth = '240px'; el.style.height = 'auto';
-    const w1 = Math.max(w0, Math.ceil(el.getBoundingClientRect().width) + 2); el.style.width = w1 + 'px';
+    const w1 = Math.max(w0 + 36, Math.ceil(el.getBoundingClientRect().width) + 2); el.style.width = w1 + 'px';
     const h1 = Math.max(h0, Math.ceil(el.getBoundingClientRect().height));
     el.style.width = w0 + 'px'; el.style.height = h0 + 'px'; el.style.maxWidth = ''; void el.offsetWidth;
     el.style.transition = 'width .28s cubic-bezier(.2,.8,.2,1), height .28s cubic-bezier(.2,.8,.2,1), margin-left .28s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s';
     el.style.width = w1 + 'px'; el.style.height = h1 + 'px';
-    el.style.marginLeft = (el.offsetLeft + w1 + 8 > bw) ? (-(w1 - w0)) + 'px' : '';
+    // grow to the left (right edge stays where the resize handle is); only grow right when there is no room on the left
+    el.style.marginLeft = (el.offsetLeft - (w1 - w0) >= 0 || el.offsetLeft + w1 + 8 > bw) ? (-(w1 - w0)) + 'px' : '';
   }, 240);
 });
 body.addEventListener('pointerout', e => {
