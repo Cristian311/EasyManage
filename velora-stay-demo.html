@@ -196,9 +196,13 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.short .ft{bottom:0;top:0}
 .res.short .g{padding-right:max(52px,calc(70px*var(--z)))}
 .res.t1 .m,.res.t1 .nt{display:none}
-.res .rsx{position:absolute;top:0;bottom:0;right:0;width:9px;cursor:ew-resize;z-index:2}
-.res .rsx::after{content:"";position:absolute;top:50%;right:3px;width:3px;height:22px;margin-top:-11px;border-radius:2px;background:color-mix(in srgb,var(--c) 60%,transparent);opacity:0;transition:opacity .12s}
+.res .rsx{position:absolute;top:0;bottom:0;right:0;width:14px;cursor:ew-resize;z-index:2;border-radius:0 9px 9px 0;transition:background .12s}
+.res .rsx::after{content:"";position:absolute;top:50%;right:4px;width:4px;height:26px;margin-top:-13px;border-radius:3px;background:color-mix(in srgb,var(--c) 70%,transparent);box-shadow:0 0 0 1.5px var(--surface);opacity:0;transition:opacity .12s}
 .res:hover .rsx::after{opacity:1}
+.res .rsx:hover{background:color-mix(in srgb,var(--c) 22%,transparent)}
+.kv .roomrow,.roomrow{display:flex;flex-direction:row;align-items:center;gap:6px;flex-wrap:wrap}
+.roomrow .btn.sm{padding:3px 8px;font-size:11.5px}
+.ctx button small{color:var(--ink-3);font-weight:500;margin-left:auto;font-size:11px}
 .res.multi{border-width:1.5px}
 .res .rooms{position:absolute;top:4px;right:6px;font-size:max(8.5px,calc(10px*var(--z)));font-weight:800;color:var(--ink-2);background:var(--surface);border:1px solid var(--line);padding:0 5px;border-radius:5px;z-index:1;white-space:nowrap}
 .res.has-alert .rooms{right:max(20px,calc(26px*var(--z)))}
@@ -457,7 +461,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
           <span><i style="background:var(--st-out)"></i>Plecat</span>
           <span><i style="background:var(--st-cancel)"></i>Anulată</span>
           <span style="font-weight:700;color:var(--ink-2)">1 rând = 1 noapte (data sosirii)</span>
-          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Trage blocul pentru a muta · marginea de jos prelungește · marginea din dreapta întinde pe camerele alăturate · click pe celulă liberă = rezervare nouă</span>
+          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Trage blocul pentru a muta · marginea de jos prelungește · trage pe celule libere, și în lateral, pentru o rezervare pe mai multe camere · click dreapta pe bloc pentru acțiuni</span>
           <div class="seg" id="zoomSeg" title="Zoom calendar (Ctrl + rotiță sau tastele + / −)" style="margin-left:6px"><button id="zoomOut" aria-label="Micșorează" style="padding:4px 9px">−</button><button id="zoomLbl" class="num" style="min-width:48px;padding:4px 6px">100%</button><button id="zoomIn" aria-label="Mărește" style="padding:4px 9px">+</button></div>
         </div>
         <div class="chart" id="chart">
@@ -861,6 +865,8 @@ ${STATUS[r.status]} · ${SRC[r.source]}${r.notes ? '\n' + r.notes : ''}`;
 
 /* ---------- Pointer interactions on the chart ---------- */
 let drag = null;
+let lpTimer = null;
+body.addEventListener('contextmenu', e => { const el = e.target.closest('.res'); if (!el) return; e.preventDefault(); openBlockMenu(el.dataset.id, e.clientX, e.clientY); });
 body.addEventListener('pointerdown', e => {
   if (e.button !== 0 || e.target.closest('.qa')) return;
   const COLW = px('--colw'), ROWH = px('--rowh');
@@ -871,21 +877,23 @@ body.addEventListener('pointerdown', e => {
     const mode = e.target.classList.contains('rs') ? 'resize' : e.target.classList.contains('rsx') ? 'resizex' : 'move';
     drag = { mode, r, el: resEl, x0: e.clientX, y0: e.clientY, in0: r.checkIn, out0: r.checkOut, room0: r.roomId, rooms0: resRoomIds(r).slice(), moved: false, valid: true };
     resEl.setPointerCapture(e.pointerId);
+    if (e.pointerType === 'touch') { clearTimeout(lpTimer); lpTimer = setTimeout(() => { if (drag && !drag.moved) { drag = null; openBlockMenu(r.id, e.clientX, e.clientY); } }, 550); }
   } else {
     // range-select on empty cells
     const col = Math.floor((e.clientX - rect.left) / COLW), row = Math.floor((e.clientY - rect.top) / ROWH);
     const cols = columns(); if (col < 0 || col >= cols.length || row < 0 || row >= shownDays) return;
-    drag = { mode: 'select', col, row0: row, row1: row, moved: false };
+    drag = { mode: 'select', col, col0: col, col1: col, row0: row, row1: row, moved: false };
     body.setPointerCapture(e.pointerId);
     drawSel();
   }
 });
+function selRooms() { const cols = columns(), c0 = Math.min(drag.col0, drag.col1), c1 = Math.max(drag.col0, drag.col1); return cols.slice(c0, c1 + 1).map(c => c.room); }
 function drawSel() {
   const COLW = px('--colw'), ROWH = px('--rowh'), sb = $('#selbox'), a = Math.min(drag.row0, drag.row1), b = Math.max(drag.row0, drag.row1);
-  const cols = columns(), room = cols[drag.col].room, inD = addDays(view.start, a), outD = addDays(view.start, b + 1);
-  const cf = conflict(room.id, inD, outD) || !room.active;
-  sb.style.cssText = `display:block;left:${drag.col*COLW+3}px;top:${a*ROWH+2}px;width:${COLW-6}px;height:${(b-a+1)*ROWH}px;${cf ? 'border-color:var(--bad);background:var(--bad-soft)' : ''}`;
-  sb.querySelector('.lab').textContent = `${b-a+1} ${b-a+1 === 1 ? 'noapte' : 'nopți'}`;
+  const c0 = Math.min(drag.col0, drag.col1), c1 = Math.max(drag.col0, drag.col1), rooms = selRooms(), inD = addDays(view.start, a), outD = addDays(view.start, b + 1);
+  const cf = rooms.some(rm => !rm.active) || conflictAny(rooms.map(rm => rm.id), inD, outD);
+  sb.style.cssText = `display:block;left:${c0*COLW+3}px;top:${a*ROWH+2}px;width:${(c1-c0+1)*COLW-6}px;height:${(b-a+1)*ROWH}px;${cf ? 'border-color:var(--bad);background:var(--bad-soft)' : ''}`;
+  sb.querySelector('.lab').textContent = `${b-a+1} ${b-a+1 === 1 ? 'noapte' : 'nopți'}${rooms.length > 1 ? ` · ${rooms.length} camere` : ''}`;
 }
 window.addEventListener('pointermove', e => {
   if (!drag) return;
@@ -893,11 +901,12 @@ window.addEventListener('pointermove', e => {
   if (drag.mode === 'select') {
     const rect = body.getBoundingClientRect();
     drag.row1 = Math.max(0, Math.min(shownDays - 1, Math.floor((e.clientY - rect.top) / ROWH)));
+    drag.col1 = Math.max(0, Math.min(columns().length - 1, Math.floor((e.clientX - rect.left) / COLW)));
     drag.moved = true; drawSel(); return;
   }
   const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
   if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
-  drag.moved = true; drag.el.classList.add('dragging'); clearTimeout(peekT); if (drag.el.classList.contains('peek')) { drag.el.classList.remove('peek','unpeek'); drag.el.style.transition = 'none'; drag.el.style.width = drag.el.dataset.w0 + 'px'; drag.el.style.height = drag.el.dataset.h0 + 'px'; drag.el.style.marginLeft = ''; }
+  drag.moved = true; clearTimeout(lpTimer); drag.el.classList.add('dragging'); clearTimeout(peekT); if (drag.el.classList.contains('peek')) { drag.el.classList.remove('peek','unpeek'); drag.el.style.transition = 'none'; drag.el.style.width = drag.el.dataset.w0 + 'px'; drag.el.style.height = drag.el.dataset.h0 + 'px'; drag.el.style.marginLeft = ''; }
   const dRows = Math.round(dy / ROWH), dCols = Math.round(dx / COLW);
   const cols = columns(), idxs = drag.rooms0.map(id => cols.findIndex(c => c.room.id === id)).filter(i => i >= 0);
   const idx0 = Math.min(...idxs), span0 = Math.max(...idxs) - idx0 + 1;
@@ -926,13 +935,14 @@ window.addEventListener('pointermove', e => {
   drag.el.classList.toggle('invalid', !drag.valid);
 });
 window.addEventListener('pointerup', e => {
+  clearTimeout(lpTimer);
   if (!drag) return;
   const d = drag; drag = null;
   if (d.mode === 'select') {
     $('#selbox').style.display = 'none';
-    const a = Math.min(d.row0, d.row1), b = Math.max(d.row0, d.row1), room = columns()[d.col].room;
-    if (!room.active) { toast('Camera este dezactivată', 'bad'); return; }
-    openResModal({ roomId: room.id, checkIn: addDays(view.start, a), checkOut: addDays(view.start, b + 1) });
+    const a = Math.min(d.row0, d.row1), b = Math.max(d.row0, d.row1); drag = d; const rooms = selRooms(); drag = null;
+    if (rooms.some(rm => !rm.active)) { toast('Una dintre camere este dezactivată', 'bad'); return; }
+    openResModal({ roomId: rooms[0].id, roomIds: rooms.map(rm => rm.id), checkIn: addDays(view.start, a), checkOut: addDays(view.start, b + 1) });
     return;
   }
   d.el.classList.remove('dragging');
@@ -1035,6 +1045,40 @@ rhead.addEventListener('click', e => {
 
 /* ---------- Room context menu, split / merge ---------- */
 const ctx = $('#ctx');
+/* Neighbouring rooms of a block, for growing / shrinking it */
+function neighbours(r) {
+  const cols = columns(), ids = resRoomIds(r), idxs = ids.map(id => cols.findIndex(c => c.room.id === id)).filter(i => i >= 0);
+  const lo = Math.min(...idxs), hi = Math.max(...idxs);
+  return { left: cols[lo - 1]?.room || null, right: cols[hi + 1]?.room || null, first: cols[lo]?.room, last: cols[hi]?.room, span: hi - lo + 1 };
+}
+function growRoom(r, side) {
+  const nb = neighbours(r), rm = nb[side]; if (!rm) return;
+  if (!rm.active) { toast(`${rm.name} este dezactivată`, 'bad'); return; }
+  const c = conflict(rm.id, r.checkIn, r.checkOut, r.id); if (c) { toast(`${rm.name} e ocupată de ${resGuest(c)} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)})`, 'bad'); return; }
+  const prev = resRoomIds(r).slice(); setRooms(r, side === 'right' ? [...prev, rm.id] : [rm.id, ...prev]);
+  save(); renderAll(); if (drawerId === r.id) openDrawer(r.id); undoToast(`${resGuest(r)} ocupă acum ${roomLabel(r)}`, () => setRooms(r, prev), 'ok');
+}
+function shrinkRoom(r, side) {
+  const prev = resRoomIds(r).slice(); if (prev.length < 2) return;
+  const cols = columns(), sorted = prev.slice().sort((a, b) => cols.findIndex(c => c.room.id === a) - cols.findIndex(c => c.room.id === b));
+  const gone = side === 'right' ? sorted.pop() : sorted.shift();
+  setRooms(r, sorted); save(); renderAll(); if (drawerId === r.id) openDrawer(r.id);
+  undoToast(`${roomById(gone)?.name} scoasă. ${resGuest(r)} rămâne pe ${roomLabel(r)}`, () => setRooms(r, prev));
+}
+function openBlockMenu(id, x, y) {
+  const r = S.reservations.find(v => v.id === id); if (!r) return;
+  const nb = neighbours(r), qa = quickAction(r), items = [];
+  if (qa) items.push({ t: qa.label, s: STATUS[qa.status], go: () => doQuick(r.id) });
+  if (nb.right) items.push({ t: `Adaugă ${nb.right.name} din dreapta`, s: nb.right.type, go: () => growRoom(r, 'right') });
+  if (nb.left) items.push({ t: `Adaugă ${nb.left.name} din stânga`, s: nb.left.type, go: () => growRoom(r, 'left') });
+  if (nb.span > 1) { items.push({ t: `Scoate ${nb.last.name}`, s: 'din dreapta', go: () => shrinkRoom(r, 'right') }); items.push({ t: `Scoate ${nb.first.name}`, s: 'din stânga', go: () => shrinkRoom(r, 'left') }); }
+  items.push({ hr: true }, { t: 'Detalii și plăți', go: () => openDrawer(r.id) }, { t: 'Editează', go: () => openResModal(null, r.id) });
+  if (r.status !== 'cancelled' && r.status !== 'checked_out') items.push({ t: 'Anulează rezervarea', dng: true, go: () => { if (confirm(`Anulezi rezervarea pentru ${resGuest(r)}?`)) changeStatus(r, 'cancelled'); } });
+  ctx.style.minWidth = '250px';
+  ctx.innerHTML = `<div class="lh">${esc(resGuest(r))} · ${esc(roomLabel(r))}</div>` + items.map((it, i) => it.hr ? '<hr>' : `<button data-i="${i}" class="${it.dng ? 'dng' : ''}">${esc(it.t)}${it.s ? `<small>${esc(it.s)}</small>` : ''}</button>`).join('');
+  ctx.style.display = 'block'; ctx.style.left = Math.min(x, innerWidth - 270) + 'px'; ctx.style.top = Math.min(y, innerHeight - ctx.offsetHeight - 10) + 'px';
+  ctx.onclick = e => { const b = e.target.closest('button'); ctx.style.display = 'none'; if (b) items[+b.dataset.i].go(); };
+}
 function openRoomMenu(roomId, anchor) {
   const r = roomById(roomId), isUnit = !!r.parentId, hasUnits = S.rooms.some(u => u.parentId === r.id);
   const hasRes = S.reservations.some(x => resRoomIds(x).includes(r.id));
@@ -1085,7 +1129,7 @@ function openDrawer(id) {
   $('#dSub').innerHTML = `<span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span> &nbsp;<span class="pill ${ps}">${PAY_L[ps]}</span> &nbsp;<span style="color:var(--ink-3)">${SRC[r.source]}</span>`;
   $('#dBody').innerHTML = `
     <div class="kv">
-      <div><label>${resRoomIds(r).length > 1 ? 'Camere' : 'Cameră'}</label><b>${esc(roomLabel(r))} <span style="color:var(--ink-3);font-weight:500">· ${resRoomIds(r).length > 1 ? resRoomIds(r).length + ' camere' : esc(rm.type)}</span></b></div>
+      <div style="grid-column:1 / -1"><label>${resRoomIds(r).length > 1 ? 'Camere' : 'Cameră'}</label><div class="roomrow">${(() => { const nb = neighbours(r); return `${nb.left ? `<button class="btn sm" title="Adaugă ${esc(nb.left.name)} din stânga" onclick="growRoom(cur(),'left')">+ ${esc(nb.left.name)}</button>` : ''}${nb.span > 1 ? `<button class="btn sm ghost" title="Scoate ${esc(nb.first.name)}" onclick="shrinkRoom(cur(),'left')">−</button>` : ''}<b>${esc(roomLabel(r))}</b> <span style="color:var(--ink-3)">· ${nb.span > 1 ? nb.span + ' camere' : esc(rm.type)}</span>${nb.span > 1 ? `<button class="btn sm ghost" title="Scoate ${esc(nb.last.name)}" onclick="shrinkRoom(cur(),'right')">−</button>` : ''}${nb.right ? `<button class="btn sm" title="Adaugă ${esc(nb.right.name)} din dreapta" onclick="growRoom(cur(),'right')">+ ${esc(nb.right.name)}</button>` : ''}`; })()}</div></div>
       <div><label>Persoane</label><b>${r.pax}</b></div>
       <div><label>Check-in</label><b>${fmtDL(r.checkIn)}</b></div>
       <div><label>Check-out</label><b>${fmtDL(r.checkOut)}</b></div>
@@ -1126,7 +1170,7 @@ function guestHistoryHtml(g, r) {
   const past = S.reservations.filter(x => x.guestId === g.id && x.id !== r.id && x.status !== 'cancelled').sort((a, b) => b.checkIn.localeCompare(a.checkIn));
   const last = past[0];
   const lead = past.length ? `A mai stat de ${past.length} ${past.length === 1 ? 'dată' : 'ori'} · ultima dată în ${esc(roomById(last.roomId)?.name || '—')}, ${fmtD(last.checkIn)}` : 'Prima ședere la noi';
-  const owed = past.reduce((s, x) => s + remaining(x), 0);
+  const owed = past.filter(x => x.checkOut <= TODAY).reduce((s, x) => s + remaining(x), 0);
   return `<div><div class="sec-t">Oaspete</div><div class="hist"><div class="lead">${lead}${owed > 0 ? ` · <span style="color:var(--bad)">datorii vechi ${money(owed)}</span>` : ''}</div>
     ${past.slice(0, 3).map(x => `<div class="hi"><span><b>${esc(roomLabel(x))}</b> · ${fmtD(x.checkIn)} – ${fmtD(x.checkOut)} · ${nights(x)} ${nights(x) === 1 ? 'noapte' : 'nopți'}</span><span>${money(x.total)}${x.checkIn > TODAY ? ' · viitoare' : ''}</span></div>`).join('')}
     ${g.notes ? `<div class="notes" style="margin-top:6px;border-color:var(--accent)">${esc(g.notes)}</div>` : ''}</div></div>`;
@@ -1143,10 +1187,10 @@ function saveInvoice() { const r = cur(); r.invoiceNo = $('#invNo').value.trim()
 function deleteRes() { const r = cur(); if (!confirm('Ștergi definitiv această rezervare?')) return; S.reservations = S.reservations.filter(x => x.id !== r.id); save(); closeDrawer(); renderAll(); toast('Rezervare ștearsă'); }
 
 /* ---------- Reservation modal ---------- */
-let editId = null, selGuest = null;
+let editId = null, selGuest = null, pendingRoomIds = null;
 const F = id => $('#' + id);
 function openResModal(pre = null, id = null) {
-  editId = id; selGuest = null; F('resAlert').classList.remove('on');
+  editId = id; selGuest = null; pendingRoomIds = pre?.roomIds && pre.roomIds.length > 1 ? pre.roomIds.slice() : null; F('resAlert').classList.remove('on');
   const rooms = bookableRooms();
   F('fRoom').innerHTML = rooms.map(r => `<option value="${r.id}">${esc(r.name)} · ${esc(r.type)} · ${r.price} RON</option>`).join('');
   const r = id ? S.reservations.find(x => x.id === id) : null;
@@ -1157,9 +1201,18 @@ function openResModal(pre = null, id = null) {
     F('fRoom').value = r.roomId; F('fRoomHint').textContent = resRoomIds(r).length > 1 ? `Acoperă ${roomLabel(r)}. Dacă schimbi camera, rămâne o singură cameră; întinde-o din calendar.` : ''; F('fIn').value = r.checkIn; F('fOut').value = r.checkOut; F('fPax').value = r.pax; F('fTotal').value = r.total; F('fRate').value = Math.round(r.total / nights(r));
     F('fSrc').value = r.source; F('fStatus').value = r.status; F('fNotes').value = r.notes; pickGuest(guestById(r.guestId)); }
   else { const rid = pre?.roomId || rooms[0]?.id; F('fRoom').value = rid; F('fIn').value = pre?.checkIn || TODAY; F('fOut').value = pre?.checkOut || addDays(F('fIn').value, 1);
-    F('fRoomHint').textContent = ''; F('fPax').value = Math.min(2, roomById(rid)?.capacity || 2); F('fRate').value = roomById(rid)?.price || 0; F('fTotal').value = ''; F('fSrc').value = 'direct'; F('fStatus').value = 'confirmed'; F('fPaid').value = 0; F('fNotes').value = ''; F('fGuest').value = ''; showChip(); }
+    const prs = pendingRoomIds ? pendingRoomIds.map(roomById).filter(Boolean) : [roomById(rid)].filter(Boolean);
+    F('fRoomHint').textContent = pendingRoomIds ? `Acoperă ${prs.map(x => x.name).join(' + ')} (${prs.length} camere). Prețul pe noapte e suma camerelor.` : '';
+    F('fPax').value = pendingRoomIds ? prs.reduce((t, x) => t + x.capacity, 0) : Math.min(2, roomById(rid)?.capacity || 2); F('fRate').value = prs.reduce((t, x) => t + x.price, 0); F('fTotal').value = ''; F('fSrc').value = 'direct'; F('fStatus').value = 'confirmed'; F('fPaid').value = 0; F('fNotes').value = ''; F('fGuest').value = ''; showChip(); }
   recalc(true); F('resOverlay').classList.add('open'); closeDrawer();
   setTimeout(() => (selGuest ? F('fRoom') : F('fGuest')).focus(), 50);
+}
+// rooms the modal will save: the multi-room set stays as long as its first room is still selected
+function modalRoomIds() {
+  const sel = F('fRoom').value, old = editId ? S.reservations.find(x => x.id === editId) : null;
+  if (old && resRoomIds(old)[0] === sel) return resRoomIds(old);
+  if (pendingRoomIds && pendingRoomIds[0] === sel) return pendingRoomIds;
+  return [sel];
 }
 function closeResModal() { F('resOverlay').classList.remove('open'); F('guestDD').classList.remove('open'); }
 function closeOverlay(id) { F(id).classList.remove('open'); }
@@ -1172,8 +1225,8 @@ function recalc(fromRate = false) {
   F('cNights').textContent = okN ? n : '–'; F('cTotal').textContent = money(total); F('cPaid').textContent = money(p); F('cRem').textContent = rem === 0 && total > 0 ? 'Achitat' : money(rem);
   F('cRemWrap').classList.toggle('zero', rem === 0 && total > 0);
   // live availability check
-  const room = F('fRoom').value, c = okN ? conflict(room, F('fIn').value, F('fOut').value, editId) : null;
-  if (c) { F('resAlert').textContent = `${roomById(room).name} este ocupată: ${resGuest(c)}, ${fmtD(c.checkIn)} – ${fmtD(c.checkOut)}. Alege altă cameră sau altă perioadă.`; F('resAlert').classList.add('on'); }
+  const room = F('fRoom').value, c = okN ? conflictAny(modalRoomIds(), F('fIn').value, F('fOut').value, editId) : null;
+  if (c) { F('resAlert').textContent = `${roomLabel(c)} este ocupată: ${resGuest(c)}, ${fmtD(c.checkIn)} – ${fmtD(c.checkOut)}. Alege altă cameră sau altă perioadă.`; F('resAlert').classList.add('on'); }
   else F('resAlert').classList.remove('on');
 }
 ['fIn','fOut','fRoom'].forEach(id => F(id).addEventListener('change', () => { if (id === 'fRoom') F('fRate').value = roomById(F('fRoom').value)?.price || F('fRate').value; if (id === 'fIn' && F('fOut').value <= F('fIn').value) F('fOut').value = addDays(F('fIn').value, 1); recalc(true); }));
@@ -1196,8 +1249,7 @@ function saveRes() {
   if (!selGuest && !F('fGuest').value.trim()) return err('Alege sau scrie numele oaspetelui.');
   if (!(n >= 1)) return err('Check-out trebuie să fie după check-in.');
   if (!(total >= 0)) return err('Prețul total nu este valid.');
-  const old = editId ? S.reservations.find(x => x.id === editId) : null;
-  const roomIds = old && resRoomIds(old)[0] === roomId ? resRoomIds(old) : [roomId];
+  const roomIds = modalRoomIds();
   const c = conflictAny(roomIds, inD, outD, editId); if (c) return err(`${roomLabel(c)} este ocupată în perioada aleasă (${resGuest(c)}).`);
   let g = selGuest;
   if (!g) { const parts = F('fGuest').value.trim().split(/\s+/); g = { id: uid('g_'), firstName: parts[0], lastName: parts.slice(1).join(' '), phone: '', email: '', country: 'România', notes: '' }; S.guests.push(g); }
