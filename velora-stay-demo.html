@@ -494,7 +494,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
   <aside class="sidebar">
     <div class="brand">
       <div class="mark">V</div>
-      <div><div class="name">Velora Stay</div><div class="sub">Pensiunea Ta</div></div>
+      <div><div class="name">Velora Stay</div><div class="sub" id="brandSub">Vila Duduleanu</div></div>
     </div>
     <nav class="nav" id="nav">
       <div class="sec">Recepție</div>
@@ -716,7 +716,7 @@ function toast(msg, kind='') {
 }
 
 /* ---------- State ---------- */
-const KEY = 'velora-stay-demo-v5';
+const KEY = 'velora-stay-demo-v6';
 const ROOM_COLORS = ['#3A7BD5','#0E7C86','#2F8F5B','#B8862B','#D9761B','#C9453A','#6B5BD6','#B3437C','#5E7C8A','#8E5A3C'];
 let S;            // {rooms, guests, reservations}
 let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '', prop: 'all', floor: 'all' };
@@ -735,10 +735,10 @@ function seed() {
     g('Radu','Marin','0766 999 000','radu.marin@gmail.com','România'),
     g('Ioana','Stan','0740 222 333','ioana.stan@gmail.com','România'),
   ];
-  const properties = [{ id: uid('p_'), name: 'Pensiunea Ta', city: 'Brașov' }, { id: uid('p_'), name: 'Vila Doi', city: 'Râșnov' }];
+  const properties = [{ id: uid('p_'), name: 'Vila Duduleanu', city: 'Brașov' }, { id: uid('p_'), name: 'Vila Mateo', city: 'Râșnov' }];
   const P1 = properties[0].id, P2 = properties[1].id;
-  const floors = [{ id: uid('f_'), propertyId: P1, name: 'Etaj 1 M' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 1 I' }, { id: uid('f_'), propertyId: P1, name: 'Mansardă' },
-                  { id: uid('f_'), propertyId: P2, name: 'Parter' }, { id: uid('f_'), propertyId: P2, name: 'Etaj' }];
+  const floors = [{ id: uid('f_'), propertyId: P1, name: 'Etaj 1 M' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 1 I' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 2 M' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 2 I' },
+                  { id: uid('f_'), propertyId: P2, name: 'Parter' }, { id: uid('f_'), propertyId: P2, name: 'Etaj 1' }];
   const r = (name, type, cap, price, desc='', active=true) => ({ id: uid('r_'), name, type, capacity: cap, price, desc, active, parentId: null, propertyId: P1, floorId: null });
   const rooms = [
     r('101','Dublă',2,250,'Vedere la grădină'),
@@ -751,9 +751,9 @@ function seed() {
     r('Ap. 2','Apartament',4,520,'Mansardă'),
   ];
   ['#3A7BD5','#3A7BD5','#3A7BD5','#5E7C8A','#2F8F5B','#2F8F5B','#B8862B','#D9761B'].forEach((c, i) => rooms[i].color = c);
-  [0,0,0,0,1,1,2,2].forEach((f, i) => rooms[i].floorId = floors[f].id);
+  [0,0,0,0,1,1,2,3].forEach((f, i) => rooms[i].floorId = floors[f].id);
   const v = (name, type, cap, price, f, color) => ({ id: uid('r_'), name, type, capacity: cap, price, desc: '', active: true, parentId: null, propertyId: P2, floorId: floors[f].id, color });
-  const vila = [v('V1','Dublă',2,220,3,'#6B5BD6'), v('V2','Dublă',2,220,3,'#6B5BD6'), v('V3','Familială',4,340,4,'#B3437C'), v('V4','Studio',2,260,4,'#B3437C')];
+  const vila = [v('V1','Dublă',2,220,4,'#6B5BD6'), v('V2','Dublă',2,220,4,'#6B5BD6'), v('V3','Familială',4,340,5,'#B3437C'), v('V4','Studio',2,260,5,'#B3437C')];
   // Split Ap. 1 into two units to show the feature off
   const ap1 = rooms[6];
   const units = ['A','B'].map(l => ({ id: uid('r_'), name: `${ap1.name} · ${l}`, type: 'Dormitor', capacity: 2, price: 280, desc: '', active: true, parentId: ap1.id, label: l, color: ap1.color, propertyId: ap1.propertyId, floorId: ap1.floorId }));
@@ -1571,10 +1571,11 @@ function renderPropBar() {
   if (view.floor !== 'all' && !floors.some(f => f.id === view.floor)) view.floor = 'all';
   const pb = props.length > 1 ? `<span class="pb-l">Proprietate</span><div class="seg" id="pbProp"><button class="all ${view.prop === 'all' ? 'on' : ''}" data-p="all">Toate</button>${props.map(x => `<button class="${view.prop === x.id ? 'on' : ''}" data-p="${x.id}">${esc(x.name)}</button>`).join('')}</div><span class="sep"></span>` : '';
   const fb = floors.length ? `<span class="pb-l">Etaj</span><div class="seg" id="pbFloor"><button class="all ${view.floor === 'all' ? 'on' : ''}" data-f="all">Toate</button>${floors.map(f => `<button class="${view.floor === f.id ? 'on' : ''}" data-f="${f.id}">${esc((view.prop === 'all' && props.length > 1 ? (propById(f.propertyId)?.name || '').split(' ')[0] + ' · ' : '') + f.name)}</button>`).join('')}</div>` : '';
-  $('#propbar').innerHTML = pb + fb + `<button class="btn sm ghost" onclick="go('rooms')">Etaje și proprietăți…</button>`;
+  $('#propbar').innerHTML = `<button class="btn sm" onclick="goBack()" title="Ecranul de dinainte (Alt + ←)">‹ Înapoi</button><span class="sep"></span>` + pb + fb + `<button class="btn sm ghost" onclick="go('rooms')">Etaje și proprietăți…</button>`;
+  const bs = $('#brandSub'); if (bs) bs.textContent = curP ? curP.name : (props[0]?.name || '');
   $('#propbar').onclick = e => { const b = e.target.closest('button[data-p],button[data-f]'); if (!b) return;
     if (b.dataset.p) { view.prop = b.dataset.p; view.floor = 'all'; } else view.floor = b.dataset.f;
-    saveView(); renderAll(); };
+    pushNav(); saveView(); renderAll(); };
   $('#propName').textContent = curP ? `${curP.name}${curP.city ? ' · ' + curP.city : ''}${view.floor !== 'all' ? ' · ' + (floorById(view.floor)?.name || '') : ''}` : (props.length > 1 ? `${props.length} proprietăți` : `${props[0]?.name || ''}${props[0]?.city ? ' · ' + props[0].city : ''}`);
 }
 function renderTodayBar() {
@@ -1618,8 +1619,15 @@ function focusRes(id) {
 function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
 
 /* ---------- Navigation, shortcuts, theme ---------- */
-function go(page) { view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); }
+function go(page, silent = false) { if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); }
 $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page); });
+// browser Back / Forward and the „Înapoi” button walk through pages and property/floor choices
+const navState = () => ({ page: view.page, prop: view.prop, floor: view.floor });
+function pushNav() { try { history.pushState(navState(), ''); } catch(e){} }
+try { history.replaceState(navState(), ''); } catch(e){}
+window.addEventListener('popstate', e => { const st = e.state; if (!st) return; view.prop = st.prop || 'all'; view.floor = st.floor || 'all'; saveView(); go(st.page || 'calendar', true); renderAll(); });
+function goBack() { if (history.length > 1) history.back(); else toast('Nu este niciun ecran anterior'); }
+document.addEventListener('keydown', e => { if (e.altKey && e.key === 'ArrowLeft') { e.preventDefault(); goBack(); } });
 $('#prevBtn').onclick = () => { view.start = addDays(view.start, -shownDays); renderChart(); };
 $('#nextBtn').onclick = () => { view.start = addDays(view.start, shownDays); renderChart(); };
 $('#todayBtn').onclick = () => { view.start = addDays(TODAY, -2); renderChart(); };
