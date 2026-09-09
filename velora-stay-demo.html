@@ -13,7 +13,7 @@
   --line:#DCE3E7; --line-2:#E9EEF1; --ink:#16242B; --ink-2:#4B5C66; --ink-3:#7E8F99;
   --accent:#0E7C86; --accent-2:#0B6570; --accent-soft:#DDF1F3; --brass:#B8862B;
   --ok:#2F8F5B; --ok-soft:#DFF3E7; --warn:#C98A12; --warn-soft:#FBEFD2; --bad:#C9453A; --bad-soft:#F9E0DD;
-  --today:#FFF5DC; --weekend:#F7F9FA; --sel:rgba(14,124,134,.16);
+  --today:#FFF5DC; --weekend:#F7F9FA; --past:#EDF0F2; --past-2:#E6EAEE; --sel:rgba(14,124,134,.16);
   --st-confirmed:#1B7F8A; --st-pending:#C98A12; --st-in:#2F8F5B; --st-out:#7E8F99; --st-cancel:#C9453A;
   --shadow:0 1px 2px rgba(22,36,43,.06),0 8px 24px -12px rgba(22,36,43,.18);
   --shadow-lg:0 24px 60px -24px rgba(22,36,43,.35);
@@ -27,7 +27,7 @@
   --line:#36474F; --line-2:#2C3C45; --ink:#E8EEF1; --ink-2:#AFBEC6; --ink-3:#7D8E97;
   --accent:#3FB3BD; --accent-2:#5CC7D0; --accent-soft:#163A3F; --brass:#D5A24A;
   --ok:#4FBF80; --ok-soft:#173327; --warn:#E3A72F; --warn-soft:#3A2D12; --bad:#E36A5F; --bad-soft:#3E1F1C;
-  --today:#2E2A1A; --weekend:#141D22; --sel:rgba(63,179,189,.22);
+  --today:#2E2A1A; --weekend:#141D22; --past:#121A1F; --past-2:#0F1519; --sel:rgba(63,179,189,.22);
   --st-confirmed:#3FB3BD; --st-pending:#E3A72F; --st-in:#4FBF80; --st-out:#7D8E97; --st-cancel:#E36A5F;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
   --shadow-lg:0 24px 60px -24px rgba(0,0,0,.8);
@@ -149,6 +149,11 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .body{position:relative;background-image:linear-gradient(to right,var(--line-2) 1px,transparent 1px),linear-gradient(to bottom,var(--line-2) 1px,transparent 1px);background-size:var(--colw) var(--rowh);background-position:-1px -1px}
 .rowbg{position:absolute;left:0;right:0;height:var(--rowh);pointer-events:none;background-image:linear-gradient(to right,var(--line-2) 1px,transparent 1px);background-size:var(--colw) 100%;background-position:-1px 0;border-bottom:1px solid var(--line-2)}
 .rowbg.wk{background-color:var(--weekend)}
+.rowbg.past{background-color:var(--past)}
+.rowbg.past.wk{background-color:var(--past-2)}
+.dc.past{background:var(--past)}
+.dc.past.wk{background:var(--past-2)}
+.dc.past .d1{color:var(--ink-2)}
 .rowbg.today{background-color:var(--today)}
 .todayline{position:absolute;left:0;right:0;height:2px;background:var(--brass);pointer-events:none;z-index:2;opacity:.7}
 .colbg.inactive{position:absolute;top:0;bottom:0;width:var(--colw);pointer-events:none;background:repeating-linear-gradient(135deg,transparent 0 8px,var(--surface-3) 8px 10px)}
@@ -168,7 +173,8 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.dragging{cursor:grabbing;z-index:50;transform:scale(1.02);box-shadow:var(--shadow-lg);opacity:.92}
 .res.invalid{--c:var(--bad)!important;background:color-mix(in srgb,var(--bad) 22%,var(--glass))}
 .res.pending{border-style:dashed}
-.res.checked_out{opacity:.55;filter:saturate(.3)}
+.res.past,.res.checked_out{opacity:.72;filter:saturate(.7)}
+.res.past:hover,.res.checked_out:hover{opacity:1;filter:none}
 .res.cancelled{opacity:.45;background:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--bad) 18%,transparent) 6px 8px),var(--glass)}
 .res.cancelled .g{text-decoration:line-through}
 .res .g{font-weight:800;font-size:max(10px,calc(12.5px*var(--z)));line-height:1.25;white-space:normal;display:-webkit-box;-webkit-line-clamp:var(--nl,1);-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere;position:relative}
@@ -928,7 +934,7 @@ function renderChart() {
 
   // Date column
   dcol.innerHTML = days.map(d => { const dt = fromIso(d), wk = dt.getDay() === 0 || dt.getDay() === 6;
-    return `<div class="dc ${wk ? 'wk' : ''} ${d === TODAY ? 'today' : ''}"><div class="d1">${dt.getDate()} ${MONTHS[dt.getMonth()]}</div><div class="d2">${d === TODAY ? 'Azi' : DOWS[dt.getDay()]}</div></div>`; }).join('');
+    return `<div class="dc ${wk ? 'wk' : ''} ${d === TODAY ? 'today' : ''} ${d < TODAY ? 'past' : ''}"><div class="d1">${dt.getDate()} ${MONTHS[dt.getMonth()]}</div><div class="d2">${d === TODAY ? 'Azi' : DOWS[dt.getDay()]}</div></div>`; }).join('');
 
   // Body
   body.style.width = (cols.length * COLW + 90) + 'px';
@@ -936,6 +942,7 @@ function renderChart() {
   let html = '';
   days.forEach((d, i) => { const dt = fromIso(d), wk = dt.getDay() === 0 || dt.getDay() === 6;
     if (d === TODAY) html += `<div class="rowbg today" style="top:${i*ROWH}px"></div><div class="todayline" style="top:${i*ROWH}px"></div>`;
+    else if (d < TODAY) html += `<div class="rowbg past ${wk ? 'wk' : ''}" style="top:${i*ROWH}px"></div>`;
     else if (wk) html += `<div class="rowbg wk" style="top:${i*ROWH}px"></div>`; });
   cols.forEach((c, i) => { if (i > 0 && groupKey(c) !== groupKey(cols[i - 1])) html += `<div class="fsep-line" style="left:${i*COLW - 1}px"></div>`; });
   cols.forEach((c, i) => { if (c.room.color) html += `<div class="colbg tint" style="left:${i*COLW}px;background:color-mix(in srgb,${c.room.color} 5%,transparent)"></div>`; if (!c.room.active) html += `<div class="colbg inactive" style="left:${i*COLW}px"></div>`; });
@@ -982,7 +989,7 @@ function renderChart() {
       if (tier === 3 && r.notes && room >= lnNote) tier = 4;
     }
     const showQa = qa && tier > 0 && COLW * span >= 104;
-    el.className = `res ${r.status} ${['short','t1','t2','t3',''][tier]} ${span > 1 ? 'multi' : ''} ${al ? 'has-alert ' + (al.level === 'warn' ? 'warnlvl' : '') : ''}`;
+    el.className = `res ${r.status} ${r.checkOut <= TODAY ? 'past' : ''} ${['short','t1','t2','t3',''][tier]} ${span > 1 ? 'multi' : ''} ${al ? 'has-alert ' + (al.level === 'warn' ? 'warnlvl' : '') : ''}`;
     el.style.cssText = `--c:${c};--nl:${nl};left:${ci*COLW + 4}px;top:${top + 2}px;height:${h - 4}px;width:${span*COLW - 8}px`;
     el.dataset.w0 = span * COLW - 8; el.dataset.last = ri === runs.length - 1 ? '1' : '0'; if (runs.length > 1) el.classList.add('segment');
     if (q && !gn.toLowerCase().includes(q)) el.style.opacity = .18;
