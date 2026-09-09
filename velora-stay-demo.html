@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="ro" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Velora Stay</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* ---------- Tokens ---------- */
+:root{
+  --bg:#F2F5F7; --surface:#FFFFFF; --surface-2:#F7F9FA; --surface-3:#EDF1F3;
+  --line:#DCE3E7; --line-2:#E9EEF1; --ink:#16242B; --ink-2:#4B5C66; --ink-3:#7E8F99;
+  --accent:#0E7C86; --accent-2:#0B6570; --accent-soft:#DDF1F3; --brass:#B8862B;
+  --ok:#2F8F5B; --ok-soft:#DFF3E7; --warn:#C98A12; --warn-soft:#FBEFD2; --bad:#C9453A; --bad-soft:#F9E0DD;
+  --today:#FFF5DC; --weekend:#F7F9FA; --sel:rgba(14,124,134,.16);
+  --st-confirmed:#1B7F8A; --st-pending:#C98A12; --st-in:#2F8F5B; --st-out:#7E8F99; --st-cancel:#C9453A;
+  --shadow:0 1px 2px rgba(22,36,43,.06),0 8px 24px -12px rgba(22,36,43,.18);
+  --shadow-lg:0 24px 60px -24px rgba(22,36,43,.35);
+  --glass:rgba(255,255,255,.55); --glass-line:rgba(255,255,255,.75);
+  --radius:10px; --sidebar:236px; --sidebar-min:68px;
+  --font:'Manrope',system-ui,-apple-system,'Segoe UI',sans-serif; --font-d:'Outfit','Manrope',system-ui,sans-serif;
+  color-scheme:light;
+}
+:root[data-theme="dark"]{
+  --bg:#0F171B; --surface:#161F25; --surface-2:#1B262D; --surface-3:#212E36;
+  --line:#2B3A43; --line-2:#24323A; --ink:#E8EEF1; --ink-2:#AFBEC6; --ink-3:#7D8E97;
+  --accent:#3FB3BD; --accent-2:#5CC7D0; --accent-soft:#163A3F; --brass:#D5A24A;
+  --ok:#4FBF80; --ok-soft:#173327; --warn:#E3A72F; --warn-soft:#3A2D12; --bad:#E36A5F; --bad-soft:#3E1F1C;
+  --today:#2E2A1A; --weekend:#141D22; --sel:rgba(63,179,189,.22);
+  --st-confirmed:#3FB3BD; --st-pending:#E3A72F; --st-in:#4FBF80; --st-out:#7D8E97; --st-cancel:#E36A5F;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
+  --shadow-lg:0 24px 60px -24px rgba(0,0,0,.8);
+  --glass:rgba(22,31,37,.55); --glass-line:rgba(255,255,255,.14);
+  color-scheme:dark;
+}
+
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
+.num{font-variant-numeric:tabular-nums}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px;border:2px solid var(--surface)}
+::-webkit-scrollbar-thumb:hover{background:var(--ink-3)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- App shell ---------- */
+.app{display:grid;grid-template-columns:var(--sidebar) 1fr;height:100vh;height:100dvh;transition:grid-template-columns .2s ease}
+.app.collapsed{grid-template-columns:var(--sidebar-min) 1fr}
+
+.sidebar{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.brand{display:flex;align-items:center;gap:12px;padding:18px 16px 14px;border-bottom:1px solid var(--line-2)}
+.brand .mark{width:36px;height:36px;border-radius:10px;background:linear-gradient(145deg,var(--accent),var(--accent-2));display:grid;place-items:center;color:#fff;font-family:var(--font-d);font-weight:700;font-size:17px;flex:none;box-shadow:inset 0 1px 0 rgba(255,255,255,.35)}
+.brand .name{font-family:var(--font-d);font-weight:700;font-size:17px;letter-spacing:-.01em;white-space:nowrap}
+.brand .sub{font-size:11px;color:var(--ink-3);white-space:nowrap;letter-spacing:.06em;text-transform:uppercase}
+.nav{padding:10px 10px;display:flex;flex-direction:column;gap:2px;flex:1;overflow:auto}
+.nav .sec{font-size:11px;color:var(--ink-3);letter-spacing:.08em;text-transform:uppercase;padding:14px 10px 6px;white-space:nowrap}
+.nav-item{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:9px;color:var(--ink-2);font-weight:600;text-align:left;white-space:nowrap;width:100%;position:relative}
+.nav-item svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.nav-item.active{background:var(--accent-soft);color:var(--accent)}
+.nav-item .badge{margin-left:auto;background:var(--brass);color:#fff;font-size:11px;font-weight:700;padding:1px 7px;border-radius:99px}
+.nav-item .soon{margin-left:auto;font-size:10px;color:var(--ink-3);border:1px solid var(--line);padding:0 6px;border-radius:99px;font-weight:600}
+.side-foot{border-top:1px solid var(--line-2);padding:10px;display:flex;flex-direction:column;gap:2px}
+.user{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px}
+.user .av{width:30px;height:30px;border-radius:50%;background:var(--brass);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
+.user .u1{font-weight:700;font-size:13px;white-space:nowrap}
+.user .u2{font-size:11px;color:var(--ink-3);white-space:nowrap}
+.app.collapsed .brand .name,.app.collapsed .brand .sub,.app.collapsed .nav-item span,.app.collapsed .nav .sec,.app.collapsed .user div,.app.collapsed .badge,.app.collapsed .soon{display:none}
+.app.collapsed .nav-item{justify-content:center;padding:10px}
+.app.collapsed .user{justify-content:center}
+
+.main{display:flex;flex-direction:column;min-width:0;min-height:0}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.topbar h1{font-size:18px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
+.topbar h1 small{font-family:var(--font);font-size:12px;color:var(--ink-3);font-weight:500}
+.spacer{flex:1}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:9px;font-weight:700;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);transition:background .12s,border-color .12s,transform .06s;white-space:nowrap}
+.btn:hover{background:var(--surface-2);border-color:var(--ink-3)}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.primary:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.danger{color:var(--bad);border-color:transparent;background:var(--bad-soft)}
+.btn.ok{color:#fff;background:var(--ok);border-color:var(--ok)}
+.btn.sm{padding:5px 9px;font-size:12px}
+.btn.icon{padding:8px;width:34px;height:34px;justify-content:center}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surface)}
+.seg button{padding:7px 11px;font-weight:700;font-size:12px;color:var(--ink-2)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:var(--accent-soft);color:var(--accent)}
+.period{font-family:var(--font-d);font-weight:600;font-size:15px;min-width:180px;text-align:center}
+.legend{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--ink-2);flex-wrap:wrap}
+@media (max-width:1400px){.hint-long{display:none}}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:0 10px;height:34px;min-width:200px}
+.search input{border:0;background:transparent;outline:0;width:100%}
+.search svg{width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:2.2;stroke-linecap:round}
+.kbd{font-family:ui-monospace,monospace;font-size:10.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--ink-3);background:var(--surface)}
+
+.page{flex:1;min-height:0;display:none;flex-direction:column}
+.page.on{display:flex}
+.scroll{flex:1;min-height:0;overflow:auto;padding:18px}
+
+/* ---------- Tape chart ---------- */
+.chart-wrap{flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 18px 18px}
+.chart{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);position:relative;display:grid;grid-template-columns:var(--datew) max-content;grid-template-rows:var(--headh) max-content;--datew:84px;--headh:70px;--colw:156px;--rowh:52px;--peekw:260px;--z:1;user-select:none}
+.corner{position:sticky;top:0;left:0;z-index:40;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:flex-end;padding:8px 10px;font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
+.rhead{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);display:flex;height:var(--headh)}
+.rh{width:var(--colw);flex:none;border-right:1px solid var(--line-2);display:flex;flex-direction:column;justify-content:flex-end;padding:6px max(6px,calc(10px*var(--z))) 8px;position:relative;cursor:grab;transition:background .12s}
+.rh:hover{background:var(--surface-2)}
+.rh.dragging{opacity:.5}
+.rh.drop-before::before,.rh.drop-after::after{content:"";position:absolute;top:8px;bottom:8px;width:3px;background:var(--accent);border-radius:2px}
+.rh.drop-before::before{left:-2px}.rh.drop-after::after{right:-2px}
+.rh .rn{font-family:var(--font-d);font-weight:600;font-size:max(12px,calc(15px*var(--z)));line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh .rt{font-size:max(9.5px,calc(11px*var(--z)));color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh .rt b{color:var(--ink-2);font-weight:700}
+.rh .grp{position:absolute;top:8px;left:6px;right:6px;font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;border-top:2px solid var(--accent);padding-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh.unit-first .grp{border-top-left-radius:3px}
+.rh.unit-mid .grp,.rh.unit-last .grp{left:-1px;color:transparent}
+.rh.unit-last .grp{right:6px}
+.rh.inactive{opacity:.55}
+.rh .menu-btn{position:absolute;top:26px;right:6px;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;color:var(--ink-3);opacity:0;transition:opacity .12s}
+.rh:hover .menu-btn{opacity:1}
+.rh .menu-btn:hover{background:var(--surface-3);color:var(--ink)}
+.rh .menu-btn svg{width:14px;height:14px;fill:currentColor}
+.rh.add{cursor:pointer;justify-content:center;align-items:center;color:var(--ink-3);font-weight:700;font-size:12px;border-right:0;width:90px}
+.rh.add:hover{color:var(--accent)}
+.dcol{position:sticky;left:0;z-index:30;background:var(--surface);border-right:1px solid var(--line)}
+.dc{height:var(--rowh);display:flex;flex-direction:column;justify-content:center;padding:0 10px;border-bottom:1px solid var(--line-2);font-variant-numeric:tabular-nums}
+.dc .d1{font-family:var(--font-d);font-weight:600;font-size:15px;line-height:1.1}
+.dc .d2{font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.dc.wk{background:var(--weekend)}
+.dc.today{background:var(--today)}
+.dc.today .d2{color:var(--brass);font-weight:800}
+.body{position:relative;background-image:linear-gradient(to right,var(--line-2) 1px,transparent 1px),linear-gradient(to bottom,var(--line-2) 1px,transparent 1px);background-size:var(--colw) var(--rowh);background-position:-1px -1px}
+.rowbg{position:absolute;left:0;right:0;height:var(--rowh);pointer-events:none}
+.rowbg.wk{background:var(--weekend)}
+.rowbg.today{background:var(--today)}
+.todayline{position:absolute;left:0;right:0;height:2px;background:var(--brass);pointer-events:none;z-index:2;opacity:.7}
+.colbg.inactive{position:absolute;top:0;bottom:0;width:var(--colw);pointer-events:none;background:repeating-linear-gradient(135deg,transparent 0 8px,var(--surface-3) 8px 10px)}
+.selbox{position:absolute;background:var(--sel);border:1.5px dashed var(--accent);border-radius:8px;pointer-events:none;z-index:5;display:none}
+.selbox .lab{position:absolute;left:6px;top:4px;font-size:11px;font-weight:700;color:var(--accent);background:var(--surface);padding:1px 6px;border-radius:6px}
+
+/* Reservation block: the "crystal" */
+.res{position:absolute;width:calc(var(--colw) - 8px);border-radius:9px;padding:max(4px,calc(7px*var(--z))) max(6px,calc(9px*var(--z))) max(18px,calc(24px*var(--z))) max(9px,calc(12px*var(--z)));overflow:hidden;cursor:grab;z-index:10;color:var(--ink);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 30%,var(--glass)) 0%,color-mix(in srgb,var(--c) 14%,var(--glass)) 60%,color-mix(in srgb,var(--c) 24%,var(--glass)) 100%);
+  backdrop-filter:blur(6px) saturate(1.2);-webkit-backdrop-filter:blur(6px) saturate(1.2);
+  border:1px solid color-mix(in srgb,var(--c) 45%,var(--glass-line));
+  box-shadow:inset 0 1px 0 var(--glass-line),inset 0 0 0 1px rgba(255,255,255,.06),0 4px 14px -6px color-mix(in srgb,var(--c) 55%,transparent);
+  transition:box-shadow .15s,transform .15s;touch-action:none;display:flex;flex-direction:column;gap:2px}
+.res::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--c);border-radius:9px 0 0 9px}
+.res::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,rgba(255,255,255,.35) 0%,rgba(255,255,255,0) 40%);pointer-events:none;mix-blend-mode:screen}
+.res:hover{box-shadow:inset 0 1px 0 var(--glass-line),0 10px 24px -8px color-mix(in srgb,var(--c) 70%,transparent);z-index:12}
+.res.dragging{cursor:grabbing;z-index:50;transform:scale(1.02);box-shadow:var(--shadow-lg);opacity:.92}
+.res.invalid{--c:var(--bad)!important;background:color-mix(in srgb,var(--bad) 22%,var(--glass))}
+.res.pending{border-style:dashed}
+.res.checked_out{opacity:.55;filter:saturate(.3)}
+.res.cancelled{opacity:.45;background:repeating-linear-gradient(135deg,transparent 0 6px,color-mix(in srgb,var(--bad) 18%,transparent) 6px 8px),var(--glass)}
+.res.cancelled .g{text-decoration:line-through}
+.res .g{font-weight:800;font-size:max(10px,calc(12.5px*var(--z)));line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;position:relative}
+.res .m{font-size:max(9.5px,calc(11px*var(--z)));color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums;position:relative;line-height:1.35}
+.res .m b{color:var(--ink);font-weight:800}
+.res .m .rest{color:var(--bad);font-weight:800}
+.res .m .okp{color:var(--ok);font-weight:800}
+.res .nt{font-size:max(9px,calc(10.5px*var(--z)));color:var(--ink-2);font-style:italic;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;position:relative;margin-top:2px}
+.res .ft{position:absolute;left:max(10px,calc(12px*var(--z)));right:max(5px,calc(8px*var(--z)));bottom:max(3px,calc(5px*var(--z)));display:flex;align-items:center;justify-content:flex-end;gap:6px;z-index:1}
+.res .out{margin-right:auto;font-size:max(9px,calc(10.5px*var(--z)));font-weight:700;color:var(--ink-2);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.res.short .out{display:none}
+.res{container-type:inline-size}
+@container (max-width:126px){.res:not(.peek) .out{display:none}}
+.res .src{font-size:max(8px,calc(9.5px*var(--z)));font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:5px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);z-index:1}
+.res .src.booking{color:#0B4EA2;border-color:#0B4EA2}
+.res .src.airbnb{color:#E0445D;border-color:#E0445D}
+.res .src.phone{color:var(--brass);border-color:var(--brass)}
+.res .pay{width:max(6px,calc(8px*var(--z)));height:max(6px,calc(8px*var(--z)));border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface);flex:none}
+.res .pay.paid{background:var(--ok)}.res .pay.unpaid{background:var(--bad)}
+.res .rs{position:absolute;left:0;right:0;bottom:0;height:9px;cursor:ns-resize;z-index:2}
+.res .rs::after{content:"";position:absolute;left:50%;bottom:3px;width:22px;height:3px;margin-left:-11px;border-radius:2px;background:color-mix(in srgb,var(--c) 60%,transparent);opacity:0;transition:opacity .12s}
+.res:hover .rs::after{opacity:1}
+.res.short{padding-top:5px;padding-bottom:5px}
+.res.short .m,.res.short .nt{display:none}
+.res.short .ft{bottom:0;top:0}
+.res.short .g{padding-right:max(52px,calc(70px*var(--z)))}
+.res.two .nt{display:none}
+.res .x{display:none;font-size:11px;color:var(--ink-2);font-variant-numeric:tabular-nums;line-height:1.35;position:relative}
+.res .x b{color:var(--ink)}
+.res.peek{z-index:60;container-type:normal;padding:9px 12px 26px 14px;box-shadow:var(--shadow-lg),0 0 0 2px color-mix(in srgb,var(--c) 45%,transparent);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);background:linear-gradient(160deg,color-mix(in srgb,var(--c) 22%,var(--surface)) 0%,color-mix(in srgb,var(--c) 10%,var(--surface)) 100%);opacity:1;filter:none}
+.res.peek .m,.res.peek .nt,.res.peek .x,.res.peek .out{display:block}
+.res.peek .nt{-webkit-line-clamp:6}
+.res.peek .g{padding-right:0;white-space:normal;font-size:13.5px}
+.res.peek .m,.res.peek .x{white-space:normal;font-size:12px}
+.res.peek .nt{font-size:11.5px}
+.res.peek .src{font-size:9.5px}
+.res.peek .out{font-size:10.5px}
+.res.peek .ft{left:14px;right:10px;bottom:6px}
+.res.peek.unpeek .g,.res.peek.unpeek .m,.res.peek.unpeek .x{white-space:nowrap}
+.res.peek .ft{top:auto;bottom:6px}
+.res.peek .out{display:inline}
+.res.short .pay{bottom:4px}
+
+/* Context menu */
+.ctx{position:fixed;z-index:200;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);padding:6px;min-width:190px;display:none}
+.ctx button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;padding:8px 10px;border-radius:7px;font-weight:600;font-size:13px;color:var(--ink)}
+.ctx button:hover{background:var(--surface-2)}
+.ctx button.dng{color:var(--bad)}
+.ctx hr{border:0;border-top:1px solid var(--line-2);margin:4px 0}
+
+/* ---------- Drawer ---------- */
+.drawer{position:fixed;top:0;right:0;bottom:0;width:400px;max-width:100vw;background:var(--surface);border-left:1px solid var(--line);box-shadow:var(--shadow-lg);z-index:120;transform:translateX(105%);transition:transform .22s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column}
+.drawer.open{transform:none}
+.drawer .hd{padding:16px 18px 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:flex-start;gap:10px}
+.drawer .hd h2{font-size:19px;font-weight:600;letter-spacing:-.01em}
+.drawer .hd .sub{color:var(--ink-3);font-size:12.5px;margin-top:2px}
+.drawer .bd{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:16px}
+.drawer .ft{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.02em;white-space:nowrap}
+.pill i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.pill.confirmed{background:color-mix(in srgb,var(--st-confirmed) 16%,transparent);color:var(--st-confirmed)}
+.pill.pending{background:var(--warn-soft);color:var(--warn)}
+.pill.checked_in{background:var(--ok-soft);color:var(--ok)}
+.pill.checked_out{background:var(--surface-3);color:var(--ink-2)}
+.pill.cancelled{background:var(--bad-soft);color:var(--bad)}
+.pill.paid{background:var(--ok-soft);color:var(--ok)}.pill.partial{background:var(--warn-soft);color:var(--warn)}.pill.unpaid{background:var(--bad-soft);color:var(--bad)}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.kv div{display:flex;flex-direction:column;gap:2px}
+.kv label{font-size:11px;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase;font-weight:700}
+.kv b{font-weight:700;font-size:14px}
+.money{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--surface-2);display:flex;flex-direction:column;gap:8px}
+.money .row{display:flex;justify-content:space-between;align-items:baseline;font-variant-numeric:tabular-nums}
+.money .row span{color:var(--ink-2)}
+.money .row b{font-size:15px}
+.money .row.rem b{font-family:var(--font-d);font-size:20px;color:var(--bad)}
+.money .row.rem.zero b{color:var(--ok)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:99px;transition:width .3s}
+.plist{display:flex;flex-direction:column;gap:6px}
+.pitem{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--line-2);border-radius:9px;font-size:13px}
+.pitem .pm{font-size:11.5px;color:var(--ink-3)}
+.pitem b{font-variant-numeric:tabular-nums}
+.addpay{display:grid;grid-template-columns:1fr 1fr auto;gap:6px}
+.sec-t{font-size:11px;color:var(--ink-3);letter-spacing:.07em;text-transform:uppercase;font-weight:800;display:flex;justify-content:space-between;align-items:center}
+.notes{font-size:13px;color:var(--ink-2);border-left:3px solid var(--brass);padding:4px 10px;background:var(--surface-2);border-radius:0 8px 8px 0;white-space:pre-wrap}
+
+/* ---------- Modal ---------- */
+.overlay{position:fixed;inset:0;background:rgba(10,20,25,.45);backdrop-filter:blur(3px);z-index:150;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow-lg);width:100%;max-width:640px;max-height:calc(100vh - 32px);display:flex;flex-direction:column;animation:pop .18s ease}
+@keyframes pop{from{transform:translateY(8px) scale(.985);opacity:0}}
+.modal.sm{max-width:440px}
+.modal .hd{padding:16px 20px 12px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--line-2)}
+.modal .hd h2{font-size:18px;font-weight:600}
+.modal .bd{padding:16px 20px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+.modal .ft{padding:12px 20px;border-top:1px solid var(--line-2);display:flex;justify-content:flex-end;gap:8px;align-items:center}
+.f{display:flex;flex-direction:column;gap:5px;min-width:0}
+.f label{font-size:11.5px;font-weight:700;color:var(--ink-2);letter-spacing:.02em}
+.f input,.f select,.f textarea{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:8px 10px;outline:0;width:100%;transition:border-color .12s,box-shadow .12s}
+.f input:focus,.f select:focus,.f textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.f input.err{border-color:var(--bad)}
+.f .hint{font-size:11.5px;color:var(--ink-3)}
+.f .hint.bad{color:var(--bad);font-weight:600}
+.f textarea{min-height:64px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.calc{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:12px;padding:10px 12px}
+.calc div{display:flex;flex-direction:column}
+.calc label{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
+.calc b{font-family:var(--font-d);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.calc .rem b{color:var(--bad)}.calc .rem.zero b{color:var(--ok)}
+.gs{position:relative}
+.gs .dd{position:absolute;left:0;right:0;top:calc(100% + 4px);background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);z-index:5;max-height:200px;overflow:auto;display:none}
+.gs .dd.open{display:block}
+.gs .dd button{display:flex;flex-direction:column;align-items:flex-start;width:100%;text-align:left;padding:8px 12px;border-bottom:1px solid var(--line-2)}
+.gs .dd button:hover{background:var(--surface-2)}
+.gs .dd button small{color:var(--ink-3);font-size:11.5px}
+.gs .dd button.new{color:var(--accent);font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:6px;background:var(--accent-soft);color:var(--accent);padding:4px 10px;border-radius:99px;font-weight:700;font-size:12.5px}
+.chip button{color:inherit;font-size:14px;line-height:1}
+.alert{background:var(--bad-soft);color:var(--bad);border-radius:9px;padding:8px 12px;font-weight:600;font-size:13px;display:none}
+.alert.on{display:block}
+
+/* ---------- Dashboard & lists ---------- */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:4px;box-shadow:var(--shadow)}
+.tile label{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:800}
+.tile b{font-family:var(--font-d);font-size:28px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile small{font-size:12px;color:var(--ink-2)}
+.tile.warn b{color:var(--warn)}.tile.ok b{color:var(--ok)}.tile.bad b{color:var(--bad)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+.card .ch{padding:12px 16px;border-bottom:1px solid var(--line-2);display:flex;align-items:center;gap:8px;font-family:var(--font-d);font-weight:600;font-size:15px}
+.card .ch .cnt{margin-left:auto;font-family:var(--font);font-size:12px;color:var(--ink-3);font-weight:700}
+.list{display:flex;flex-direction:column}
+.li{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line-2);cursor:pointer}
+.li:last-child{border-bottom:0}
+.li:hover{background:var(--surface-2)}
+.li .rm{font-family:var(--font-d);font-weight:600;min-width:52px;color:var(--accent)}
+.li .nm{font-weight:700;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .nm small{display:block;font-weight:500;color:var(--ink-3);font-size:11.5px}
+.li .amt{font-variant-numeric:tabular-nums;font-weight:700}
+.empty{padding:22px 16px;color:var(--ink-3);text-align:center;font-size:13px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th{text-align:left;font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;padding:10px 14px;border-bottom:1px solid var(--line);background:var(--surface-2);white-space:nowrap}
+table.t td{padding:10px 14px;border-bottom:1px solid var(--line-2);white-space:nowrap;vertical-align:middle}
+table.t tr:hover td{background:var(--surface-2)}
+table.t tr{cursor:pointer}
+table.t .r{text-align:right;font-variant-numeric:tabular-nums}
+.tbl-wrap{overflow-x:auto}
+.ph{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;color:var(--ink-3);padding:60px 20px;text-align:center}
+.ph h2{color:var(--ink);font-size:20px;font-weight:600}
+.ph p{max-width:46ch;margin:0}
+
+/* ---------- Toast ---------- */
+.toasts{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:300;pointer-events:none}
+.toast{background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:13px;box-shadow:var(--shadow-lg);animation:up .2s ease;display:flex;gap:8px;align-items:center;max-width:90vw}
+.toast.bad{background:var(--bad);color:#fff}.toast.ok{background:var(--ok);color:#fff}
+@keyframes up{from{transform:translateY(8px);opacity:0}}
+
+/* ---------- Responsive ---------- */
+.menu-toggle{display:none}
+@media (max-width:1100px){
+  .app{grid-template-columns:var(--sidebar-min) 1fr}
+  .app .brand .name,.app .brand .sub,.app .nav-item span,.app .nav .sec,.app .user div,.app .badge,.app .soon{display:none}
+  .app .nav-item{justify-content:center;padding:10px}
+  .app .user{justify-content:center}
+  .hint-long{display:none}
+}
+@media (max-width:720px){
+  .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  .sidebar{order:2;border-right:0;border-top:1px solid var(--line);flex-direction:row;align-items:center}
+  .brand,.side-foot,.nav .sec{display:none}
+  .nav{flex-direction:row;justify-content:space-around;padding:6px;overflow-x:auto}
+  .nav-item{flex-direction:column;gap:3px;font-size:10px;padding:6px 8px!important}
+  .app .nav-item span{display:block}
+  .nav-item.soonwrap{display:none}
+  .topbar{padding:8px 12px;gap:6px}
+  .topbar h1 small,.search,.kbd-hint{display:none}
+  .period{min-width:0;font-size:13px}
+  .chart-wrap{padding:8px}
+  .chart{--colw:128px;--rowh:46px;--datew:64px;border-radius:10px}
+  .drawer{width:100vw}
+  .g2,.g3{grid-template-columns:1fr}
+  .calc{grid-template-columns:1fr 1fr}
+  .cols{grid-template-columns:1fr}
+  .scroll{padding:12px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <!-- ===== Sidebar ===== -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="mark">V</div>
+      <div><div class="name">Velora Stay</div><div class="sub">Pensiunea Ta</div></div>
+    </div>
+    <nav class="nav" id="nav">
+      <div class="sec">Recepție</div>
+      <button class="nav-item" data-page="today"><svg viewBox="0 0 24 24"><path d="M3 12l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg><span>Azi</span><span class="badge" id="todayBadge"></span></button>
+      <button class="nav-item active" data-page="calendar"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><rect x="7" y="12" width="4" height="6" rx="1"/></svg><span>Calendar</span></button>
+      <button class="nav-item" data-page="reservations"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Rezervări</span></button>
+      <button class="nav-item" data-page="guests"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg><span>Oaspeți</span></button>
+      <div class="sec">Proprietate</div>
+      <button class="nav-item" data-page="rooms"><svg viewBox="0 0 24 24"><path d="M3 18V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10"/><path d="M3 12h18M3 21v-3M21 21v-3"/><path d="M7 12V9h4v3"/></svg><span>Camere</span></button>
+      <button class="nav-item soonwrap" data-page="payments"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h3"/></svg><span>Plăți</span><span class="soon">MVP</span></button>
+      <button class="nav-item soonwrap" data-page="invoices"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg><span>Facturi</span><span class="soon">MVP</span></button>
+      <button class="nav-item soonwrap" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Setări</span></button>
+    </nav>
+    <div class="side-foot">
+      <button class="nav-item" id="themeBtn"><svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><span>Temă</span></button>
+      <button class="nav-item" id="collapseBtn"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg><span>Restrânge</span></button>
+      <div class="user"><div class="av">AR</div><div><div class="u1">Ana Rusu</div><div class="u2">Recepție</div></div></div>
+    </div>
+  </aside>
+
+  <!-- ===== Main ===== -->
+  <div class="main">
+    <!-- Calendar page -->
+    <section class="page on" id="page-calendar">
+      <div class="topbar">
+        <h1>Calendar <small id="propName">Pensiunea Ta · Brașov</small></h1>
+        <div class="spacer"></div>
+        <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="q" placeholder="Caută oaspete…"></div>
+        <button class="btn icon" id="prevBtn" title="Perioada anterioară"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <button class="btn" id="todayBtn">Azi</button>
+        <button class="btn icon" id="nextBtn" title="Perioada următoare"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+        <div class="period num" id="periodLbl"></div>
+        <div class="seg" id="rangeSeg"><button data-n="7">7 zile</button><button data-n="14" class="on">14 zile</button><button data-n="30">30 zile</button></div>
+        <button class="btn primary" id="newResBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă <span class="kbd kbd-hint" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.4);background:transparent">N</span></button>
+      </div>
+      <div class="chart-wrap">
+        <div class="legend" style="padding:0 2px 10px">
+          <span><i style="background:var(--st-confirmed)"></i>Confirmată</span>
+          <span><i style="background:var(--st-pending);outline:1px dashed var(--st-pending);outline-offset:1px"></i>În așteptare</span>
+          <span><i style="background:var(--st-in)"></i>Cazat</span>
+          <span><i style="background:var(--st-out)"></i>Plecat</span>
+          <span><i style="background:var(--st-cancel)"></i>Anulată</span>
+          <span style="font-weight:700;color:var(--ink-2)">1 rând = 1 noapte (data sosirii)</span>
+          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Trage blocul pentru a muta · marginea de jos prelungește · click pe celulă liberă = rezervare nouă · trage antetul camerei pentru a reordona</span>
+          <div class="seg" id="zoomSeg" title="Zoom calendar (Ctrl + rotiță sau tastele + / −)" style="margin-left:6px"><button id="zoomOut" aria-label="Micșorează" style="padding:4px 9px">−</button><button id="zoomLbl" class="num" style="min-width:48px;padding:4px 6px">100%</button><button id="zoomIn" aria-label="Mărește" style="padding:4px 9px">+</button></div>
+        </div>
+        <div class="chart" id="chart">
+          <div class="corner">Zi ↓ Cameră →</div>
+          <div class="rhead" id="rhead"></div>
+          <div class="dcol" id="dcol"></div>
+          <div class="body" id="body"><div class="selbox" id="selbox"><span class="lab"></span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Today page -->
+    <section class="page" id="page-today">
+      <div class="topbar"><h1>Azi <small id="todayLbl"></small></h1><div class="spacer"></div><button class="btn primary" onclick="openResModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă</button></div>
+      <div class="scroll" id="todayBody"></div>
+    </section>
+
+    <!-- Reservations page -->
+    <section class="page" id="page-reservations">
+      <div class="topbar"><h1>Rezervări</h1><div class="spacer"></div><div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qRes" placeholder="Caută…"></div><button class="btn primary" onclick="openResModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă</button></div>
+      <div class="scroll" id="resBody"></div>
+    </section>
+
+    <!-- Guests page -->
+    <section class="page" id="page-guests">
+      <div class="topbar"><h1>Oaspeți</h1><div class="spacer"></div><div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="qGuest" placeholder="Caută…"></div></div>
+      <div class="scroll" id="guestBody"></div>
+    </section>
+
+    <!-- Rooms page -->
+    <section class="page" id="page-rooms">
+      <div class="topbar"><h1>Camere</h1><div class="spacer"></div><button class="btn primary" onclick="openRoomModal()"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Cameră nouă</button></div>
+      <div class="scroll" id="roomBody"></div>
+    </section>
+
+    <section class="page" id="page-payments"><div class="topbar"><h1>Plăți</h1></div><div class="scroll"><div class="ph"><h2>Plățile se înregistrează direct din rezervare</h2><p>Deschide o rezervare din calendar și adaugă plata în sertarul din dreapta. Un raport separat de încasări vine în MVP.</p></div></div></section>
+    <section class="page" id="page-invoices"><div class="topbar"><h1>Facturi</h1></div><div class="scroll"><div class="ph"><h2>Registru de facturi</h2><p>În MVP: marchezi rezervarea ca facturată și salvezi numărul, data și totalul. Integrarea e-Factura vine după.</p></div></div></section>
+    <section class="page" id="page-settings"><div class="topbar"><h1>Setări</h1></div><div class="scroll"><div class="ph"><h2>Proprietate și cont</h2><p>Nume, adresă, CUI, monedă, ore de check-in / check-out. Intenționat mic.</p><button class="btn" onclick="resetDemo()">Resetează datele demo</button></div></div></section>
+  </div>
+</div>
+
+<!-- ===== Reservation drawer ===== -->
+<aside class="drawer" id="drawer">
+  <div class="hd">
+    <div style="flex:1;min-width:0"><h2 id="dName"></h2><div class="sub" id="dSub"></div></div>
+    <button class="btn icon ghost" onclick="closeDrawer()" title="Închide"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  </div>
+  <div class="bd" id="dBody"></div>
+  <div class="ft" id="dFoot"></div>
+</aside>
+
+<!-- ===== Reservation modal ===== -->
+<div class="overlay" id="resOverlay">
+  <div class="modal" role="dialog" aria-labelledby="resTitle">
+    <div class="hd"><h2 id="resTitle">Rezervare nouă</h2><div class="spacer"></div><button class="btn icon ghost" onclick="closeResModal()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="bd">
+      <div class="alert" id="resAlert"></div>
+      <div class="f gs">
+        <label>Oaspete</label>
+        <div id="guestChip" style="display:none"></div>
+        <input id="fGuest" placeholder="Caută după nume sau telefon… sau scrie un nume nou" autocomplete="off">
+        <div class="dd" id="guestDD"></div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Cameră</label><select id="fRoom"></select></div>
+        <div class="f"><label>Check-in</label><input type="date" id="fIn"></div>
+        <div class="f"><label>Check-out</label><input type="date" id="fOut"><span class="hint" id="fOutHint"></span></div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Persoane</label><input type="number" id="fPax" min="1" value="2"></div>
+        <div class="f"><label>Preț / noapte</label><input type="number" id="fRate" min="0" step="10"></div>
+        <div class="f"><label>Preț total</label><input type="number" id="fTotal" min="0" step="10"></div>
+      </div>
+      <div class="g3">
+        <div class="f"><label>Sursă</label><select id="fSrc"><option value="direct">Direct</option><option value="booking">Booking.com</option><option value="airbnb">Airbnb</option><option value="phone">Telefon</option><option value="other">Altă sursă</option></select></div>
+        <div class="f"><label>Status</label><select id="fStatus"><option value="confirmed">Confirmată</option><option value="pending">În așteptare</option><option value="checked_in">Cazat</option><option value="checked_out">Plecat</option><option value="cancelled">Anulată</option></select></div>
+        <div class="f" id="fPaidWrap"><label>Avans încasat</label><input type="number" id="fPaid" min="0" step="10" value="0"></div>
+      </div>
+      <div class="calc">
+        <div><label>Nopți</label><b id="cNights">–</b></div>
+        <div><label>Total</label><b id="cTotal">–</b></div>
+        <div><label>Încasat</label><b id="cPaid">–</b></div>
+        <div class="rem" id="cRemWrap"><label>Rest de plată</label><b id="cRem">–</b></div>
+      </div>
+      <div class="f"><label>Observații</label><textarea id="fNotes" placeholder="Ex: pat suplimentar, vine cu câinele, factură pe firmă…"></textarea></div>
+    </div>
+    <div class="ft"><span class="hint" style="margin-right:auto;font-size:12px;color:var(--ink-3)"><span class="kbd">Esc</span> închide · <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> salvează</span><button class="btn" onclick="closeResModal()">Renunță</button><button class="btn primary" id="resSave" onclick="saveRes()">Salvează rezervarea</button></div>
+  </div>
+</div>
+
+<!-- ===== Room modal ===== -->
+<div class="overlay" id="roomOverlay">
+  <div class="modal sm" role="dialog">
+    <div class="hd"><h2 id="roomTitle">Cameră nouă</h2><div class="spacer"></div><button class="btn icon ghost" onclick="closeRoomModal()"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="bd">
+      <div class="g2">
+        <div class="f"><label>Număr / nume</label><input id="rName" placeholder="ex: 104"></div>
+        <div class="f"><label>Tip</label><select id="rType"><option>Single</option><option>Dublă</option><option>Twin</option><option>Triplă</option><option>Apartament</option><option>Studio</option><option>Familială</option></select></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Capacitate (persoane)</label><input type="number" id="rCap" min="1" value="2"></div>
+        <div class="f"><label>Preț / noapte (RON)</label><input type="number" id="rPrice" min="0" step="10" value="250"></div>
+      </div>
+      <div class="f"><label>Descriere</label><input id="rDesc" placeholder="ex: vedere la munte, balcon"></div>
+      <div class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="rActive" checked style="width:auto"><label for="rActive" style="margin:0">Activă (apare în calendar și poate fi rezervată)</label></div>
+    </div>
+    <div class="ft"><button class="btn" onclick="closeRoomModal()">Renunță</button><button class="btn primary" onclick="saveRoom()">Salvează</button></div>
+  </div>
+</div>
+
+<!-- ===== Split modal ===== -->
+<div class="overlay" id="splitOverlay">
+  <div class="modal sm" role="dialog">
+    <div class="hd"><h2>Împarte camera în unități</h2><div class="spacer"></div><button class="btn icon ghost" onclick="closeOverlay('splitOverlay')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="bd">
+      <p style="margin:0;color:var(--ink-2);font-size:13px" id="splitInfo"></p>
+      <div class="g2">
+        <div class="f"><label>Număr de unități</label><input type="number" id="sCount" min="2" max="6" value="2"></div>
+        <div class="f"><label>Preț / noapte per unitate</label><input type="number" id="sPrice" min="0" step="10"></div>
+      </div>
+      <div class="f"><label>Etichete (separate prin virgulă)</label><input id="sLabels" placeholder="A, B"><span class="hint">Se afișează ca „Ap. 1 · A”, „Ap. 1 · B”. Rezervările existente rămân pe prima unitate.</span></div>
+    </div>
+    <div class="ft"><button class="btn" onclick="closeOverlay('splitOverlay')">Renunță</button><button class="btn primary" onclick="doSplit()">Împarte</button></div>
+  </div>
+</div>
+
+<div class="ctx" id="ctx"></div>
+<div class="toasts" id="toasts"></div>
+
+<script>
+/* =========================================================
+   Velora Stay — demo front-end (vanilla JS, no build step)
+   All state lives in memory + localStorage. In the real app
+   every mutation below becomes an API call; the UI stays.
+   ========================================================= */
+
+/* ---------- Helpers ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const pad = n => String(n).padStart(2,'0');
+const iso = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const fromIso = s => { const [y,m,d] = s.split('-').map(Number); return new Date(y, m-1, d); };
+const addDays = (s, n) => { const d = fromIso(s); d.setDate(d.getDate()+n); return iso(d); };
+const diffDays = (a, b) => Math.round((fromIso(b) - fromIso(a)) / 86400000);
+const TODAY = iso(new Date());
+const MONTHS = ['ian','feb','mar','apr','mai','iun','iul','aug','sep','oct','nov','dec'];
+const DOWS = ['Dum','Lun','Mar','Mie','Joi','Vin','Sâm'];
+const fmtD = s => { const d = fromIso(s); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
+const fmtDL = s => { const d = fromIso(s); return `${DOWS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+const money = n => (Math.round(n) === n ? n : n.toFixed(2)).toLocaleString('ro-RO') + ' RON';
+const uid = p => p + Math.random().toString(36).slice(2, 8);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const STATUS = { confirmed:'Confirmată', pending:'În așteptare', checked_in:'Cazat', checked_out:'Plecat', cancelled:'Anulată' };
+const SRC = { direct:'Direct', booking:'Booking.com', airbnb:'Airbnb', phone:'Telefon', other:'Altă sursă' };
+const SRC_SHORT = { direct:'DIRECT', booking:'BOOKING', airbnb:'AIRBNB', phone:'TEL', other:'ALT' };
+const METHOD = { cash:'Numerar', card:'Card', transfer:'Transfer', other:'Altul' };
+
+function toast(msg, kind='') {
+  const t = document.createElement('div'); t.className = 'toast ' + kind; t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), 2800);
+}
+
+/* ---------- State ---------- */
+const KEY = 'velora-stay-demo-v1';
+let S;            // {rooms, guests, reservations}
+let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '' };
+
+function seed() {
+  const g = (f, l, phone, email, country, notes='') => ({ id: uid('g_'), firstName: f, lastName: l, phone, email, country, notes });
+  const guests = [
+    g('Mihai','Popescu','0722 111 222','mihai.popescu@gmail.com','România','Vine des, preferă etajul 1.'),
+    g('Andrei','Ionescu','0745 333 444','andrei.i@yahoo.com','România','Are câine mic.'),
+    g('Laura','Dumitrescu','0733 555 666','laura.d@outlook.com','România'),
+    g('Hans','Müller','+49 170 123456','hans.mueller@web.de','Germania'),
+    g('Elena','Georgescu','0755 777 888','elena.g@gmail.com','România','Factură pe firmă: SC Alfa SRL.'),
+    g('Sara','Rossi','+39 333 9876543','sara.rossi@gmail.com','Italia'),
+    g('Radu','Marin','0766 999 000','radu.marin@gmail.com','România'),
+    g('Ioana','Stan','0740 222 333','ioana.stan@gmail.com','România'),
+  ];
+  const r = (name, type, cap, price, desc='', active=true) => ({ id: uid('r_'), name, type, capacity: cap, price, desc, active, parentId: null });
+  const rooms = [
+    r('101','Dublă',2,250,'Vedere la grădină'),
+    r('102','Dublă',2,250,'Balcon'),
+    r('103','Twin',2,240),
+    r('104','Single',1,180),
+    r('201','Triplă',3,320,'Vedere la munte'),
+    r('202','Familială',4,380),
+    r('Ap. 1','Apartament',4,520,'2 dormitoare, bucătărie'),
+    r('Ap. 2','Apartament',4,520,'Mansardă'),
+  ];
+  // Split Ap. 1 into two units to show the feature off
+  const ap1 = rooms[6];
+  const units = ['A','B'].map(l => ({ id: uid('r_'), name: `${ap1.name} · ${l}`, type: 'Dormitor', capacity: 2, price: 280, desc: '', active: true, parentId: ap1.id, label: l }));
+  rooms.splice(7, 0, ...units);
+
+  const R = (gi, room, inOff, nights, opts={}) => {
+    const rm = typeof room === 'number' ? rooms[room] : room;
+    const checkIn = addDays(TODAY, inOff), checkOut = addDays(checkIn, nights);
+    const total = opts.total ?? rm.price * nights;
+    const payments = (opts.pay || []).map(p => ({ id: uid('p_'), amount: p[0], method: p[1], date: p[2] ?? checkIn, note: p[3] ?? '' }));
+    return { id: uid('res_'), guestId: guests[gi].id, roomId: rm.id, checkIn, checkOut, pax: opts.pax ?? Math.min(2, rm.capacity), total, source: opts.src ?? 'direct', status: opts.status ?? 'confirmed', notes: opts.notes ?? '', payments, invoiceNo: opts.inv ?? '', createdAt: Date.now() };
+  };
+  const reservations = [
+    R(0, 0, -2, 4, { status:'checked_in', src:'phone', pay:[[500,'cash']], notes:'Preferă micul dejun la 8:00.' }),
+    R(1, 2, -1, 3, { status:'checked_in', src:'booking', pay:[[720,'card']], notes:'Vine cu câinele. Pat suplimentar pentru copil.' }),
+    R(2, 1, 0, 2, { status:'confirmed', src:'direct', pay:[[200,'transfer']] }),
+    R(3, 4, 0, 5, { status:'confirmed', src:'booking', pay:[[1600,'card']], pax:3 }),
+    R(4, rooms[9], 1, 3, { status:'confirmed', src:'phone', notes:'De emis e-Factura pe SC Alfa SRL.', pax:4 }),
+    R(5, 5, 2, 4, { status:'pending', src:'airbnb', pax:4 }),
+    R(6, 3, 3, 2, { status:'confirmed', src:'direct', pay:[[360,'cash']] }),
+    R(7, 1, 4, 3, { status:'confirmed', src:'direct' }),
+    R(0, 7, 5, 2, { status:'pending', src:'phone', pax:2 }),
+    R(3, 0, 6, 3, { status:'confirmed', src:'booking', pay:[[750,'card']] }),
+    R(2, 8, 2, 2, { status:'confirmed', src:'direct', pay:[[560,'card']] }),
+    R(6, 4, 7, 2, { status:'cancelled', src:'airbnb' }),
+    R(1, 2, 9, 4, { status:'confirmed', src:'direct' }),
+    R(5, 3, -4, 3, { status:'checked_out', src:'booking', pay:[[540,'card']], inv:'VS-2026-0141' }),
+  ];
+  return { rooms, guests, reservations };
+}
+function load() { try { const s = JSON.parse(localStorage.getItem(KEY)); if (s && s.rooms && s.reservations) return s; } catch(e){} return seed(); }
+function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
+function resetDemo() { localStorage.removeItem(KEY); S = seed(); view.start = addDays(TODAY, -2); renderAll(); toast('Datele demo au fost resetate'); }
+
+/* ---------- Domain helpers (mirrors future backend rules) ---------- */
+const roomById = id => S.rooms.find(r => r.id === id);
+const guestById = id => S.guests.find(g => g.id === id);
+const guestName = g => g ? `${g.firstName} ${g.lastName}`.trim() : '—';
+const resGuest = r => guestName(guestById(r.guestId));
+const paid = r => r.payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+const remaining = r => Math.max(0, Number(r.total) - paid(r));
+const nights = r => diffDays(r.checkIn, r.checkOut);
+const payStatus = r => { const p = paid(r); return p <= 0 ? 'unpaid' : p >= Number(r.total) ? 'paid' : 'partial'; };
+const PAY_L = { unpaid:'Neplătit', partial:'Parțial', paid:'Plătit' };
+const isActiveRes = r => r.status !== 'cancelled';
+// Double-booking rule: overlap when a.in < b.out && b.in < a.out (back-to-back is fine)
+function conflict(roomId, checkIn, checkOut, exceptId=null) {
+  return S.reservations.find(r => r.id !== exceptId && r.roomId === roomId && isActiveRes(r) && checkIn < r.checkOut && r.checkIn < checkOut) || null;
+}
+// Column list = top-level rooms in order; a split room contributes its units instead of itself
+function columns() {
+  const out = [];
+  S.rooms.filter(r => !r.parentId).forEach(p => {
+    const units = S.rooms.filter(u => u.parentId === p.id);
+    if (units.length) units.forEach((u, i) => out.push({ room: u, parent: p, pos: i === 0 ? 'unit-first' : i === units.length-1 ? 'unit-last' : 'unit-mid' }));
+    else out.push({ room: p, parent: null, pos: '' });
+  });
+  return out;
+}
+const bookableRooms = () => columns().map(c => c.room).filter(r => r.active);
+const dayList = () => Array.from({ length: view.days }, (_, i) => addDays(view.start, i));
+
+/* ---------- Tape chart rendering ---------- */
+const chart = $('#chart'), rhead = $('#rhead'), dcol = $('#dcol'), body = $('#body');
+let zoom = 1; try { zoom = +localStorage.getItem(KEY + '-zoom') || 1; } catch(e){}
+function applyZoom() {
+  const m = matchMedia('(max-width:720px)').matches;
+  chart.style.setProperty('--colw', Math.round((m ? 128 : 156) * zoom) + 'px');
+  chart.style.setProperty('--rowh', Math.round((m ? 46 : 52) * zoom) + 'px');
+  chart.style.setProperty('--peekw', Math.round(Math.max(240, 156 * zoom * 1.7)) + 'px');
+  chart.style.setProperty('--z', zoom);
+  $('#zoomLbl').textContent = Math.round(zoom * 100) + '%';
+  try { localStorage.setItem(KEY + '-zoom', zoom); } catch(e){}
+}
+function setZoom(z) { zoom = Math.min(1.6, Math.max(0.5, Math.round(z * 20) / 20)); applyZoom(); renderChart(); }
+const px = v => parseFloat(getComputedStyle(chart).getPropertyValue(v));
+
+function renderChart() {
+  applyZoom();
+  const cols = columns(), days = dayList();
+  const COLW = px('--colw'), ROWH = px('--rowh');
+  const d0 = days[0], d1 = days[days.length-1];
+  $('#periodLbl').textContent = `${fmtD(d0)} – ${fmtD(d1)} ${fromIso(d1).getFullYear()}`;
+
+  // Room headers
+  rhead.innerHTML = cols.map((c, i) => {
+    const r = c.room, grp = c.parent ? `<div class="grp">${esc(c.parent.name)} · ${esc(c.parent.type)}</div>` : '';
+    const nm = c.parent ? esc(r.label || r.name.split('·').pop().trim()) : esc(r.name);
+    return `<div class="rh ${c.pos} ${r.active ? '' : 'inactive'}" data-col="${i}" data-room="${r.id}" data-top="${c.parent ? c.parent.id : r.id}" title="${esc(r.desc || '')}">
+      ${grp}<div class="rn">${nm}</div><div class="rt">${esc(r.type)} · ${r.capacity}p · <b class="num">${r.price}</b> lei</div>
+      <button class="menu-btn" data-menu="${r.id}" title="Opțiuni cameră"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    </div>`;
+  }).join('') + `<div class="rh add" id="addRoomCol">+ Cameră</div>`;
+
+  // Date column
+  dcol.innerHTML = days.map(d => { const dt = fromIso(d), wk = dt.getDay() === 0 || dt.getDay() === 6;
+    return `<div class="dc ${wk ? 'wk' : ''} ${d === TODAY ? 'today' : ''}"><div class="d1">${dt.getDate()} ${MONTHS[dt.getMonth()]}</div><div class="d2">${d === TODAY ? 'Azi' : DOWS[dt.getDay()]}</div></div>`; }).join('');
+
+  // Body
+  body.style.width = (cols.length * COLW + 90) + 'px';
+  body.style.height = (days.length * ROWH) + 'px';
+  let html = '';
+  days.forEach((d, i) => { const dt = fromIso(d), wk = dt.getDay() === 0 || dt.getDay() === 6;
+    if (d === TODAY) html += `<div class="rowbg today" style="top:${i*ROWH}px"></div><div class="todayline" style="top:${i*ROWH}px"></div>`;
+    else if (wk) html += `<div class="rowbg wk" style="top:${i*ROWH}px"></div>`; });
+  cols.forEach((c, i) => { if (!c.room.active) html += `<div class="colbg inactive" style="left:${i*COLW}px"></div>`; });
+  html += `<div class="selbox" id="selbox"><span class="lab"></span></div>`;
+  body.innerHTML = html;
+
+  // Reservation blocks
+  const colIdx = Object.fromEntries(cols.map((c, i) => [c.room.id, i]));
+  const rangeStart = d0, rangeEnd = addDays(d1, 1);
+  const q = view.q.trim().toLowerCase();
+  S.reservations.forEach(r => {
+    if (!(r.checkIn < rangeEnd && r.checkOut > rangeStart)) return;
+    const ci = colIdx[r.roomId]; if (ci === undefined) return;
+    const startIdx = diffDays(d0, r.checkIn), n = nights(r);
+    const top = startIdx * ROWH, h = n * ROWH;
+    const el = document.createElement('div');
+    const c = { confirmed:'var(--st-confirmed)', pending:'var(--st-pending)', checked_in:'var(--st-in)', checked_out:'var(--st-out)', cancelled:'var(--st-cancel)' }[r.status];
+    el.className = `res ${r.status} ${n < 2 ? 'short' : n < 3 ? 'two' : ''}`;
+    el.style.cssText = `--c:${c};left:${ci*COLW + 4}px;top:${top + 2}px;height:${h - 4}px`;
+    const gn = resGuest(r);
+    if (q && !gn.toLowerCase().includes(q)) el.style.opacity = .18;
+    el.dataset.id = r.id;
+    const rem = remaining(r), ps = payStatus(r);
+    el.title = `${gn}
+${roomById(r.roomId).name} · ${fmtD(r.checkIn)} → ${fmtD(r.checkOut)} · ${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers
+Total ${money(r.total)} · încasat ${money(paid(r))} · rest ${money(rem)}
+${STATUS[r.status]} · ${SRC[r.source]}${r.notes ? '\n' + r.notes : ''}`;
+    el.innerHTML = `<div class="g">${esc(gn)}</div>
+      <div class="x"><b>${fmtD(r.checkIn)}</b> → <b>${fmtD(r.checkOut)}</b> · ${STATUS[r.status]}</div>
+      <div class="m">${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers.</div>
+      <div class="m"><b>${Number(r.total).toLocaleString('ro-RO')} lei</b> · ${rem > 0 ? `<span class="rest">rest ${Number(rem).toLocaleString('ro-RO')}</span>` : `<span class="okp">achitat</span>`}</div>
+      ${r.notes ? `<div class="nt">${esc(r.notes)}</div>` : ''}
+      <div class="x">Încasat <b>${money(paid(r))}</b> · ${SRC[r.source]}</div>
+      <div class="ft"><span class="out" title="Check-out ${fmtDL(r.checkOut)}">→ ${fmtD(r.checkOut)}</span><span class="src ${r.source}">${SRC_SHORT[r.source]}</span><span class="pay ${ps}" title="${PAY_L[ps]}"></span></div>
+      <div class="rs" title="Trage pentru a schimba check-out"></div>`;
+    body.appendChild(el);
+  });
+}
+
+/* ---------- Pointer interactions on the chart ---------- */
+let drag = null;
+body.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  const COLW = px('--colw'), ROWH = px('--rowh');
+  const resEl = e.target.closest('.res');
+  const rect = body.getBoundingClientRect();
+  if (resEl) {
+    const r = S.reservations.find(x => x.id === resEl.dataset.id);
+    const mode = e.target.classList.contains('rs') ? 'resize' : 'move';
+    drag = { mode, r, el: resEl, x0: e.clientX, y0: e.clientY, in0: r.checkIn, out0: r.checkOut, room0: r.roomId, moved: false, valid: true };
+    resEl.setPointerCapture(e.pointerId);
+  } else {
+    // range-select on empty cells
+    const col = Math.floor((e.clientX - rect.left) / COLW), row = Math.floor((e.clientY - rect.top) / ROWH);
+    const cols = columns(); if (col < 0 || col >= cols.length || row < 0 || row >= view.days) return;
+    drag = { mode: 'select', col, row0: row, row1: row, moved: false };
+    body.setPointerCapture(e.pointerId);
+    drawSel();
+  }
+});
+function drawSel() {
+  const COLW = px('--colw'), ROWH = px('--rowh'), sb = $('#selbox'), a = Math.min(drag.row0, drag.row1), b = Math.max(drag.row0, drag.row1);
+  const cols = columns(), room = cols[drag.col].room, inD = addDays(view.start, a), outD = addDays(view.start, b + 1);
+  const cf = conflict(room.id, inD, outD) || !room.active;
+  sb.style.cssText = `display:block;left:${drag.col*COLW+3}px;top:${a*ROWH+2}px;width:${COLW-6}px;height:${(b-a+1)*ROWH}px;${cf ? 'border-color:var(--bad);background:var(--bad-soft)' : ''}`;
+  sb.querySelector('.lab').textContent = `${b-a+1} ${b-a+1 === 1 ? 'noapte' : 'nopți'}`;
+}
+window.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const COLW = px('--colw'), ROWH = px('--rowh');
+  if (drag.mode === 'select') {
+    const rect = body.getBoundingClientRect();
+    drag.row1 = Math.max(0, Math.min(view.days - 1, Math.floor((e.clientY - rect.top) / ROWH)));
+    drag.moved = true; drawSel(); return;
+  }
+  const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
+  if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
+  drag.moved = true; drag.el.classList.add('dragging'); clearTimeout(peekT); if (drag.el.classList.contains('peek')) { drag.el.classList.remove('peek','unpeek'); drag.el.style.transition = 'none'; drag.el.style.width = ''; drag.el.style.height = drag.el.dataset.h0 + 'px'; drag.el.style.marginLeft = ''; }
+  const dRows = Math.round(dy / ROWH), dCols = Math.round(dx / COLW);
+  const cols = columns(), idx0 = cols.findIndex(c => c.room.id === drag.room0);
+  if (drag.mode === 'move') {
+    const ni = Math.max(0, Math.min(cols.length - 1, idx0 + dCols));
+    const newIn = addDays(drag.in0, dRows), newOut = addDays(drag.out0, dRows);
+    drag.cand = { roomId: cols[ni].room.id, checkIn: newIn, checkOut: newOut };
+    drag.valid = cols[ni].room.active && !conflict(cols[ni].room.id, newIn, newOut, drag.r.id);
+    drag.el.style.left = (ni * COLW + 4) + 'px';
+    drag.el.style.top = (diffDays(view.start, newIn) * ROWH + 2) + 'px';
+  } else {
+    const n0 = diffDays(drag.in0, drag.out0), n = Math.max(1, n0 + dRows);
+    const newOut = addDays(drag.in0, n);
+    drag.cand = { roomId: drag.room0, checkIn: drag.in0, checkOut: newOut };
+    drag.valid = !conflict(drag.room0, drag.in0, newOut, drag.r.id);
+    drag.el.style.height = (n * ROWH - 4) + 'px';
+  }
+  drag.el.classList.toggle('invalid', !drag.valid);
+});
+window.addEventListener('pointerup', e => {
+  if (!drag) return;
+  const d = drag; drag = null;
+  if (d.mode === 'select') {
+    $('#selbox').style.display = 'none';
+    const a = Math.min(d.row0, d.row1), b = Math.max(d.row0, d.row1), room = columns()[d.col].room;
+    if (!room.active) { toast('Camera este dezactivată', 'bad'); return; }
+    openResModal({ roomId: room.id, checkIn: addDays(view.start, a), checkOut: addDays(view.start, b + 1) });
+    return;
+  }
+  d.el.classList.remove('dragging');
+  if (!d.moved) { openDrawer(d.r.id); return; }
+  if (!d.cand || (d.cand.roomId === d.room0 && d.cand.checkIn === d.in0 && d.cand.checkOut === d.out0)) { renderChart(); return; }
+  if (!d.valid) {
+    const c = conflict(d.cand.roomId, d.cand.checkIn, d.cand.checkOut, d.r.id);
+    toast(c ? `Suprapunere cu ${resGuest(c)} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)})` : 'Camera este dezactivată', 'bad');
+    renderChart(); return;
+  }
+  Object.assign(d.r, d.cand); save(); renderAll();
+  toast(d.mode === 'move' ? `${resGuest(d.r)} → ${roomById(d.r.roomId).name}, ${fmtD(d.r.checkIn)} – ${fmtD(d.r.checkOut)}` : `Check-out mutat la ${fmtD(d.r.checkOut)} (${nights(d.r)} nopți)`, 'ok');
+});
+window.addEventListener('pointercancel', () => { if (drag) { drag = null; renderChart(); } });
+
+/* Hover peek: expand a block over its neighbours after a short pause */
+let peekT = null;
+body.addEventListener('pointerover', e => {
+  const el = e.target.closest('.res'); if (!el || drag || e.pointerType === 'touch') return;
+  clearTimeout(peekT); peekT = setTimeout(() => { if (drag || el.classList.contains('peek')) return;
+    const w0 = el.offsetWidth, h0 = el.offsetHeight, bw = body.clientWidth;
+    el.dataset.h0 = h0; el.style.transition = 'none';
+    el.classList.add('peek'); el.style.width = 'max-content'; el.style.maxWidth = '240px'; el.style.height = 'auto';
+    const w1 = Math.max(w0, Math.ceil(el.getBoundingClientRect().width) + 2); el.style.width = w1 + 'px';
+    const h1 = Math.max(h0, Math.ceil(el.getBoundingClientRect().height));
+    el.style.width = w0 + 'px'; el.style.height = h0 + 'px'; el.style.maxWidth = ''; void el.offsetWidth;
+    el.style.transition = 'width .28s cubic-bezier(.2,.8,.2,1), height .28s cubic-bezier(.2,.8,.2,1), margin-left .28s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s';
+    el.style.width = w1 + 'px'; el.style.height = h1 + 'px';
+    el.style.marginLeft = (el.offsetLeft + w1 + 8 > bw) ? (-(w1 - w0)) + 'px' : '';
+  }, 240);
+});
+body.addEventListener('pointerout', e => {
+  const el = e.target.closest('.res'); if (!el) return;
+  if (e.relatedTarget && el.contains(e.relatedTarget)) return;
+  clearTimeout(peekT); unpeek(el);
+});
+function unpeek(el) {
+  if (!el.classList.contains('peek')) return;
+  el.style.width = ''; el.style.height = el.dataset.h0 + 'px'; el.style.marginLeft = '';
+  el.classList.add('unpeek');
+  setTimeout(() => { el.classList.remove('peek', 'unpeek'); el.style.transition = ''; }, 280);
+}
+
+/* Column reorder by dragging room headers */
+let hdrag = null;
+rhead.addEventListener('pointerdown', e => {
+  if (e.target.closest('.menu-btn')) return;
+  const h = e.target.closest('.rh'); if (!h || h.classList.contains('add')) return;
+  hdrag = { el: h, top: h.dataset.top, x0: e.clientX, moved: false, target: null, side: null };
+  h.setPointerCapture(e.pointerId);
+});
+rhead.addEventListener('pointermove', e => {
+  if (!hdrag) return;
+  if (!hdrag.moved && Math.abs(e.clientX - hdrag.x0) < 6) return;
+  hdrag.moved = true; hdrag.el.classList.add('dragging');
+  $$('.rh', rhead).forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  const over = document.elementFromPoint(e.clientX, e.clientY)?.closest('.rh');
+  if (!over || over.classList.contains('add') || over.dataset.top === hdrag.top) { hdrag.target = null; return; }
+  const rc = over.getBoundingClientRect(); const side = e.clientX < rc.left + rc.width / 2 ? 'before' : 'after';
+  hdrag.target = over.dataset.top; hdrag.side = side; over.classList.add('drop-' + side);
+});
+rhead.addEventListener('pointerup', e => {
+  if (!hdrag) return; const h = hdrag; hdrag = null;
+  h.el.classList.remove('dragging'); $$('.rh', rhead).forEach(x => x.classList.remove('drop-before', 'drop-after'));
+  if (!h.moved) { if (e.target.closest('.menu-btn')) return; openRoomModal(h.el.dataset.room); return; }
+  if (!h.target) return;
+  moveTop(h.top, h.target, h.side);
+});
+function moveTop(id, targetId, side) {
+  const tops = S.rooms.filter(r => !r.parentId), others = S.rooms.filter(r => r.parentId);
+  const from = tops.findIndex(r => r.id === id); const [m] = tops.splice(from, 1);
+  let to = tops.findIndex(r => r.id === targetId); if (side === 'after') to++;
+  tops.splice(to, 0, m);
+  S.rooms = [...tops, ...others]; save(); renderChart(); renderRooms();
+}
+rhead.addEventListener('click', e => {
+  if (e.target.closest('#addRoomCol')) openRoomModal();
+  const mb = e.target.closest('.menu-btn'); if (mb) { e.stopPropagation(); openRoomMenu(mb.dataset.menu, mb); }
+});
+
+/* ---------- Room context menu, split / merge ---------- */
+const ctx = $('#ctx');
+function openRoomMenu(roomId, anchor) {
+  const r = roomById(roomId), isUnit = !!r.parentId, hasUnits = S.rooms.some(u => u.parentId === r.id);
+  const hasRes = S.reservations.some(x => x.roomId === r.id);
+  ctx.innerHTML = `
+    <button data-a="edit">✎ Editează camera</button>
+    ${!isUnit && !hasUnits ? `<button data-a="split">⫶ Împarte în unități</button>` : ''}
+    ${isUnit ? `<button data-a="merge">⊞ Unește unitățile înapoi</button>` : ''}
+    <button data-a="toggle">${r.active ? '◌ Dezactivează' : '● Activează'}</button>
+    <hr><button data-a="del" class="dng" ${hasRes ? 'disabled title="Are rezervări"' : ''}>🗑 Șterge${hasRes ? ' (are rezervări)' : ''}</button>`;
+  const rc = anchor.getBoundingClientRect();
+  ctx.style.display = 'block'; ctx.style.left = Math.min(rc.left, innerWidth - 210) + 'px'; ctx.style.top = (rc.bottom + 4) + 'px';
+  ctx.onclick = e => { const a = e.target.closest('button')?.dataset.a; ctx.style.display = 'none'; if (!a) return;
+    if (a === 'edit') openRoomModal(r.id);
+    if (a === 'split') openSplit(r.id);
+    if (a === 'merge') mergeUnits(r.parentId);
+    if (a === 'toggle') { r.active = !r.active; save(); renderAll(); toast(r.active ? `${r.name} activată` : `${r.name} dezactivată`); }
+    if (a === 'del' && !hasRes) { if (confirm(`Ștergi camera ${r.name}?`)) { S.rooms = S.rooms.filter(x => x.id !== r.id); save(); renderAll(); toast('Cameră ștearsă'); } }
+  };
+}
+document.addEventListener('pointerdown', e => { if (!e.target.closest('#ctx')) ctx.style.display = 'none'; });
+let splitRoomId = null;
+function openSplit(id) { const r = roomById(id); splitRoomId = id;
+  $('#splitInfo').textContent = `${r.name} (${r.type}, ${r.capacity} pers) va apărea în calendar ca mai multe coloane grupate, fiecare rezervabilă separat.`;
+  $('#sCount').value = 2; $('#sPrice').value = Math.round(r.price / 2 / 10) * 10; $('#sLabels').value = 'A, B'; $('#splitOverlay').classList.add('open'); }
+function doSplit() {
+  const p = roomById(splitRoomId), n = Math.max(2, Math.min(6, +$('#sCount').value || 2)), price = +$('#sPrice').value || 0;
+  let labels = $('#sLabels').value.split(',').map(s => s.trim()).filter(Boolean);
+  while (labels.length < n) labels.push(String.fromCharCode(65 + labels.length));
+  const units = labels.slice(0, n).map(l => ({ id: uid('r_'), name: `${p.name} · ${l}`, label: l, type: 'Unitate', capacity: Math.max(1, Math.round(p.capacity / n)), price, desc: '', active: true, parentId: p.id }));
+  S.reservations.filter(r => r.roomId === p.id).forEach(r => r.roomId = units[0].id);
+  S.rooms.push(...units); closeOverlay('splitOverlay'); save(); renderAll(); toast(`${p.name} împărțită în ${n} unități`, 'ok');
+}
+function mergeUnits(parentId) {
+  const p = roomById(parentId), units = S.rooms.filter(u => u.parentId === parentId);
+  const res = S.reservations.filter(r => units.some(u => u.id === r.roomId) && isActiveRes(r));
+  for (const a of res) for (const b of res) if (a !== b && a.checkIn < b.checkOut && b.checkIn < a.checkOut) { toast(`Nu pot uni: ${resGuest(a)} și ${resGuest(b)} s-ar suprapune pe ${p.name}`, 'bad'); return; }
+  S.reservations.filter(r => units.some(u => u.id === r.roomId)).forEach(r => r.roomId = p.id);
+  S.rooms = S.rooms.filter(u => u.parentId !== parentId); save(); renderAll(); toast(`${p.name} este din nou o singură cameră`, 'ok');
+}
+
+/* ---------- Drawer (reservation details) ---------- */
+let drawerId = null;
+function openDrawer(id) {
+  const r = S.reservations.find(x => x.id === id); if (!r) return; drawerId = id;
+  const g = guestById(r.guestId), rm = roomById(r.roomId), n = nights(r), p = paid(r), rem = remaining(r), ps = payStatus(r);
+  $('#dName').textContent = guestName(g);
+  $('#dSub').innerHTML = `<span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span> &nbsp;<span class="pill ${ps}">${PAY_L[ps]}</span> &nbsp;<span style="color:var(--ink-3)">${SRC[r.source]}</span>`;
+  $('#dBody').innerHTML = `
+    <div class="kv">
+      <div><label>Cameră</label><b>${esc(rm.name)} <span style="color:var(--ink-3);font-weight:500">· ${esc(rm.type)}</span></b></div>
+      <div><label>Persoane</label><b>${r.pax}</b></div>
+      <div><label>Check-in</label><b>${fmtDL(r.checkIn)}</b></div>
+      <div><label>Check-out</label><b>${fmtDL(r.checkOut)}</b></div>
+      <div><label>Telefon</label><b>${esc(g?.phone || '—')}</b></div>
+      <div><label>Email</label><b style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis">${esc(g?.email || '—')}</b></div>
+    </div>
+    <div class="money">
+      <div class="row"><span>${n} ${n === 1 ? 'noapte' : 'nopți'} × ${money(r.total / n)}</span><b>${money(r.total)}</b></div>
+      <div class="row"><span>Încasat</span><b style="color:var(--ok)">${money(p)}</b></div>
+      <div class="bar"><i style="width:${Math.min(100, r.total ? p / r.total * 100 : 100)}%"></i></div>
+      <div class="row rem ${rem === 0 ? 'zero' : ''}"><span>Rest de plată</span><b>${rem === 0 ? 'Achitat integral' : money(rem)}</b></div>
+    </div>
+    <div>
+      <div class="sec-t">Plăți <span style="text-transform:none;letter-spacing:0;font-weight:600">${r.payments.length} înregistrate</span></div>
+      <div class="plist" style="margin-top:8px">${r.payments.map(x => `<div class="pitem"><div><div>${METHOD[x.method]}${x.note ? ' · ' + esc(x.note) : ''}</div><div class="pm">${fmtD(x.date)}</div></div><b>${money(x.amount)}</b></div>`).join('') || '<div class="empty" style="padding:8px">Nicio plată încă</div>'}</div>
+      ${r.status !== 'cancelled' ? `<div class="addpay" style="margin-top:8px">
+        <input type="number" id="payAmt" placeholder="Sumă" min="1" value="${rem || ''}" style="border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--surface)">
+        <select id="payMethod" style="border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--surface)"><option value="cash">Numerar</option><option value="card">Card</option><option value="transfer">Transfer</option><option value="other">Altul</option></select>
+        <button class="btn ok" onclick="addPayment()">+ Încasează</button></div>` : ''}
+    </div>
+    ${r.notes ? `<div><div class="sec-t">Observații</div><div class="notes" style="margin-top:8px">${esc(r.notes)}</div></div>` : ''}
+    <div><div class="sec-t">Factură</div><div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+      <input id="invNo" placeholder="Număr factură (ex: VS-2026-0142)" value="${esc(r.invoiceNo)}" style="flex:1;border:1px solid var(--line);border-radius:9px;padding:7px 10px;background:var(--surface)">
+      <button class="btn sm" onclick="saveInvoice()">${r.invoiceNo ? 'Actualizează' : 'Marchează facturat'}</button></div></div>
+    ${g?.notes ? `<div><div class="sec-t">Despre oaspete</div><div class="notes" style="margin-top:8px;border-color:var(--accent)">${esc(g.notes)}</div></div>` : ''}`;
+  const acts = [];
+  if (r.status === 'confirmed' || r.status === 'pending') acts.push(`<button class="btn ok" onclick="setStatus('checked_in')">Check-in</button>`);
+  if (r.status === 'checked_in') acts.push(`<button class="btn primary" onclick="setStatus('checked_out')">Check-out</button>`);
+  if (r.status === 'pending') acts.push(`<button class="btn" onclick="setStatus('confirmed')">Confirmă</button>`);
+  acts.push(`<button class="btn" onclick="openResModal(null,'${r.id}')">Editează</button>`);
+  if (r.status !== 'cancelled' && r.status !== 'checked_out') acts.push(`<button class="btn danger" onclick="setStatus('cancelled')">Anulează</button>`);
+  if (r.status === 'cancelled') acts.push(`<button class="btn danger" onclick="deleteRes()">Șterge definitiv</button>`);
+  $('#dFoot').innerHTML = acts.join('');
+  $('#drawer').classList.add('open');
+}
+function closeDrawer() { $('#drawer').classList.remove('open'); drawerId = null; }
+function cur() { return S.reservations.find(x => x.id === drawerId); }
+function setStatus(s) { const r = cur(); if (!r) return;
+  if (s === 'checked_out' && remaining(r) > 0 && !confirm(`Rest de plată ${money(remaining(r))}. Faci check-out oricum?`)) return;
+  if (s === 'cancelled' && !confirm(`Anulezi rezervarea pentru ${resGuest(r)}?`)) return;
+  r.status = s; save(); renderAll(); openDrawer(r.id); toast(`${resGuest(r)}: ${STATUS[s]}`, s === 'cancelled' ? '' : 'ok'); }
+function addPayment() { const r = cur(); const amt = +$('#payAmt').value; if (!amt || amt <= 0) { toast('Introdu o sumă', 'bad'); return; }
+  r.payments.push({ id: uid('p_'), amount: amt, method: $('#payMethod').value, date: TODAY, note: '' }); save(); renderAll(); openDrawer(r.id); toast(`Încasat ${money(amt)}`, 'ok'); }
+function saveInvoice() { const r = cur(); r.invoiceNo = $('#invNo').value.trim(); r.invoiceDate = r.invoiceNo ? TODAY : null; save(); openDrawer(r.id); toast(r.invoiceNo ? `Factura ${r.invoiceNo} salvată` : 'Număr factură șters'); }
+function deleteRes() { const r = cur(); if (!confirm('Ștergi definitiv această rezervare?')) return; S.reservations = S.reservations.filter(x => x.id !== r.id); save(); closeDrawer(); renderAll(); toast('Rezervare ștearsă'); }
+
+/* ---------- Reservation modal ---------- */
+let editId = null, selGuest = null;
+const F = id => $('#' + id);
+function openResModal(pre = null, id = null) {
+  editId = id; selGuest = null; F('resAlert').classList.remove('on');
+  const rooms = bookableRooms();
+  F('fRoom').innerHTML = rooms.map(r => `<option value="${r.id}">${esc(r.name)} · ${esc(r.type)} · ${r.price} RON</option>`).join('');
+  const r = id ? S.reservations.find(x => x.id === id) : null;
+  F('resTitle').textContent = r ? 'Editează rezervarea' : 'Rezervare nouă';
+  F('resSave').textContent = r ? 'Salvează modificările' : 'Salvează rezervarea';
+  F('fPaidWrap').style.display = r ? 'none' : '';
+  if (r) { const rm = roomById(r.roomId); if (!rooms.includes(rm)) F('fRoom').insertAdjacentHTML('afterbegin', `<option value="${rm.id}">${esc(rm.name)}</option>`);
+    F('fRoom').value = r.roomId; F('fIn').value = r.checkIn; F('fOut').value = r.checkOut; F('fPax').value = r.pax; F('fTotal').value = r.total; F('fRate').value = Math.round(r.total / nights(r));
+    F('fSrc').value = r.source; F('fStatus').value = r.status; F('fNotes').value = r.notes; pickGuest(guestById(r.guestId)); }
+  else { const rid = pre?.roomId || rooms[0]?.id; F('fRoom').value = rid; F('fIn').value = pre?.checkIn || TODAY; F('fOut').value = pre?.checkOut || addDays(F('fIn').value, 1);
+    F('fPax').value = Math.min(2, roomById(rid)?.capacity || 2); F('fRate').value = roomById(rid)?.price || 0; F('fTotal').value = ''; F('fSrc').value = 'direct'; F('fStatus').value = 'confirmed'; F('fPaid').value = 0; F('fNotes').value = ''; F('fGuest').value = ''; showChip(); }
+  recalc(true); F('resOverlay').classList.add('open'); closeDrawer();
+  setTimeout(() => (selGuest ? F('fRoom') : F('fGuest')).focus(), 50);
+}
+function closeResModal() { F('resOverlay').classList.remove('open'); F('guestDD').classList.remove('open'); }
+function closeOverlay(id) { F(id).classList.remove('open'); }
+function recalc(fromRate = false) {
+  const n = diffDays(F('fIn').value, F('fOut').value);
+  const okN = Number.isFinite(n) && n >= 1;
+  F('fOutHint').textContent = okN ? `${n} ${n === 1 ? 'noapte' : 'nopți'}` : 'Check-out trebuie să fie după check-in'; F('fOutHint').className = 'hint' + (okN ? '' : ' bad');
+  if (fromRate && okN) F('fTotal').value = (+F('fRate').value || 0) * n;
+  const total = +F('fTotal').value || 0, p = editId ? paid(S.reservations.find(x => x.id === editId)) : (+F('fPaid').value || 0), rem = Math.max(0, total - p);
+  F('cNights').textContent = okN ? n : '–'; F('cTotal').textContent = money(total); F('cPaid').textContent = money(p); F('cRem').textContent = rem === 0 && total > 0 ? 'Achitat' : money(rem);
+  F('cRemWrap').classList.toggle('zero', rem === 0 && total > 0);
+  // live availability check
+  const room = F('fRoom').value, c = okN ? conflict(room, F('fIn').value, F('fOut').value, editId) : null;
+  if (c) { F('resAlert').textContent = `${roomById(room).name} este ocupată: ${resGuest(c)}, ${fmtD(c.checkIn)} – ${fmtD(c.checkOut)}. Alege altă cameră sau altă perioadă.`; F('resAlert').classList.add('on'); }
+  else F('resAlert').classList.remove('on');
+}
+['fIn','fOut','fRoom'].forEach(id => F(id).addEventListener('change', () => { if (id === 'fRoom') F('fRate').value = roomById(F('fRoom').value)?.price || F('fRate').value; if (id === 'fIn' && F('fOut').value <= F('fIn').value) F('fOut').value = addDays(F('fIn').value, 1); recalc(true); }));
+F('fRate').addEventListener('input', () => recalc(true));
+['fTotal','fPaid'].forEach(id => F(id).addEventListener('input', () => recalc(false)));
+function showChip() { const c = F('guestChip'); if (selGuest) { c.style.display = ''; c.innerHTML = `<span class="chip">${esc(guestName(selGuest))} · ${esc(selGuest.phone || '')}<button onclick="clearGuest()" title="Schimbă">×</button></span>`; F('fGuest').style.display = 'none'; } else { c.style.display = 'none'; F('fGuest').style.display = ''; } }
+function pickGuest(g) { selGuest = g; showChip(); F('guestDD').classList.remove('open'); }
+function clearGuest() { selGuest = null; showChip(); F('fGuest').value = ''; F('fGuest').focus(); }
+F('fGuest').addEventListener('input', () => {
+  const q = F('fGuest').value.trim().toLowerCase(), dd = F('guestDD');
+  if (!q) { dd.classList.remove('open'); return; }
+  const hits = S.guests.filter(g => guestName(g).toLowerCase().includes(q) || (g.phone || '').replace(/\s/g,'').includes(q.replace(/\s/g,''))).slice(0, 6);
+  dd.innerHTML = hits.map(g => `<button type="button" data-g="${g.id}">${esc(guestName(g))}<small>${esc(g.phone || '')} · ${esc(g.country || '')} · ${S.reservations.filter(r => r.guestId === g.id).length} rezervări</small></button>`).join('') + `<button type="button" class="new" data-new="1">+ Oaspete nou: „${esc(F('fGuest').value.trim())}”</button>`;
+  dd.classList.add('open');
+  dd.onclick = e => { const b = e.target.closest('button'); if (!b) return; if (b.dataset.g) pickGuest(guestById(b.dataset.g)); else dd.classList.remove('open'); };
+});
+function saveRes() {
+  const inD = F('fIn').value, outD = F('fOut').value, n = diffDays(inD, outD), roomId = F('fRoom').value, total = +F('fTotal').value;
+  const err = m => { F('resAlert').textContent = m; F('resAlert').classList.add('on'); };
+  if (!selGuest && !F('fGuest').value.trim()) return err('Alege sau scrie numele oaspetelui.');
+  if (!(n >= 1)) return err('Check-out trebuie să fie după check-in.');
+  if (!(total >= 0)) return err('Prețul total nu este valid.');
+  const c = conflict(roomId, inD, outD, editId); if (c) return err(`${roomById(roomId).name} este ocupată în perioada aleasă (${resGuest(c)}).`);
+  let g = selGuest;
+  if (!g) { const parts = F('fGuest').value.trim().split(/\s+/); g = { id: uid('g_'), firstName: parts[0], lastName: parts.slice(1).join(' '), phone: '', email: '', country: 'România', notes: '' }; S.guests.push(g); }
+  const data = { guestId: g.id, roomId, checkIn: inD, checkOut: outD, pax: +F('fPax').value || 1, total, source: F('fSrc').value, status: F('fStatus').value, notes: F('fNotes').value.trim() };
+  if (editId) { Object.assign(S.reservations.find(x => x.id === editId), data); toast('Rezervare actualizată', 'ok'); }
+  else { const r = { id: uid('res_'), ...data, payments: [], invoiceNo: '', createdAt: Date.now() }; const adv = +F('fPaid').value || 0; if (adv > 0) r.payments.push({ id: uid('p_'), amount: adv, method: 'cash', date: TODAY, note: 'Avans' }); S.reservations.push(r);
+    if (inD < view.start || inD > addDays(view.start, view.days - 1)) view.start = addDays(inD, -2);
+    toast(`Rezervare creată: ${guestName(g)}, ${roomById(roomId).name}`, 'ok'); }
+  save(); closeResModal(); renderAll();
+}
+
+/* ---------- Room modal ---------- */
+let editRoomId = null;
+function openRoomModal(id = null) { editRoomId = id; const r = id ? roomById(id) : null;
+  F('roomTitle').textContent = r ? `Editează ${r.name}` : 'Cameră nouă';
+  F('rName').value = r?.name || ''; F('rType').value = r?.type || 'Dublă'; if (F('rType').value !== (r?.type || 'Dublă')) { F('rType').insertAdjacentHTML('afterbegin', `<option>${esc(r.type)}</option>`); F('rType').value = r.type; }
+  F('rCap').value = r?.capacity || 2; F('rPrice').value = r?.price ?? 250; F('rDesc').value = r?.desc || ''; F('rActive').checked = r ? r.active : true;
+  F('roomOverlay').classList.add('open'); setTimeout(() => F('rName').focus(), 50); }
+function closeRoomModal() { F('roomOverlay').classList.remove('open'); }
+function saveRoom() { const name = F('rName').value.trim(); if (!name) { F('rName').classList.add('err'); return; }
+  const data = { name, type: F('rType').value, capacity: +F('rCap').value || 1, price: +F('rPrice').value || 0, desc: F('rDesc').value.trim(), active: F('rActive').checked };
+  if (editRoomId) { Object.assign(roomById(editRoomId), data); toast(`Camera ${name} actualizată`, 'ok'); } else { S.rooms.push({ id: uid('r_'), parentId: null, ...data }); toast(`Camera ${name} adăugată`, 'ok'); }
+  save(); closeRoomModal(); renderAll(); }
+
+/* ---------- Other pages ---------- */
+function renderToday() {
+  const act = S.reservations.filter(isActiveRes);
+  const arr = act.filter(r => r.checkIn === TODAY && r.status !== 'checked_out'), dep = act.filter(r => r.checkOut === TODAY && r.status !== 'checked_out'), stay = act.filter(r => r.status === 'checked_in');
+  const rooms = bookableRooms(), occ = new Set(act.filter(r => r.checkIn <= TODAY && r.checkOut > TODAY).map(r => r.roomId));
+  const owed = act.filter(r => r.status !== 'cancelled' && remaining(r) > 0);
+  const m0 = TODAY.slice(0, 7), month = act.filter(r => r.checkIn.slice(0, 7) === m0).reduce((s, r) => s + Number(r.total), 0);
+  const upcoming = act.filter(r => r.checkIn > TODAY).sort((a, b) => a.checkIn.localeCompare(b.checkIn)).slice(0, 6);
+  $('#todayBadge').textContent = arr.length + dep.length || ''; $('#todayLbl').textContent = fmtDL(TODAY);
+  const li = r => `<div class="li" onclick="go('calendar');openDrawer('${r.id}')"><div class="rm">${esc(roomById(r.roomId).name)}</div><div class="nm">${esc(resGuest(r))}<small>${fmtD(r.checkIn)} – ${fmtD(r.checkOut)} · ${r.pax} pers · ${SRC[r.source]}</small></div><span class="pill ${payStatus(r)}">${PAY_L[payStatus(r)]}</span><div class="amt">${remaining(r) ? money(remaining(r)) : '✓'}</div></div>`;
+  $('#todayBody').innerHTML = `
+    <div class="tiles">
+      <div class="tile"><label>Sosiri azi</label><b>${arr.length}</b><small>${arr.filter(r => r.status === 'checked_in').length} deja cazate</small></div>
+      <div class="tile"><label>Plecări azi</label><b>${dep.length}</b><small>${dep.filter(r => remaining(r) > 0).length} cu rest de plată</small></div>
+      <div class="tile ok"><label>Camere ocupate</label><b>${occ.size}<span style="font-size:16px;color:var(--ink-3)"> / ${rooms.length}</span></b><small>${rooms.length ? Math.round(occ.size / rooms.length * 100) : 0}% ocupare</small></div>
+      <div class="tile"><label>Camere libere</label><b>${rooms.length - occ.size}</b><small>disponibile în această seară</small></div>
+      <div class="tile ${owed.length ? 'bad' : ''}"><label>Solduri neîncasate</label><b>${money(owed.reduce((s, r) => s + remaining(r), 0))}</b><small>${owed.length} rezervări</small></div>
+      <div class="tile"><label>Venit estimat ${MONTHS[+m0.slice(5) - 1]}</label><b>${money(month)}</b><small>după check-in în lună</small></div>
+    </div>
+    <div class="cols">
+      <div class="card"><div class="ch">Sosiri<span class="cnt">${arr.length}</span></div><div class="list">${arr.map(li).join('') || '<div class="empty">Nicio sosire azi</div>'}</div></div>
+      <div class="card"><div class="ch">Plecări<span class="cnt">${dep.length}</span></div><div class="list">${dep.map(li).join('') || '<div class="empty">Nicio plecare azi</div>'}</div></div>
+      <div class="card"><div class="ch">Cazați acum<span class="cnt">${stay.length}</span></div><div class="list">${stay.map(li).join('') || '<div class="empty">Nimeni cazat</div>'}</div></div>
+      <div class="card"><div class="ch">Urmează<span class="cnt">${upcoming.length}</span></div><div class="list">${upcoming.map(li).join('') || '<div class="empty">Nicio rezervare viitoare</div>'}</div></div>
+    </div>`;
+}
+function renderResList() {
+  const q = ($('#qRes').value || '').toLowerCase();
+  const list = S.reservations.filter(r => !q || resGuest(r).toLowerCase().includes(q) || roomById(r.roomId).name.toLowerCase().includes(q)).sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+  $('#resBody').innerHTML = `<div class="card tbl-wrap"><table class="t"><thead><tr><th>Oaspete</th><th>Cameră</th><th>Check-in</th><th>Check-out</th><th>Nopți</th><th>Sursă</th><th>Status</th><th class="r">Total</th><th class="r">Rest</th><th>Factură</th></tr></thead><tbody>
+    ${list.map(r => `<tr onclick="go('calendar');view.start='${addDays(r.checkIn, -2)}';renderChart();openDrawer('${r.id}')"><td><b>${esc(resGuest(r))}</b></td><td>${esc(roomById(r.roomId).name)}</td><td>${fmtD(r.checkIn)}</td><td>${fmtD(r.checkOut)}</td><td class="r">${nights(r)}</td><td>${SRC[r.source]}</td><td><span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span></td><td class="r">${money(r.total)}</td><td class="r" style="color:${remaining(r) ? 'var(--bad)' : 'var(--ok)'}">${remaining(r) ? money(remaining(r)) : '✓'}</td><td>${esc(r.invoiceNo || '—')}</td></tr>`).join('')}
+    </tbody></table>${list.length ? '' : '<div class="empty">Nicio rezervare</div>'}</div>`;
+}
+function renderGuests() {
+  const q = ($('#qGuest').value || '').toLowerCase();
+  const list = S.guests.filter(g => !q || guestName(g).toLowerCase().includes(q) || (g.phone || '').includes(q)).sort((a, b) => guestName(a).localeCompare(guestName(b)));
+  $('#guestBody').innerHTML = `<div class="card tbl-wrap"><table class="t"><thead><tr><th>Nume</th><th>Telefon</th><th>Email</th><th>Țară</th><th class="r">Rezervări</th><th>Ultima ședere</th><th>Note</th></tr></thead><tbody>
+    ${list.map(g => { const rs = S.reservations.filter(r => r.guestId === g.id).sort((a, b) => b.checkIn.localeCompare(a.checkIn));
+      return `<tr onclick="${rs[0] ? `go('calendar');view.start='${addDays(rs[0].checkIn, -2)}';renderChart();openDrawer('${rs[0].id}')` : ''}"><td><b>${esc(guestName(g))}</b></td><td>${esc(g.phone || '—')}</td><td>${esc(g.email || '—')}</td><td>${esc(g.country || '—')}</td><td class="r">${rs.length}</td><td>${rs[0] ? fmtD(rs[0].checkIn) + ' · ' + esc(roomById(rs[0].roomId).name) : '—'}</td><td style="white-space:normal;max-width:260px;color:var(--ink-2)">${esc(g.notes || '')}</td></tr>`; }).join('')}
+    </tbody></table></div>`;
+}
+function renderRooms() {
+  const cols = columns();
+  $('#roomBody').innerHTML = `<div class="card tbl-wrap"><table class="t"><thead><tr><th>Cameră</th><th>Tip</th><th class="r">Capacitate</th><th class="r">Preț / noapte</th><th>Descriere</th><th>Stare</th><th></th></tr></thead><tbody>
+    ${cols.map(c => { const r = c.room, cnt = S.reservations.filter(x => x.roomId === r.id && isActiveRes(x) && x.checkOut > TODAY).length;
+      return `<tr onclick="openRoomModal('${r.id}')"><td><b>${esc(r.name)}</b>${c.parent ? `<div style="font-size:11px;color:var(--accent)">unitate din ${esc(c.parent.name)}</div>` : ''}</td><td>${esc(r.type)}</td><td class="r">${r.capacity}</td><td class="r">${r.price} RON</td><td style="white-space:normal;color:var(--ink-2)">${esc(r.desc || '')}</td><td><span class="pill ${r.active ? 'checked_in' : 'checked_out'}">${r.active ? 'Activă' : 'Inactivă'}</span> <small style="color:var(--ink-3)">${cnt} rez. viitoare</small></td>
+        <td><button class="btn sm" onclick="event.stopPropagation();openRoomMenu('${r.id}', this)">⋯</button></td></tr>`; }).join('')}
+    </tbody></table></div>`;
+}
+function renderAll() { renderChart(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
+
+/* ---------- Navigation, shortcuts, theme ---------- */
+function go(page) { view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); }
+$('#nav').addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page); });
+$('#prevBtn').onclick = () => { view.start = addDays(view.start, -view.days); renderChart(); };
+$('#nextBtn').onclick = () => { view.start = addDays(view.start, view.days); renderChart(); };
+$('#todayBtn').onclick = () => { view.start = addDays(TODAY, -2); renderChart(); };
+$('#rangeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $$('#rangeSeg button').forEach(x => x.classList.toggle('on', x === b)); view.days = +b.dataset.n; renderChart(); });
+$('#newResBtn').onclick = () => openResModal();
+$('#zoomIn').onclick = () => setZoom(zoom + 0.1);
+$('#zoomOut').onclick = () => setZoom(zoom - 0.1);
+$('#zoomLbl').onclick = () => setZoom(1);
+chart.addEventListener('wheel', e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); setZoom(zoom + (e.deltaY < 0 ? 0.1 : -0.1)); }, { passive: false });
+$('#q').addEventListener('input', e => { view.q = e.target.value; renderChart(); });
+$('#qRes').addEventListener('input', renderResList); $('#qGuest').addEventListener('input', renderGuests);
+$('#collapseBtn').onclick = () => $('#app').classList.toggle('collapsed');
+$('#themeBtn').onclick = () => { const root = document.documentElement, dark = root.dataset.theme === 'dark'; root.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem(KEY + '-theme', root.dataset.theme); } catch(e){} };
+document.documentElement.dataset.theme = 'light'; try { const t = localStorage.getItem(KEY + '-theme'); if (t) document.documentElement.dataset.theme = t; } catch(e){}
+$$('.overlay').forEach(o => o.addEventListener('pointerdown', e => { if (e.target === o) o.classList.remove('open'); }));
+document.addEventListener('keydown', e => {
+  const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
+  if (e.key === 'Escape') { $$('.overlay.open').forEach(o => o.classList.remove('open')); closeDrawer(); ctx.style.display = 'none'; return; }
+  if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && F('resOverlay').classList.contains('open')) { saveRes(); return; }
+  if (typing) return;
+  if (e.key === 'n' || e.key === 'N') openResModal();
+  if (e.key === 't' || e.key === 'T') $('#todayBtn').click();
+  if (e.key === 'ArrowLeft') $('#prevBtn').click();
+  if (e.key === 'ArrowRight') $('#nextBtn').click();
+  if (e.key === '+' || e.key === '=') setZoom(zoom + 0.1);
+  if (e.key === '-') setZoom(zoom - 0.1);
+});
+window.addEventListener('resize', () => { clearTimeout(window._rt); window._rt = setTimeout(renderChart, 120); });
+
+/* ---------- Init ---------- */
+S = load(); renderAll();
+// scroll so that today is near the top of the visible chart
+requestAnimationFrame(() => { chart.scrollTop = 0; });
+</script>
+</body>
+</html>

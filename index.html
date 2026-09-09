@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototip Vertical - PMS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Ascundem scrollbar-ul nativ pentru un look mai curat */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        .grab-cursor { cursor: grab; }
+        .grab-cursor:active { cursor: grabbing; }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col font-sans overflow-hidden">
+
+    <!-- Header Aplicație -->
+    <header class="bg-white border-b border-slate-200 px-6 py-4 flex justify-between items-center z-40 shadow-sm shrink-0">
+        <div>
+            <h1 class="text-xl font-bold text-slate-900">Pensiunea Ta</h1>
+            <p class="text-sm text-slate-500">Vizualizare Verticală</p>
+        </div>
+        <button onclick="openAddModal()" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-md transition-all flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"></path></svg>
+            Rezervare Nouă
+        </button>
+    </header>
+
+    <!-- Zona Calendarului -->
+    <main class="flex-1 overflow-auto p-6 relative">
+        <div class="bg-white rounded-xl shadow-lg border border-slate-200 inline-block min-w-full">
+            <!-- Containerul relativ ne ajută să poziționăm rezervările absolut peste grilă -->
+            <div id="grid-container" class="relative">
+                <!-- Tabelul va fi generat de JavaScript -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Modale ascunse (Adăugare & Vizualizare) -->
+    
+    <!-- Modal Adăugare -->
+    <div id="addModal" class="fixed inset-0 bg-slate-900/50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 w-96 shadow-2xl transform transition-all">
+            <h2 class="text-lg font-bold mb-4">Adaugă Rezervare</h2>
+            <div class="space-y-3">
+                <input id="new-name" type="text" placeholder="Nume Client" class="w-full border border-slate-300 rounded p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="flex gap-2">
+                    <select id="new-room" class="w-1/2 border border-slate-300 rounded p-2 text-sm outline-none"></select>
+                    <select id="new-day" class="w-1/2 border border-slate-300 rounded p-2 text-sm outline-none"></select>
+                </div>
+                <div class="flex gap-2">
+                    <input id="new-nights" type="number" placeholder="Nr. Nopți" min="1" value="1" class="w-1/2 border border-slate-300 rounded p-2 text-sm outline-none">
+                    <input id="new-price" type="number" placeholder="Preț Total (RON)" class="w-1/2 border border-slate-300 rounded p-2 text-sm outline-none">
+                </div>
+                <textarea id="new-desc" placeholder="Descriere / Observații (ex: Avans plătit, Pat suplimentar)" class="w-full border border-slate-300 rounded p-2 text-sm outline-none h-20"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 mt-5">
+                <button onclick="closeModals()" class="px-4 py-2 text-slate-600 font-medium hover:bg-slate-100 rounded">Anulează</button>
+                <button onclick="saveReservation()" class="px-4 py-2 bg-blue-600 text-white font-medium rounded hover:bg-blue-700">Salvează</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Detalii (La click pe rezervare) -->
+    <div id="detailsModal" class="fixed inset-0 bg-slate-900/50 hidden flex items-center justify-center z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-xl p-6 w-80 shadow-2xl">
+            <div class="flex justify-between items-start mb-4">
+                <h2 id="det-name" class="text-xl font-bold text-slate-800"></h2>
+                <span id="det-room" class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-bold"></span>
+            </div>
+            <p class="text-sm text-slate-500 mb-4 flex gap-2 items-center">
+                <span class="font-bold text-slate-700">Perioadă:</span> <span id="det-period"></span>
+            </p>
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-700 p-3 rounded mb-4">
+                <span class="text-xs uppercase font-bold block mb-1">Preț Total</span>
+                <span id="det-price" class="text-lg font-bold"></span>
+            </div>
+            <div class="mb-5">
+                <span class="text-xs uppercase font-bold text-slate-400 block mb-1">Observații</span>
+                <p id="det-desc" class="text-sm text-slate-700 italic border-l-2 border-blue-400 pl-2"></p>
+            </div>
+            <button onclick="closeModals()" class="w-full py-2 bg-slate-800 text-white font-medium rounded hover:bg-slate-900">Închide</button>
+        </div>
+    </div>
+
+    <!-- Logica Aplicației -->
+    <script>
+        // Setări dimensionale pentru grilă (pixeli)
+        const CELL_WIDTH = 100;
+        const CELL_HEIGHT = 60;
+        const SIDEBAR_WIDTH = 80;
+        const HEADER_HEIGHT = 120; // Spațiu mai mare pentru textul diagonal
+
+        // Datele de bază
+        const rooms = [
+            { id: 0, name: 'Camera 1' },
+            { id: 1, name: 'Camera 2' },
+            { id: 2, name: 'Camera 3 (Triplă)' },
+            { id: 3, name: 'Apartament 1' },
+            { id: 4, name: 'Apartament 2' }
+        ];
+
+        // Zilele lunii (exemplu fix pt prototip)
+        const days = ['20 Aug', '21 Aug', '22 Aug', '23 Aug', '24 Aug', '25 Aug', '26 Aug', '27 Aug', '28 Aug', '29 Aug'];
+
+        // Baza de date a rezervărilor curente
+        let reservations = [
+            { id: 'r1', roomId: 0, startDay: 0, nights: 3, client: 'Familia Popescu', price: 450, desc: 'A achitat integral prin Booking.com.', color: 'bg-emerald-500 border-emerald-600' },
+            { id: 'r2', roomId: 2, startDay: 2, nights: 4, client: 'Ionescu Andrei', price: 900, desc: 'Vine cu câinele. Avans 300 RON încasat.', color: 'bg-blue-500 border-blue-600' },
+            { id: 'r3', roomId: 3, startDay: 1, nights: 2, client: 'Grup Corporate', price: 800, desc: 'De emis e-Factura pe firmă.', color: 'bg-purple-500 border-purple-600' }
+        ];
+
+        // Funcția care construiește HTML-ul pentru liniile tabelului (Grila de fundal)
+        function renderGrid() {
+            let html = `<table class="border-collapse" style="table-layout: fixed;"><thead><tr>`;
+            
+            // Celula goală stânga-sus
+            html += `<th style="width:${SIDEBAR_WIDTH}px; height:${HEADER_HEIGHT}px;" class="border-r border-b border-slate-300 sticky top-0 left-0 bg-white z-40"></th>`;
+            
+            // Generare Antet Camere (Text Diagonal)
+            rooms.forEach(r => {
+                html += `<th style="width:${CELL_WIDTH}px; height:${HEADER_HEIGHT}px;" class="border-r border-b border-slate-300 sticky top-0 bg-slate-50 z-30">
+                            <div class="relative w-full h-full">
+                                <span class="absolute bottom-4 left-6 origin-bottom-left -rotate-45 text-sm font-bold text-slate-700 whitespace-nowrap drop-shadow-sm tracking-wide">
+                                    ${r.name}
+                                </span>
+                            </div>
+                         </th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            // Generare Rânduri Zile (Vertical)
+            days.forEach((day, dIdx) => {
+                html += `<tr>`;
+                // Antet rând (Data)
+                html += `<td style="width:${SIDEBAR_WIDTH}px; height:${CELL_HEIGHT}px;" class="border-r border-b border-slate-300 text-center text-sm font-bold text-slate-600 sticky left-0 bg-white z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">${day}</td>`;
+                
+                // Celule pe care se poate face Drop
+                rooms.forEach(r => {
+                    html += `<td style="width:${CELL_WIDTH}px; height:${CELL_HEIGHT}px;" 
+                                 class="border-r border-b border-slate-200 border-dashed bg-transparent hover:bg-yellow-50 transition-colors"
+                                 ondragover="allowDrop(event)" ondrop="handleDrop(event, ${r.id}, ${dIdx})">
+                             </td>`;
+                });
+                html += `</tr>`;
+            });
+            
+            html += `</tbody></table>`;
+            // Layer-ul unde "desenăm" blocurile de rezervare peste grilă
+            html += `<div id="res-layer" class="absolute top-0 left-0 pointer-events-none" style="margin-top:${HEADER_HEIGHT}px; margin-left:${SIDEBAR_WIDTH}px; right:0; bottom:0;"></div>`;
+            
+            document.getElementById('grid-container').innerHTML = html;
+            renderReservations();
+            populateSelects();
+        }
+
+        // Funcția care "pictează" rezervările ca elemente plutitoare
+        function renderReservations() {
+            const layer = document.getElementById('res-layer');
+            layer.innerHTML = ''; // Curățăm înainte de a redesena
+
+            reservations.forEach(res => {
+                const div = document.createElement('div');
+                // Calculăm poziția pe verticală (zile) și orizontală (camere)
+                const topPos = res.startDay * CELL_HEIGHT;
+                const leftPos = res.roomId * CELL_WIDTH;
+                const totalHeight = res.nights * CELL_HEIGHT;
+
+                div.className = `absolute ${res.color || 'bg-slate-700 border-slate-800'} rounded-lg border text-white p-2 shadow-md grab-cursor pointer-events-auto flex flex-col justify-center overflow-hidden transition-transform hover:brightness-110 z-10`;
+                div.style.top = (topPos + 3) + 'px'; // +3px pt margini interioare
+                div.style.left = (leftPos + 3) + 'px';
+                div.style.height = (totalHeight - 6) + 'px';
+                div.style.width = (CELL_WIDTH - 6) + 'px';
+                
+                // Detalii afișate pe bloc
+                div.innerHTML = `
+                    <span class="font-bold text-[0.8rem] leading-tight truncate">${res.client}</span>
+                    <span class="text-[0.7rem] opacity-90 truncate">${res.nights} nopți • ${res.price} lei</span>
+                `;
+                
+                // Evenimente Drag & Drop și Click
+                div.draggable = true;
+                div.ondragstart = (e) => e.dataTransfer.setData('res_id', res.id);
+                div.onclick = () => openDetails(res.id);
+
+                layer.appendChild(div);
+            });
+        }
+
+        /* --- Logica DRAG & DROP --- */
+        function allowDrop(e) {
+            e.preventDefault(); // Necesar pt a permite drop-ul pe HTML
+        }
+
+        function handleDrop(e, newRoomId, newDayIdx) {
+            e.preventDefault();
+            const resId = e.dataTransfer.getData('res_id');
+            const res = reservations.find(r => r.id === resId);
+            
+            if (res) {
+                // Verificăm dacă rezervarea iese din calendar la mutare
+                if (newDayIdx + res.nights > days.length) {
+                    alert("Eroare: Rezervarea este prea lungă și iese din calendarul afișat!");
+                    return;
+                }
+                // Actualizăm datele și redesenăm blocurile
+                res.roomId = newRoomId;
+                res.startDay = newDayIdx;
+                renderReservations();
+            }
+        }
+
+        /* --- Logica MODALE (Adăugare & Afișare) --- */
+        function populateSelects() {
+            const rSelect = document.getElementById('new-room');
+            const dSelect = document.getElementById('new-day');
+            rSelect.innerHTML = rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            dSelect.innerHTML = days.map((d, i) => `<option value="${i}">${d}</option>`).join('');
+        }
+
+        function openAddModal() {
+            document.getElementById('new-name').value = '';
+            document.getElementById('new-price').value = '';
+            document.getElementById('new-desc').value = '';
+            document.getElementById('addModal').classList.remove('hidden');
+        }
+
+        function closeModals() {
+            document.getElementById('addModal').classList.add('hidden');
+            document.getElementById('detailsModal').classList.add('hidden');
+        }
+
+        function saveReservation() {
+            const client = document.getElementById('new-name').value;
+            const roomId = parseInt(document.getElementById('new-room').value);
+            const startDay = parseInt(document.getElementById('new-day').value);
+            const nights = parseInt(document.getElementById('new-nights').value);
+            const price = document.getElementById('new-price').value;
+            const desc = document.getElementById('new-desc').value;
+
+            if(!client || !price) {
+                alert("Te rugăm să completezi numele și prețul!"); return;
+            }
+
+            reservations.push({
+                id: 'res_' + Date.now(),
+                roomId: roomId,
+                startDay: startDay,
+                nights: nights,
+                client: client,
+                price: price,
+                desc: desc || 'Fără observații.',
+                color: 'bg-orange-500 border-orange-600' // Culoare distinctă pt cele noi
+            });
+
+            closeModals();
+            renderReservations();
+        }
+
+        function openDetails(resId) {
+            const res = reservations.find(r => r.id === resId);
+            if(!res) return;
+
+            document.getElementById('det-name').innerText = res.client;
+            document.getElementById('det-room').innerText = rooms.find(r => r.id === res.roomId).name;
+            document.getElementById('det-price').innerText = res.price + ' RON';
+            document.getElementById('det-desc').innerText = res.desc;
+            
+            // Calculare text perioadă (ex: 20 Aug - 23 Aug)
+            let endDayIdx = res.startDay + res.nights;
+            let endDayStr = (endDayIdx < days.length) ? days[endDayIdx] : "Lunile viitoare";
+            document.getElementById('det-period').innerText = `${days[res.startDay]} → ${endDayStr} (${res.nights} nopți)`;
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        // Inițializare
+        window.onload = renderGrid;
+    </script>
+</body>
+</html>
