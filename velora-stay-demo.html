@@ -320,6 +320,7 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .pk .pc-row span{min-width:0;overflow-wrap:anywhere}
 .pk .pc-hint{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .pk .pc-hint .qa{margin-right:0}
+.src-tag,.pk .pc-row span.src-tag{color:var(--sc);font-weight:800;font-size:11.5px;letter-spacing:.02em;border:1.5px solid var(--sc);border-radius:6px;padding:0 7px;background:color-mix(in srgb,var(--sc) 10%,var(--surface));white-space:nowrap;align-self:center}
 .pk .pc-money span{display:flex;flex-direction:column;gap:1px;font-size:11px}
 .pk .pc-money b{white-space:nowrap;font-size:12.5px}
 /* adding rooms to a reservation by drawing */
@@ -469,6 +470,21 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .toast button:hover{background:rgba(255,255,255,.3)}
 /* Today bar */
 .propbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 2px 10px}
+/* ---------- Finance ---------- */
+#finBody .tiles{grid-template-columns:repeat(auto-fit,minmax(170px,1fr))}
+#finBody .tile b{font-size:24px}
+#finBody .cols{grid-template-columns:1fr 1fr}
+#finBody .card.wide{grid-column:1 / -1}
+#finBody .ch .cnt{margin-left:auto}
+#finBody .ch .btn{margin-left:10px}
+#finBody table.t td.neg{color:var(--bad);font-weight:700}
+#finBody table.t td.pos{color:var(--ok);font-weight:700}
+#finBody table.t tr.cur td{background:var(--accent-soft)}
+#finBody table.t tfoot td{font-weight:800;border-top:2px solid var(--line);background:var(--surface-2)}
+#finBody .share{display:inline-block;height:6px;border-radius:3px;background:var(--accent);vertical-align:middle;margin-right:6px;opacity:.7}
+#finBody .rec{font-size:10.5px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:5px;margin-left:6px}
+#finBody .note{font-size:12px;color:var(--ink-3);padding:8px 16px 12px}
+@media (max-width:900px){#finBody .cols{grid-template-columns:1fr}}
 /* ---------- Rates page ---------- */
 .rt-quick{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 2px 10px}
 .rt-leg{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)}
@@ -610,7 +626,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
       <div class="sec">Proprietate</div>
       <button class="nav-item" data-page="rooms"><svg viewBox="0 0 24 24"><path d="M3 18V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10"/><path d="M3 12h18M3 21v-3M21 21v-3"/><path d="M7 12V9h4v3"/></svg><span>Camere</span></button>
       <button class="nav-item" data-page="rates"><svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Tarife</span></button>
-      <button class="nav-item soonwrap" data-page="payments"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h3"/></svg><span>Plăți</span><span class="soon">MVP</span></button>
+      <button class="nav-item" data-page="finance"><svg viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M6 17V11M11 17V6M16 17v-4M21 17V8"/></svg><span>Financiar</span></button>
       <button class="nav-item soonwrap" data-page="invoices"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg><span>Facturi</span><span class="soon">MVP</span></button>
       <button class="nav-item soonwrap" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Setări</span></button>
     </nav>
@@ -705,7 +721,16 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <button class="btn" id="rtReset">Revino la prețul de bază</button>
       </div>
     </section>
-    <section class="page" id="page-payments"><div class="topbar"><h1>Plăți</h1></div><div class="scroll"><div class="ph"><h2>Plățile se înregistrează direct din rezervare</h2><p>Deschide o rezervare din calendar și adaugă plata în sertarul din dreapta. Un raport separat de încasări vine în MVP.</p></div></div></section>
+    <section class="page" id="page-finance">
+      <div class="topbar"><h1>Financiar <small id="finSub"></small></h1><div class="spacer"></div>
+        <div class="seg" id="finProp"></div>
+        <button class="btn icon" id="finPrev" title="Luna anterioară"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div class="period" id="finMonth"></div>
+        <button class="btn icon" id="finNext" title="Luna următoare"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+        <button class="btn primary" id="finAdd"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Cheltuială</button>
+      </div>
+      <div class="scroll" id="finBody"></div>
+    </section>
     <section class="page" id="page-invoices"><div class="topbar"><h1>Facturi</h1></div><div class="scroll"><div class="ph"><h2>Registru de facturi</h2><p>În MVP: marchezi rezervarea ca facturată și salvezi numărul, data și totalul. Integrarea e-Factura vine după.</p></div></div></section>
     <section class="page" id="page-settings"><div class="topbar"><h1>Setări</h1></div><div class="scroll"><div class="ph"><h2>Proprietate și cont</h2><p>Nume, adresă, CUI, monedă, ore de check-in / check-out. Intenționat mic.</p><button class="btn" onclick="resetDemo()">Resetează datele demo</button></div></div></section>
   </div>
@@ -762,6 +787,26 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
       </details>
     </div>
     <div class="ft"><span class="hint" style="margin-right:auto;font-size:12px;color:var(--ink-3)"><span class="kbd">Esc</span> închide · <span class="kbd">Ctrl</span>+<span class="kbd">Enter</span> salvează</span><button class="btn" onclick="closeResModal()">Renunță</button><button class="btn primary" id="resSave" onclick="saveRes()">Salvează rezervarea</button></div>
+  </div>
+</div>
+
+<!-- ===== Expense modal ===== -->
+<div class="overlay" id="expOverlay">
+  <div class="modal sm" role="dialog">
+    <div class="hd"><h2 id="expTitle">Cheltuială nouă</h2><div class="spacer"></div><button class="btn icon ghost" onclick="closeOverlay('expOverlay')"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="bd">
+      <div class="g2">
+        <div class="f"><label>Sumă (lei)</label><input type="number" id="eAmt" min="0" step="10" placeholder="ex: 1200"></div>
+        <div class="f"><label>Data</label><input type="date" id="eDate"></div>
+      </div>
+      <div class="g2">
+        <div class="f"><label>Categorie</label><select id="eCat"></select></div>
+        <div class="f"><label>Proprietate</label><select id="eProp"></select></div>
+      </div>
+      <div class="f"><label>Descriere</label><input id="eDesc" placeholder="ex: factură curent, salariu cameristă"></div>
+      <div class="f" style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="eRec" style="width:auto"><label for="eRec" style="margin:0">Se repetă în fiecare lună, începând cu luna aleasă</label></div>
+    </div>
+    <div class="ft"><button class="btn" onclick="closeOverlay('expOverlay')">Renunță</button><button class="btn primary" id="eSave">Salvează</button></div>
   </div>
 </div>
 
@@ -984,7 +1029,7 @@ function seed() {
       day = out;
     }
   });
-  return { properties, floors, rooms, guests, reservations, rates: demoRates(rooms) };
+  return { properties, floors, rooms, guests, reservations, rates: demoRates(rooms), expenses: demoExpenses(properties) };
 }
 // sample seasons so the rates grid shows something: August +20%, September weekends +30 lei, November -15%
 function demoRates(rooms) {
@@ -996,11 +1041,30 @@ function demoRates(rooms) {
     out[rm.id] = m; });
   return out;
 }
+// sample running costs so the finance page is not empty
+function demoExpenses(props) {
+  const y = fromIso(TODAY).getFullYear(), P = props.map(x => x.id), P2 = P[1] || null, m0 = `${y}-08-01`;
+  const e = (date, category, desc, amount, propertyId, recurring) => ({ id: uid('e_'), date, category, desc, amount, propertyId, recurring: !!recurring, until: '' });
+  return [
+    e(m0, 'Salarii', 'Recepție, 2 persoane', 7000, null, true),
+    e(m0, 'Salarii', 'Cameriste', 5200, P[0], true),
+    e(m0, 'Salarii', 'Cameristă', 2600, P2, true),
+    e(m0, 'Utilități', 'Curent, gaz, apă', 3400, P[0], true),
+    e(m0, 'Utilități', 'Curent, gaz, apă', 1500, P2, true),
+    e(m0, 'Utilități', 'Internet și TV', 220, null, true),
+    e(m0, 'Taxe și impozite', 'Contabilitate', 600, null, true),
+    e(`${y}-08-06`, 'Întreținere și reparații', 'Reparație boiler etaj 2', 1250, P[0]),
+    e(`${y}-08-18`, 'Consumabile', 'Lenjerie și prosoape noi', 2400, P[0]),
+    e(`${y}-09-03`, 'Consumabile', 'Detergenți și cosmetice', 640, null),
+    e(`${y}-09-08`, 'Marketing', 'Fotografii noi pentru Booking', 900, P2),
+  ];
+}
 function load() { let s = null; try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.rooms && j.reservations) s = j; } catch(e){} if (!s) s = seed();
   s.reservations.forEach(r => { if (!r.roomIds || !r.roomIds.length) r.roomIds = [r.roomId]; r.roomId = r.roomIds[0]; });
   if (!s.properties || !s.properties.length) s.properties = [{ id: uid('p_'), name: 'Pensiunea Ta', city: '' }];
   if (!s.floors) s.floors = [];
   if (!s.rates) s.rates = demoRates(s.rooms);
+  if (!s.expenses) s.expenses = demoExpenses(s.properties);
   s.rooms.forEach(r => { if (!s.properties.some(x => x.id === r.propertyId)) r.propertyId = s.properties[0].id; if (r.floorId && !s.floors.some(f => f.id === r.floorId)) r.floorId = null; });
   return s; }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
@@ -1446,7 +1510,7 @@ function peekHtml(r) {
     ${al ? `<div class="pc-al ${al.level}">${esc(al.text)}</div>` : ''}
     <div class="pc-row"><span>${esc(roomLabel(r))}</span><span>${ids.length > 1 ? ids.length + ' camere' : esc(roomById(r.roomId)?.type || '')}</span></div>
     <div class="pc-row"><span>${fmtDL(r.checkIn)}</span><span>→ ${fmtDL(r.checkOut)}</span></div>
-    <div class="pc-row"><span>${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers.</span><span>${SRC[r.source]}</span></div>
+    <div class="pc-row"><span>${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers.</span><span class="src-tag" style="--sc:var(--src-${r.source}, var(--src-other))">${SRC[r.source]}</span></div>
     <div class="pc-money"><span>Total <b>${money(r.total)}</b></span><span>Încasat <b>${money(paid(r))}</b></span><span class="${ps}">${rem > 0 ? 'Rest <b>' + money(rem) + '</b>' : '<b>Achitat</b>'}</span></div>
     ${r.notes ? `<div class="pc-notes">${esc(r.notes)}</div>` : ''}
     ${g && (g.phone || g.email) ? `<div class="pc-row"><span>${esc(g.phone || '')}</span><span>${esc(g.email || '')}</span></div>` : ''}
@@ -1635,7 +1699,7 @@ function openDrawer(id) {
   const r = S.reservations.find(x => x.id === id); if (!r) return; drawerId = id;
   const g = guestById(r.guestId), rm = roomById(r.roomId), n = nights(r), p = paid(r), rem = remaining(r), ps = payStatus(r);
   $('#dName').textContent = guestName(g);
-  $('#dSub').innerHTML = `<span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span> &nbsp;<span class="pill ${ps}">${PAY_L[ps]}</span> &nbsp;<span style="color:var(--ink-3)">${SRC[r.source]}</span>`;
+  $('#dSub').innerHTML = `<span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span> &nbsp;<span class="pill ${ps}">${PAY_L[ps]}</span> &nbsp;<span class="src-tag" style="--sc:var(--src-${r.source}, var(--src-other))">${SRC[r.source]}</span>`;
   $('#dBody').innerHTML = `
     <div class="kv">
       <div style="grid-column:1 / -1"><label>${resRoomIds(r).length > 1 ? 'Camere' : 'Cameră'}</label><div class="roomrow">${(() => { const nb = neighbours(r); return `${nb.left ? `<button class="btn sm" title="Adaugă ${esc(nb.left.name)} din stânga" onclick="growRoom(cur(),'left')">+ ${esc(nb.left.name)}</button>` : ''}${nb.span > 1 ? `<button class="btn sm ghost" title="Scoate ${esc(nb.first.name)}" onclick="shrinkRoom(cur(),'left')">−</button>` : ''}<b>${esc(roomLabel(r))}</b> <span style="color:var(--ink-3)">· ${nb.span > 1 ? nb.span + ' camere' : esc(rm.type)}</span>${nb.span > 1 ? `<button class="btn sm ghost" title="Scoate ${esc(nb.last.name)}" onclick="shrinkRoom(cur(),'right')">−</button>` : ''}${nb.right ? `<button class="btn sm" title="Adaugă ${esc(nb.right.name)} din dreapta" onclick="growRoom(cur(),'right')">+ ${esc(nb.right.name)}</button>` : ''}`; })()}</div></div>
@@ -1943,7 +2007,7 @@ function focusRes(id) {
   openDrawer(id);
 }
 function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderPage(); }
-function renderPage(page = view.page) { if (page === 'rates') renderRates(); else if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
+function renderPage(page = view.page) { if (page === 'finance') renderFinance(); else if (page === 'rates') renderRates(); else if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
 
 /* ---------- Rates page: rooms in columns, nights in rows ---------- */
 let rv = { start: addDays(TODAY, -3), days: 62 }, rsel = { rooms: [], from: TODAY, to: addDays(TODAY, 6) }, rdrag = null, rtBusy = false, rtLastTop = 0;
@@ -2015,6 +2079,117 @@ function rtApply(reset) {
 $('#rtApply').onclick = () => rtApply(false);
 $('#rtReset').onclick = () => rtApply(true);
 $('#rtPrice').addEventListener('keydown', e => { if (e.key === 'Enter') rtApply(false); });
+
+/* ---------- Finance: what came in, what went out, what is left ---------- */
+let fin = { month: TODAY.slice(0, 7), prop: 'all' };
+const EXP_CATS = ['Salarii','Utilități','Curățenie','Întreținere și reparații','Consumabile','Comisioane','Taxe și impozite','Marketing','Altele'];
+const COMM = { booking: .15, travelminit: .12, airbnb: .03 };      // estimated platform commission
+const MONTHS_L = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
+const monthName = m => { const [y, mo] = m.split('-').map(Number); return `${MONTHS_L[mo - 1]} ${y}`; };
+const addMonths = (m, k) => { const [y, mo] = m.split('-').map(Number); const d = new Date(y, mo - 1 + k, 1); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}`; };
+const monthEnd = m => { const [y, mo] = m.split('-').map(Number); return iso(new Date(y, mo, 0)); };
+const resProp = r => roomById(r.roomId)?.propertyId;
+function expensesIn(m, prop) {
+  const a = m + '-01', b = monthEnd(m);
+  return S.expenses.filter(e => (prop === 'all' || e.propertyId === prop) &&
+    (e.recurring ? e.date <= b && (!e.until || e.until >= a) : e.date >= a && e.date <= b));
+}
+function finMonth(m, prop) {
+  const a = m + '-01', b = addDays(monthEnd(m), 1), days = diffDays(a, b);
+  const rooms = S.rooms.filter(r => r.active && !S.rooms.some(u => u.parentId === r.id) && (prop === 'all' || r.propertyId === prop));
+  let earned = 0, roomNights = 0, comm = 0, cashed = 0, outstanding = 0; const bySrc = {}, byMethod = {}, pays = [];
+  S.reservations.forEach(r => {
+    if (prop !== 'all' && resProp(r) !== prop) return;
+    r.payments.forEach(pm => { if (pm.date >= a && pm.date < b) { pays.push({ r, pm }); cashed += Number(pm.amount); byMethod[pm.method] = (byMethod[pm.method] || 0) + Number(pm.amount); } });
+    if (r.status === 'cancelled') return;
+    const s0 = r.checkIn > a ? r.checkIn : a, s1 = r.checkOut < b ? r.checkOut : b, n = diffDays(s0, s1);
+    if (n > 0) { const share = Number(r.total) * n / nights(r), k = resRoomIds(r).length;
+      earned += share; roomNights += n * k; comm += share * (COMM[r.source] || 0);
+      const x = bySrc[r.source] = bySrc[r.source] || { res: 0, n: 0, v: 0 }; x.res++; x.n += n * k; x.v += share; }
+    if (r.checkIn >= a && r.checkIn < b) outstanding += remaining(r);
+  });
+  const exps = expensesIn(m, prop), spent = exps.reduce((t, e) => t + Number(e.amount), 0);
+  return { earned, cashed, spent, comm, profit: cashed - spent - comm, outstanding, occ: rooms.length ? roomNights / (rooms.length * days) : 0, roomNights, bySrc, byMethod, pays, exps };
+}
+const lei = v => Math.round(v).toLocaleString('ro-RO') + ' lei';
+const pct = v => Math.round(v * 100) + '%';
+function renderFinance() {
+  const m = fin.month, f = finMonth(m, fin.prop), P = fin.prop === 'all' ? null : propById(fin.prop);
+  $('#finMonth').textContent = monthName(m);
+  $('#finSub').textContent = P ? P.name : 'toate proprietățile';
+  $('#finProp').innerHTML = (S.properties.length > 1 ? [['all', 'Toate'], ...S.properties.map(x => [x.id, shortProp(x)])] : []).map(([id, nm]) => `<button class="${fin.prop === id ? 'on' : ''}" data-p="${id}">${esc(nm)}</button>`).join('');
+  const tile = (label, value, small, cls = '') => `<div class="tile ${cls}"><label>${label}</label><b>${value}</b><small>${small}</small></div>`;
+  const tiles = tile('Încasat', lei(f.cashed), `${f.pays.length} plăți în lună`) +
+    tile('Venit din nopți', lei(f.earned), 'nopțile lunii, indiferent când se plătesc') +
+    tile('Cheltuieli', lei(f.spent), `${f.exps.length} înregistrări`, f.spent ? 'warn' : '') +
+    tile('Comisioane estimate', lei(f.comm), 'Booking 15%, Travelminit 12%, Airbnb 3%') +
+    tile('Profit', lei(f.profit), 'încasat minus cheltuieli și comisioane', f.profit >= 0 ? 'ok' : 'bad') +
+    tile('De încasat', lei(f.outstanding), 'rest de plată la sosirile lunii', f.outstanding ? 'bad' : '') +
+    tile('Ocupare', pct(f.occ), `${f.roomNights} nopți-cameră vândute`);
+  // by payment method
+  const methods = Object.keys(METHOD).filter(k => f.byMethod[k]);
+  const byMethod = `<table class="t"><thead><tr><th>Metodă</th><th class="r">Sumă</th><th>Pondere</th></tr></thead><tbody>${methods.map(k => `<tr><td>${METHOD[k]}</td><td class="r">${lei(f.byMethod[k])}</td><td><span class="share" style="width:${Math.round(f.byMethod[k] / f.cashed * 80)}px"></span>${pct(f.byMethod[k] / f.cashed)}</td></tr>`).join('') || '<tr><td colspan="3" class="empty">Nicio plată în lună</td></tr>'}</tbody>${methods.length ? `<tfoot><tr><td>Total</td><td class="r">${lei(f.cashed)}</td><td></td></tr></tfoot>` : ''}</table>`;
+  // by booking source
+  const srcs = Object.keys(SRC).filter(k => f.bySrc[k]);
+  const bySrc = `<table class="t"><thead><tr><th>Sursă</th><th class="r">Rezervări</th><th class="r">Nopți</th><th class="r">Venit</th><th class="r">Comision</th></tr></thead><tbody>${srcs.map(k => `<tr><td><span class="rdot" style="background:var(--src-${k}, var(--src-other))"></span>${SRC[k]}</td><td class="r">${f.bySrc[k].res}</td><td class="r">${f.bySrc[k].n}</td><td class="r">${lei(f.bySrc[k].v)}</td><td class="r">${COMM[k] ? lei(f.bySrc[k].v * COMM[k]) : '—'}</td></tr>`).join('') || '<tr><td colspan="5" class="empty">Nicio noapte vândută</td></tr>'}</tbody></table>`;
+  // by property
+  const byProp = !P && S.properties.length > 1 ? `<div class="card wide"><div class="ch">Pe proprietăți</div><div class="tbl-wrap"><table class="t"><thead><tr><th>Proprietate</th><th class="r">Ocupare</th><th class="r">Venit din nopți</th><th class="r">Încasat</th><th class="r">Cheltuieli</th><th class="r">Profit</th></tr></thead><tbody>${
+    S.properties.map(x => { const q = finMonth(m, x.id); return `<tr><td><b>${esc(x.name)}</b></td><td class="r">${pct(q.occ)}</td><td class="r">${lei(q.earned)}</td><td class="r">${lei(q.cashed)}</td><td class="r">${lei(q.spent)}</td><td class="r ${q.profit >= 0 ? 'pos' : 'neg'}">${lei(q.profit)}</td></tr>`; }).join('')}
+    <tr><td>Cheltuieli comune</td><td></td><td></td><td></td><td class="r">${lei(expensesIn(m, 'all').filter(e => !e.propertyId).reduce((t, e) => t + Number(e.amount), 0))}</td><td></td></tr></tbody></table></div></div>` : '';
+  // expenses of the month
+  const exps = f.exps.slice().sort((x, y) => Number(y.amount) - Number(x.amount));
+  const expT = `<table class="t"><thead><tr><th>Data</th><th>Categorie</th><th>Descriere</th><th>Proprietate</th><th class="r">Sumă</th><th></th></tr></thead><tbody>${exps.map(e => `<tr data-e="${e.id}"><td>${e.recurring ? 'lunar' : fmtD(e.date)}</td><td>${esc(e.category)}${e.recurring ? '<span class="rec">LUNAR</span>' : ''}</td><td style="white-space:normal">${esc(e.desc || '')}</td><td>${e.propertyId ? esc(propById(e.propertyId)?.name || '') : 'Comună'}</td><td class="r">${lei(e.amount)}</td><td class="r">${e.recurring ? `<button class="btn sm" data-stop="${e.id}">Oprește de acum</button>` : `<button class="btn sm ghost" data-del="${e.id}">Șterge</button>`}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nicio cheltuială în această lună</td></tr>'}</tbody>${exps.length ? `<tfoot><tr><td colspan="4">Total</td><td class="r">${lei(f.spent)}</td><td></td></tr></tfoot>` : ''}</table>`;
+  // month by month
+  const first = [...S.reservations.map(r => r.checkIn.slice(0, 7)), ...S.expenses.map(e => e.date.slice(0, 7))].sort()[0] || m;
+  const months = []; for (let k = -5; k <= 2; k++) { const mm = addMonths(TODAY.slice(0, 7), k); if (mm >= first) months.push(mm); }
+  const monthsT = `<table class="t"><thead><tr><th>Luna</th><th class="r">Ocupare</th><th class="r">Venit din nopți</th><th class="r">Încasat</th><th class="r">Cheltuieli</th><th class="r">Comisioane</th><th class="r">Profit</th></tr></thead><tbody>${
+    months.map(mm => { const q = finMonth(mm, fin.prop); return `<tr data-m="${mm}" class="${mm === m ? 'cur' : ''}"><td><b>${monthName(mm)}</b>${mm > TODAY.slice(0, 7) ? ' <small style="color:var(--ink-3)">în viitor</small>' : ''}</td><td class="r">${pct(q.occ)}</td><td class="r">${lei(q.earned)}</td><td class="r">${lei(q.cashed)}</td><td class="r">${lei(q.spent)}</td><td class="r">${lei(q.comm)}</td><td class="r ${q.profit >= 0 ? 'pos' : 'neg'}">${lei(q.profit)}</td></tr>`; }).join('')}</tbody></table>`;
+  // payments list
+  const pays = f.pays.slice().sort((x, y) => y.pm.date.localeCompare(x.pm.date)), shown = pays.slice(0, 60);
+  const paysT = `<table class="t"><thead><tr><th>Data</th><th>Oaspete</th><th>Cameră</th><th>Metodă</th><th>Notă</th><th class="r">Sumă</th></tr></thead><tbody>${shown.map(({ r, pm }) => `<tr data-r="${r.id}"><td>${fmtD(pm.date)}</td><td><b>${esc(resGuest(r))}</b></td><td>${esc(roomLabel(r))}</td><td>${METHOD[pm.method] || pm.method}</td><td>${esc(pm.note || '')}</td><td class="r">${lei(pm.amount)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nicio plată</td></tr>'}</tbody></table>${pays.length > shown.length ? `<div class="note">Afișez cele mai recente ${shown.length} din ${pays.length} plăți.</div>` : ''}`;
+  $('#finBody').innerHTML = `<div class="tiles">${tiles}</div>
+    <div class="cols">
+      <div class="card"><div class="ch">Încasări pe metodă<span class="cnt">${lei(f.cashed)}</span></div><div class="tbl-wrap">${byMethod}</div></div>
+      <div class="card"><div class="ch">Pe sursă de rezervare<span class="cnt">${f.roomNights} nopți</span></div><div class="tbl-wrap">${bySrc}</div></div>
+      ${byProp}
+      <div class="card wide"><div class="ch">Cheltuieli în ${monthName(m).toLowerCase()}<span class="cnt">${lei(f.spent)}</span><button class="btn sm" onclick="openExp()">+ Adaugă cheltuială</button></div><div class="tbl-wrap">${expT}</div></div>
+      <div class="card wide"><div class="ch">Lună de lună<span class="cnt">click pe o lună ca s-o deschizi</span></div><div class="tbl-wrap">${monthsT}</div></div>
+      <div class="card wide"><div class="ch">Plăți încasate în ${monthName(m).toLowerCase()}<span class="cnt">${pays.length}</span></div><div class="tbl-wrap">${paysT}</div></div>
+    </div>`;
+}
+$('#finPrev').onclick = () => { fin.month = addMonths(fin.month, -1); renderFinance(); };
+$('#finNext').onclick = () => { fin.month = addMonths(fin.month, 1); renderFinance(); };
+$('#finProp').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; fin.prop = b.dataset.p; renderFinance(); };
+$('#finAdd').onclick = () => openExp();
+$('#finBody').addEventListener('click', e => {
+  const st = e.target.closest('[data-stop]'), dl = e.target.closest('[data-del]'), mr = e.target.closest('tr[data-m]'), er = e.target.closest('tr[data-e]'), pr = e.target.closest('tr[data-r]');
+  if (st) { const x = S.expenses.find(q => q.id === st.dataset.stop); const prev = x.until; x.until = monthEnd(addMonths(fin.month, -1)); if (x.until < x.date) x.until = addDays(x.date, -1);
+    save(); renderFinance(); undoToast(`${x.category}: nu se mai adaugă din ${monthName(fin.month).toLowerCase()}`, () => { x.until = prev; }); return; }
+  if (dl) { const i = S.expenses.findIndex(q => q.id === dl.dataset.del), x = S.expenses[i]; S.expenses.splice(i, 1); save(); renderFinance();
+    undoToast(`Cheltuială ștearsă: ${x.desc || x.category}, ${lei(x.amount)}`, () => { S.expenses.splice(i, 0, x); }); return; }
+  if (mr) { fin.month = mr.dataset.m; renderFinance(); $('#finBody').scrollTop = 0; return; }
+  if (er) { openExp(er.dataset.e); return; }
+  if (pr) { focusRes(pr.dataset.r); }
+});
+let expEdit = null;
+function openExp(id = null) {
+  const x = id ? S.expenses.find(q => q.id === id) : null; expEdit = id;
+  F('expTitle').textContent = x ? 'Editează cheltuiala' : 'Cheltuială nouă';
+  F('eCat').innerHTML = EXP_CATS.map(c => `<option>${c}</option>`).join('');
+  F('eProp').innerHTML = `<option value="">Comună, pentru toate</option>` + S.properties.map(q => `<option value="${q.id}">${esc(q.name)}</option>`).join('');
+  F('eAmt').value = x ? x.amount : ''; F('eDate').value = x ? x.date : (fin.month === TODAY.slice(0, 7) ? TODAY : fin.month + '-01');
+  F('eCat').value = x ? x.category : 'Utilități'; F('eProp').value = x ? (x.propertyId || '') : (fin.prop === 'all' ? '' : fin.prop);
+  F('eDesc').value = x ? x.desc : ''; F('eRec').checked = x ? x.recurring : false;
+  F('expOverlay').classList.add('open'); setTimeout(() => F('eAmt').focus(), 50);
+}
+F('eSave').onclick = () => {
+  const amount = Math.round(+F('eAmt').value); if (!(amount > 0)) { toast('Scrie suma cheltuielii', 'bad'); F('eAmt').focus(); return; }
+  if (!F('eDate').value) { toast('Alege data', 'bad'); return; }
+  const data = { date: F('eDate').value, category: F('eCat').value, desc: F('eDesc').value.trim(), amount, propertyId: F('eProp').value || null, recurring: F('eRec').checked };
+  if (expEdit) Object.assign(S.expenses.find(q => q.id === expEdit), data); else S.expenses.push({ id: uid('e_'), until: '', ...data });
+  save(); closeOverlay('expOverlay'); fin.month = data.recurring && data.date.slice(0, 7) > fin.month ? data.date.slice(0, 7) : (data.recurring ? fin.month : data.date.slice(0, 7)); renderFinance();
+  toast(expEdit ? 'Cheltuială actualizată' : `Cheltuială adăugată: ${lei(amount)}${data.recurring ? ' pe lună' : ''}`, 'ok');
+};
 
 /* ---------- Navigation, shortcuts, theme ---------- */
 function go(page, silent = false) { if (addMode && page !== 'calendar') endAddRooms(); if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); renderPage(page); }
