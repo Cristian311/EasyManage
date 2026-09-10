@@ -1356,7 +1356,8 @@ window.addEventListener('pointermove', e => {
     drag.valid = okRooms(ids);
     if (drag.el.dataset.last === '1') { const seg0 = Math.round((drag.w0 + 8) / COLW), seg = Math.max(1, seg0 + (list.length - sorted.length)); drag.el.style.width = (seg * COLW - 8) + 'px'; }
   } else {
-    const n0 = diffDays(drag.in0, drag.out0), n = Math.max(1, n0 + dRows);
+    // the bottom edge follows the row under the pointer, so it lands under the mouse even if the block was expanded
+    const row = Math.floor((e.clientY - body.getBoundingClientRect().top) / ROWH), n = Math.max(1, row - diffDays(view.start, drag.in0) + 1);
     const newOut = addDays(drag.in0, n);
     drag.cand = { roomIds: drag.rooms0, roomId: drag.room0, checkIn: drag.in0, checkOut: newOut };
     drag.valid = okRooms(drag.rooms0);
