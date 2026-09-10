@@ -236,11 +236,22 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .peekcard .pc-al{font-weight:700;color:var(--bad);background:var(--bad-soft);padding:4px 8px;border-radius:7px;margin-bottom:6px}
 .peekcard .pc-al.warn{color:var(--warn);background:var(--warn-soft)}
 .peekcard .pc-hint{margin-top:7px;padding-top:6px;border-top:1px solid var(--line-2);font-size:11px;color:var(--ink-3)}
-.dragtip{position:fixed;z-index:400;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 11px;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(6px) scale(.97);transition:opacity .22s ease,transform .22s ease}
+.dragtip{position:fixed;z-index:400;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 11px;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow-lg);opacity:0;transform:translateX(-6px) scale(.97);transition:opacity .22s ease,transform .22s ease}
 .dragtip.on{opacity:1;transform:none}
 .dragtip b{font-family:var(--font-d);font-size:15px;font-weight:600;margin-right:4px}
 .dragtip .sub{opacity:.75;font-weight:600}
+.dragtip::before{content:"";position:absolute;top:50%;margin-top:-6px;width:0;height:0;border-top:6px solid transparent;border-bottom:6px solid transparent;left:-6px;border-right:6px solid var(--ink)}
+.dragtip.flip::before{left:auto;right:-6px;border-right:0;border-left:6px solid var(--ink)}
+.dragtip.flip{transform:translateX(6px) scale(.97)}
+.dragtip.flip.on{transform:none}
+.dragtip .sub + b,.dragtip .lbl{margin-left:0}
+.dragtip .lbl{opacity:.75;font-weight:600;margin-right:5px}
 .dragtip.bad{background:var(--bad);color:#fff}
+.dragtip.bad::before{border-right-color:var(--bad)}
+.dragtip.flip.bad::before{border-left-color:var(--bad)}
+.dc.co{box-shadow:inset 3px 0 0 var(--brass)}
+.dc.co .d1{color:var(--brass)}
+.dc.co .d2{color:var(--brass);font-weight:800}
 .res .rsx:hover{background:color-mix(in srgb,var(--c) 22%,transparent)}
 .kv .roomrow,.roomrow{display:flex;flex-direction:row;align-items:center;gap:6px;flex-wrap:wrap}
 .roomrow .btn.sm{padding:3px 8px;font-size:11.5px}
@@ -294,7 +305,7 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .drawer .hd{padding:16px 18px 12px;border-bottom:1px solid var(--line-2);display:flex;align-items:flex-start;gap:10px}
 .drawer .hd h2{font-size:19px;font-weight:600;letter-spacing:-.01em}
 .drawer .hd .sub{color:var(--ink-3);font-size:12.5px;margin-top:2px}
-.drawer .bd{flex:1;overflow:auto;padding:16px 18px;display:flex;flex-direction:column;gap:16px}
+.drawer .bd{flex:1;overflow-y:auto;overflow-x:hidden;padding:16px 18px;display:flex;flex-direction:column;gap:16px}
 .drawer .ft{padding:12px 18px;border-top:1px solid var(--line-2);display:flex;gap:8px;flex-wrap:wrap}
 .pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:800;padding:3px 9px;border-radius:99px;letter-spacing:.02em;white-space:nowrap}
 .pill i{width:7px;height:7px;border-radius:50%;background:currentColor}
@@ -304,7 +315,8 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .pill.checked_out{background:var(--surface-3);color:var(--ink-2)}
 .pill.cancelled{background:var(--bad-soft);color:var(--bad)}
 .pill.paid{background:var(--ok-soft);color:var(--ok)}.pill.partial{background:var(--warn-soft);color:var(--warn)}.pill.unpaid{background:var(--bad-soft);color:var(--bad)}
-.kv{display:grid;grid-template-columns:1fr 1fr;gap:10px 14px}
+.kv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px 14px}
+.kv b{overflow-wrap:anywhere}
 .kv div{display:flex;flex-direction:column;gap:2px}
 .kv label{font-size:11px;color:var(--ink-3);letter-spacing:.05em;text-transform:uppercase;font-weight:700}
 .kv b{font-weight:700;font-size:14px}
@@ -320,7 +332,10 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .pitem{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border:1px solid var(--line-2);border-radius:9px;font-size:13px}
 .pitem .pm{font-size:11.5px;color:var(--ink-3)}
 .pitem b{font-variant-numeric:tabular-nums}
-.addpay{display:grid;grid-template-columns:1fr 1fr auto;gap:6px}
+.addpay{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px}
+.addpay input,.addpay select{min-width:0;width:100%}
+.addpay .btn{padding:8px 11px}
+#invNo{min-width:0}
 .sec-t{font-size:11px;color:var(--ink-3);letter-spacing:.07em;text-transform:uppercase;font-weight:800;display:flex;justify-content:space-between;align-items:center}
 .notes{font-size:13px;color:var(--ink-2);border-left:3px solid var(--brass);padding:4px 10px;background:var(--surface-2);border-radius:0 8px 8px 0;white-space:pre-wrap}
 
@@ -458,7 +473,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .ctx button .lb small{display:block;color:var(--ink-3);font-weight:500;font-size:11.5px}
 .ctx button b{font-variant-numeric:tabular-nums}
 .hist{display:flex;flex-direction:column;gap:4px;margin-top:8px}
-.hist .hi{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:5px 8px;border:1px solid var(--line-2);border-radius:8px}
+.hist .hi{display:flex;flex-wrap:wrap;gap:2px 10px;justify-content:space-between;font-size:12.5px;color:var(--ink-2);padding:5px 8px;border:1px solid var(--line-2);border-radius:8px}
 .hist .hi b{color:var(--accent);font-family:var(--font-d);font-weight:600}
 .hist .lead{font-weight:700;color:var(--ink);font-size:13px;margin-top:8px}
 .toast.bad{background:var(--bad);color:#fff}.toast.ok{background:var(--ok);color:#fff}
@@ -688,6 +703,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 <div class="ctx" id="ctx"></div>
 <div class="toasts" id="toasts"></div>
 <div class="dragtip" id="dragtip"></div>
+<div class="dragtip below" id="dragtip2"></div>
 <div class="peekcard" id="peekcard"></div>
 
 <script>
@@ -1122,22 +1138,29 @@ window.addEventListener('pointerup', e => {
 window.addEventListener('pointercancel', () => { hideDragTip(); if (drag) { drag = null; renderChart(); } });
 const D = s => { const d = fromIso(s); return `${DOWS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 function showDragTip(d) {
-  const t = $('#dragtip'), c = d.cand; if (!c) return;
-  const n = diffDays(c.checkIn, c.checkOut), rooms = c.roomIds.map(id => roomById(id)?.name).join(' + ');
+  const t = $('#dragtip'), b = $('#dragtip2'), c = d.cand; if (!c) return;
+  const n = diffDays(c.checkIn, c.checkOut), nn = `${n} ${n === 1 ? 'noapte' : 'nopți'}`, rooms = c.roomIds.map(id => roomById(id)?.name).join(' + ');
   if (d.mode === 'resizex') t.innerHTML = `<b>${esc(rooms)}</b><span class="sub">${c.roomIds.length} ${c.roomIds.length === 1 ? 'cameră' : 'camere'}</span>`;
-  else if (d.mode === 'resize') t.innerHTML = `<b>→ ${D(c.checkOut)}</b><span class="sub">${n} ${n === 1 ? 'noapte' : 'nopți'}</span>`;
-  else t.innerHTML = `<b>${D(c.checkIn)}</b><span class="sub">→ ${D(c.checkOut)} · ${n} ${n === 1 ? 'noapte' : 'nopți'} · ${esc(rooms)}</span>`;
-  t.classList.toggle('bad', !d.valid);
+  else t.innerHTML = `<span class="lbl">Sosire</span><b>${D(c.checkIn)}</b><span class="sub">${nn} · ${esc(rooms)}</span>`;
+  // departure: the morning of the check-out day, right under the block where the room frees up
+  b.innerHTML = `<span class="lbl">Pleacă</span><b>${D(c.checkOut)}</b><span class="sub">dimineața</span>`;
+  [t, b].forEach(x => x.classList.toggle('bad', !d.valid));
   lightTarget(c, d.valid);
-  const r = d.el.getBoundingClientRect(), th = t.offsetHeight || 30;
-  t.style.left = Math.max(8, Math.min(r.left, innerWidth - t.offsetWidth - 8)) + 'px';
-  t.style.top = (r.top - th - 8 > 60 ? r.top - th - 8 : r.bottom + 8) + 'px';
-  t.classList.add('on');
+  // beside the block (right, or left when there is no room), so nothing above or below gets covered
+  const r = d.el.getBoundingClientRect(), th = t.offsetHeight || 30, bh = b.offsetHeight || 30, w = Math.max(t.offsetWidth, b.offsetWidth);
+  const flip = r.right + 12 + w > innerWidth - 8;
+  const x = flip ? Math.max(8, r.left - 12 - w) : r.right + 12;
+  let tTop = r.top, bTop = r.bottom - bh;
+  if (d.mode !== 'resizex' && bTop < tTop + th + 6) bTop = tTop + th + 6;      // short blocks: stack the two tags
+  tTop = Math.max(8, Math.min(innerHeight - th - 8, tTop)); bTop = Math.max(8, Math.min(innerHeight - bh - 8, bTop));
+  [t, b].forEach(el => { el.classList.toggle('flip', flip); el.style.left = (flip ? x + (w - el.offsetWidth) : x) + 'px'; });
+  t.style.top = tTop + 'px'; b.style.top = bTop + 'px';
+  t.classList.add('on'); b.classList.toggle('on', d.mode !== 'resizex');
 }
-function hideDragTip() { $('#dragtip').classList.remove('on'); lightTarget(null); }
+function hideDragTip() { $('#dragtip').classList.remove('on'); $('#dragtip2').classList.remove('on'); lightTarget(null); }
 function lightTarget(c, ok = true) {
   const band = $('#dragband'), colb = $('#dragcol'); if (!band) return;
-  $$('.dc.hl', dcol).forEach(x => x.classList.remove('hl', 'bad')); $$('.rh.hl', rhead).forEach(x => x.classList.remove('hl', 'bad'));
+  $$('.dc.hl, .dc.co', dcol).forEach(x => x.classList.remove('hl', 'bad', 'co')); $$('.rh.hl', rhead).forEach(x => x.classList.remove('hl', 'bad'));
   if (!c) { band.style.display = 'none'; colb.style.display = 'none'; return; }
   const COLW = px('--colw'), ROWH = px('--rowh'), cols = columns();
   const r0 = diffDays(view.start, c.checkIn), n = diffDays(c.checkIn, c.checkOut);
@@ -1145,6 +1168,7 @@ function lightTarget(c, ok = true) {
   band.style.cssText = `display:block;top:${r0 * ROWH}px;height:${n * ROWH}px`; band.classList.toggle('bad', !ok);
   colb.style.cssText = `display:block;left:${i0 * COLW}px;width:${(i1 - i0 + 1) * COLW}px`; colb.classList.toggle('bad', !ok);
   const dcs = dcol.children; for (let i = Math.max(0, r0); i < Math.min(dcs.length, r0 + n); i++) { dcs[i].classList.add('hl'); if (!ok) dcs[i].classList.add('bad'); }
+  if (r0 + n >= 0 && dcs[r0 + n]) dcs[r0 + n].classList.add('co');   // the morning they leave
   c.roomIds.forEach(id => { const h = rhead.querySelector(`.rh[data-room="${id}"]`); if (h) { h.classList.add('hl'); if (!ok) h.classList.add('bad'); } });
 }
 
