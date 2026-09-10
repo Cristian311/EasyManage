@@ -469,6 +469,45 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .toast button:hover{background:rgba(255,255,255,.3)}
 /* Today bar */
 .propbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 2px 10px}
+/* ---------- Rates page ---------- */
+.rt-quick{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 2px 10px}
+.rt-leg{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)}
+.rt-leg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.rt-leg i.up,.rt-grid td.up{background:color-mix(in srgb,#D9761B 17%,var(--surface))}
+.rt-leg i.down,.rt-grid td.down{background:color-mix(in srgb,#3A7BD5 15%,var(--surface))}
+.rt-grid{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);user-select:none}
+.rt-grid table{border-collapse:separate;border-spacing:0;font-variant-numeric:tabular-nums}
+.rt-grid th,.rt-grid td{border-right:1px solid var(--line-2);border-bottom:1px solid var(--line-2)}
+.rt-grid thead th{position:sticky;top:0;z-index:3;background:var(--surface);min-width:96px;padding:9px 10px 7px;text-align:left;cursor:pointer;box-shadow:inset 0 4px 0 var(--rc,transparent);border-bottom:2px solid var(--line)}
+.rt-grid thead th:hover{background:var(--surface-2)}
+.rt-grid thead th .rn{font-family:var(--font-d);font-weight:700;font-size:16px;color:var(--ink)}
+.rt-grid thead th .rt{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);margin-top:2px;white-space:nowrap}
+.rt-grid thead th .rt b{color:var(--ink-2)}
+.rt-grid .cap{font-weight:900;font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--surface-3);color:var(--ink-2)}
+.rt-grid .cap.c2{background:var(--accent-soft);color:var(--accent)}
+.rt-grid .cap.c4{background:var(--warn-soft);color:#9A6A00}
+.rt-grid thead th.rt-corner{left:0;z-index:4;cursor:default;min-width:104px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;vertical-align:bottom}
+.rt-grid tbody th{position:sticky;left:0;z-index:2;background:var(--surface);padding:0 10px;text-align:left;white-space:nowrap;height:36px;min-width:104px;font-weight:500;color:var(--ink-3);font-size:11px}
+.rt-grid tbody th b{font-family:var(--font-d);font-weight:600;font-size:14px;color:var(--ink);margin-right:4px}
+.rt-grid td{text-align:center;height:36px;min-width:96px;font-weight:600;font-size:13.5px;color:var(--ink-3);cursor:cell}
+.rt-grid td.up{color:#9A4A00;font-weight:800}
+.rt-grid td.down{color:#1F4E9A;font-weight:800}
+.rt-grid tr.wk td:not(.up):not(.down),.rt-grid tr.wk th{background:var(--weekend)}
+.rt-grid tr.past td,.rt-grid tr.past th{opacity:.55}
+.rt-grid tr.today th{background:var(--today);color:var(--brass);font-weight:800}
+.rt-grid tr.m1 td,.rt-grid tr.m1 th{border-top:2px solid var(--ink-3)}
+.rt-grid td.sel{outline:2px solid var(--accent);outline-offset:-2px;background:var(--sel)!important;color:var(--ink)}
+:root[data-theme="dark"] .rt-grid td.up{color:#F2A65A}
+:root[data-theme="dark"] .rt-grid td.down{color:#8FB5F5}
+.rt-panel{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;padding:12px 18px;border-top:1px solid var(--line);background:var(--surface);box-shadow:0 -8px 24px -16px rgba(22,36,43,.25)}
+.rt-panel .rt-info{flex:1 1 260px;min-width:0;font-size:13px;color:var(--ink-2)}
+.rt-panel .rt-info b{color:var(--ink);font-family:var(--font-d);font-size:16px}
+.rt-panel .rt-info small{display:block;color:var(--ink-3);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rt-panel .f input{min-width:0}
+.rt-panel #rtPrice{width:120px;font-weight:800;font-size:16px}
+.rt-panel .chk{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink-2);padding-bottom:8px}
+.rh .rt .pr.up{color:#C2610F}
+.rh .rt .pr.down{color:#2F6FDB}
 .propbar .pb-l{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:800;margin-right:2px}
 .propbar .seg button{padding:6px 12px;white-space:nowrap}
 .propbar .pb-g{font-size:12px;color:var(--ink-2);font-weight:800;margin-left:6px}
@@ -570,6 +609,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
       <button class="nav-item" data-page="guests"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M15.5 14.5a5 5 0 0 1 6 5"/></svg><span>Oaspeți</span></button>
       <div class="sec">Proprietate</div>
       <button class="nav-item" data-page="rooms"><svg viewBox="0 0 24 24"><path d="M3 18V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10"/><path d="M3 12h18M3 21v-3M21 21v-3"/><path d="M7 12V9h4v3"/></svg><span>Camere</span></button>
+      <button class="nav-item" data-page="rates"><svg viewBox="0 0 24 24"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg><span>Tarife</span></button>
       <button class="nav-item soonwrap" data-page="payments"><svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20M6 15h3"/></svg><span>Plăți</span><span class="soon">MVP</span></button>
       <button class="nav-item soonwrap" data-page="invoices"><svg viewBox="0 0 24 24"><path d="M6 2h9l5 5v15H6z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg><span>Facturi</span><span class="soon">MVP</span></button>
       <button class="nav-item soonwrap" data-page="settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Setări</span></button>
@@ -645,6 +685,26 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
       <div class="scroll"><div id="floorBody"></div><div id="roomBody"></div></div>
     </section>
 
+    <section class="page" id="page-rates">
+      <div class="topbar"><h1>Tarife <small>preț pe noapte, pe cameră și pe zi</small></h1><div class="spacer"></div>
+        <button class="btn" id="rtToday">Azi</button>
+        <label class="btn" style="cursor:pointer">Sari la <input type="date" id="rtJump" style="border:0;background:transparent;padding:0;font:inherit;color:inherit"></label>
+      </div>
+      <div class="chart-wrap">
+        <div class="propbar" id="rtProp"></div>
+        <div class="rt-quick" id="rtQuick"></div>
+        <div class="rt-grid" id="rtGrid"></div>
+      </div>
+      <div class="rt-panel">
+        <div class="rt-info" id="rtInfo"></div>
+        <div class="f"><label>De la</label><input type="date" id="rtFrom"></div>
+        <div class="f"><label>Până la (ultima noapte)</label><input type="date" id="rtTo"></div>
+        <div class="f"><label>Preț / noapte (lei)</label><input type="number" id="rtPrice" min="0" step="10" placeholder="ex: 300"></div>
+        <label class="chk"><input type="checkbox" id="rtWk"> Doar nopțile de vineri și sâmbătă</label>
+        <button class="btn primary" id="rtApply">Aplică prețul</button>
+        <button class="btn" id="rtReset">Revino la prețul de bază</button>
+      </div>
+    </section>
     <section class="page" id="page-payments"><div class="topbar"><h1>Plăți</h1></div><div class="scroll"><div class="ph"><h2>Plățile se înregistrează direct din rezervare</h2><p>Deschide o rezervare din calendar și adaugă plata în sertarul din dreapta. Un raport separat de încasări vine în MVP.</p></div></div></section>
     <section class="page" id="page-invoices"><div class="topbar"><h1>Facturi</h1></div><div class="scroll"><div class="ph"><h2>Registru de facturi</h2><p>În MVP: marchezi rezervarea ca facturată și salvezi numărul, data și totalul. Integrarea e-Factura vine după.</p></div></div></section>
     <section class="page" id="page-settings"><div class="topbar"><h1>Setări</h1></div><div class="scroll"><div class="ph"><h2>Proprietate și cont</h2><p>Nume, adresă, CUI, monedă, ore de check-in / check-out. Intenționat mic.</p><button class="btn" onclick="resetDemo()">Resetează datele demo</button></div></div></section>
@@ -924,12 +984,23 @@ function seed() {
       day = out;
     }
   });
-  return { properties, floors, rooms, guests, reservations };
+  return { properties, floors, rooms, guests, reservations, rates: demoRates(rooms) };
+}
+// sample seasons so the rates grid shows something: August +20%, September weekends +30 lei, November -15%
+function demoRates(rooms) {
+  const y = fromIso(TODAY).getFullYear(), out = {}, r10 = v => Math.round(v / 10) * 10;
+  rooms.forEach(rm => { const m = {};
+    for (let d = `${y}-08-01`; d <= `${y}-08-31`; d = addDays(d, 1)) m[d] = r10(rm.price * 1.2);
+    for (let d = `${y}-09-01`; d <= `${y}-09-30`; d = addDays(d, 1)) { const w = fromIso(d).getDay(); if (w === 5 || w === 6) m[d] = rm.price + 30; }
+    for (let d = `${y}-11-01`; d <= `${y}-11-30`; d = addDays(d, 1)) m[d] = r10(rm.price * .85);
+    out[rm.id] = m; });
+  return out;
 }
 function load() { let s = null; try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.rooms && j.reservations) s = j; } catch(e){} if (!s) s = seed();
   s.reservations.forEach(r => { if (!r.roomIds || !r.roomIds.length) r.roomIds = [r.roomId]; r.roomId = r.roomIds[0]; });
   if (!s.properties || !s.properties.length) s.properties = [{ id: uid('p_'), name: 'Pensiunea Ta', city: '' }];
   if (!s.floors) s.floors = [];
+  if (!s.rates) s.rates = demoRates(s.rooms);
   s.rooms.forEach(r => { if (!s.properties.some(x => x.id === r.propertyId)) r.propertyId = s.properties[0].id; if (r.floorId && !s.floors.some(f => f.id === r.floorId)) r.floorId = null; });
   return s; }
 function save() { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e){} }
@@ -949,6 +1020,16 @@ const isActiveRes = r => r.status !== 'cancelled';
 // Double-booking rule: overlap when a.in < b.out && b.in < a.out (back-to-back is fine)
 const resRoomIds = r => r.roomIds && r.roomIds.length ? r.roomIds : [r.roomId];
 const roomLabel = r => resRoomIds(r).map(id => roomById(id)?.name || '—').join(' + ');
+/* Rates: a special price for a room on a night, otherwise the room's base price */
+const rateFor = (roomId, d) => { const v = S.rates && S.rates[roomId] && S.rates[roomId][d]; return v != null ? v : (roomById(roomId)?.price || 0); };
+function stayPrice(ids, a, b) { let t = 0; for (let d = a; d < b; d = addDays(d, 1)) ids.forEach(id => { t += rateFor(id, d); }); return t; }
+const isWkNight = d => { const w = fromIso(d).getDay(); return w === 5 || w === 6; };
+function setRates(ids, from, to, price, wkOnly) {
+  if (to < from) [from, to] = [to, from];
+  for (let d = from; d <= to; d = addDays(d, 1)) { if (wkOnly && !isWkNight(d)) continue;
+    ids.forEach(id => { const rm = roomById(id); if (!rm) return; S.rates[id] = S.rates[id] || {};
+      if (price == null || price === rm.price) delete S.rates[id][d]; else S.rates[id][d] = price; }); }
+}
 function conflict(roomId, checkIn, checkOut, exceptId=null) {
   return S.reservations.find(r => r.id !== exceptId && resRoomIds(r).includes(roomId) && isActiveRes(r) && checkIn < r.checkOut && r.checkIn < checkOut) || null;
 }
@@ -1037,7 +1118,7 @@ function renderChart() {
     const grp = c.parent ? `<div class="grp">${esc(c.parent.name)} · ${esc(c.parent.type)}</div>` : fl;
     const nm = c.parent ? esc(r.label || r.name.split('·').pop().trim()) : esc(r.name);
     return `<div class="rh ${c.pos} ${r.active ? '' : 'inactive'} ${r.color ? 'colored' : ''} ${sep ? 'fsep' : ''}" data-col="${i}" data-room="${r.id}" data-top="${c.parent ? c.parent.id : r.id}" style="${r.color ? `--rc:${r.color}` : ''}">
-      ${grp}<div class="rn">${nm}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span><span class="ty">${esc(r.type)}</span><b class="num pr">${r.price} lei</b></div>
+      ${grp}<div class="rn">${nm}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span><span class="ty">${esc(r.type)}</span><b class="num pr" data-pr="${r.id}">${r.price} lei</b></div>
       <button class="menu-btn" data-menu="${r.id}" title="Opțiuni cameră"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
     </div>`;
   }).join('') + `<div class="rh add" id="addRoomCol">+ Cameră</div>`;
@@ -1437,14 +1518,14 @@ function growRoom(r, side) {
   const nb = neighbours(r), rm = nb[side]; if (!rm) return;
   if (!rm.active) { toast(`${rm.name} este dezactivată`, 'bad'); return; }
   const c = conflict(rm.id, r.checkIn, r.checkOut, r.id); if (c) { toast(`${rm.name} e ocupată de ${resGuest(c)} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)})`, 'bad'); return; }
-  const prev = resRoomIds(r).slice(), prevTotal = r.total, add = rm.price * nights(r);
+  const prev = resRoomIds(r).slice(), prevTotal = r.total, add = stayPrice([rm.id], r.checkIn, r.checkOut);
   setRooms(r, side === 'right' ? [...prev, rm.id] : [rm.id, ...prev]); r.total = Number(r.total) + add;
   save(); renderAll(); if (drawerId === r.id) openDrawer(r.id); undoToast(`${resGuest(r)} ocupă acum ${roomLabel(r)} · +${money(add)}`, () => { setRooms(r, prev); r.total = prevTotal; }, 'ok'); offerMerge(r);
 }
 function shrinkRoom(r, side) {
   const prev = resRoomIds(r).slice(); if (prev.length < 2) return;
   const cols = columns(), sorted = prev.slice().sort((a, b) => cols.findIndex(c => c.room.id === a) - cols.findIndex(c => c.room.id === b));
-  const gone = side === 'right' ? sorted.pop() : sorted.shift(), prevTotal = r.total, less = (roomById(gone)?.price || 0) * nights(r);
+  const gone = side === 'right' ? sorted.pop() : sorted.shift(), prevTotal = r.total, less = stayPrice([gone], r.checkIn, r.checkOut);
   setRooms(r, sorted); r.total = Math.max(0, Number(r.total) - less); save(); renderAll(); if (drawerId === r.id) openDrawer(r.id);
   undoToast(`${roomById(gone)?.name} scoasă. ${resGuest(r)} rămâne pe ${roomLabel(r)} · −${money(less)}`, () => { setRooms(r, prev); r.total = prevTotal; });
 }
@@ -1485,7 +1566,7 @@ function finishAddRooms(id, rooms, inD, outD) {
   if (o.kind === 'merge') {
     const cols = columns(), idxOf = x => cols.findIndex(q => q.room.id === x);
     const prevRooms = resRoomIds(r).slice(), prevTotal = r.total;
-    const add = o.ids.reduce((t, x) => t + (roomById(x)?.price || 0), 0) * nights(r);
+    const add = stayPrice(o.ids, r.checkIn, r.checkOut);
     setRooms(r, [...prevRooms, ...o.ids].sort((x, y) => idxOf(x) - idxOf(y))); r.total = Number(r.total) + add;
     save(); renderAll();
     const el = body.querySelector(`.res[data-id="${r.id}"]`); if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); }
@@ -1615,10 +1696,10 @@ function saveInvoice() { const r = cur(); r.invoiceNo = $('#invNo').value.trim()
 function deleteRes() { const r = cur(); if (!confirm('Ștergi definitiv această rezervare?')) return; S.reservations = S.reservations.filter(x => x.id !== r.id); save(); closeDrawer(); renderAll(); toast('Rezervare ștearsă'); }
 
 /* ---------- Reservation modal ---------- */
-let editId = null, selGuest = null, mRooms = [], totalManual = false;
+let editId = null, selGuest = null, mRooms = [], totalManual = false, rateManual = false;
 const F = id => $('#' + id);
 function openResModal(pre = null, id = null) {
-  editId = id; selGuest = null; totalManual = false; F('resAlert').classList.remove('on');
+  editId = id; selGuest = null; totalManual = false; rateManual = false; F('resAlert').classList.remove('on');
   const rooms = bookableRooms();
   const r = id ? S.reservations.find(x => x.id === id) : null;
   F('resTitle').textContent = r ? 'Editează rezervarea' : 'Rezervare nouă';
@@ -1659,9 +1740,12 @@ function recalc(fromRate = false) {
   const n = diffDays(F('fIn').value, F('fOut').value);
   const okN = Number.isFinite(n) && n >= 1;
   F('fOutHint').textContent = okN ? `${n} ${n === 1 ? 'noapte' : 'nopți'}` : 'Check-out trebuie să fie după check-in'; F('fOutHint').className = 'hint' + (okN ? '' : ' bad');
-  if (fromRate && okN && !totalManual) F('fTotal').value = (+F('fRate').value || 0) * n;
-  F('fTotalHint').textContent = totalManual ? 'Preț introdus manual' : (okN ? `${+F('fRate').value || 0} × ${n} ${n === 1 ? 'noapte' : 'nopți'}, îl poți modifica` : 'Se calculează, dar îl poți scrie tu'); F('fTotalHint').classList.toggle('manual', totalManual);
-  F('fRateHint').textContent = mRooms.length > 1 ? 'suma camerelor, editabil' : '';
+  const sp = okN && mRooms.length ? stayPrice(mRooms, F('fIn').value, F('fOut').value) : 0;
+  const varies = okN && mRooms.some(id => { const f = rateFor(id, F('fIn').value); for (let d = F('fIn').value; d < F('fOut').value; d = addDays(d, 1)) if (rateFor(id, d) !== f) return true; return false; });
+  if (fromRate && okN && !totalManual && !rateManual) F('fRate').value = Math.round(sp / n);
+  if (fromRate && okN && !totalManual) F('fTotal').value = rateManual ? (+F('fRate').value || 0) * n : sp;
+  F('fTotalHint').textContent = totalManual ? 'Preț introdus manual' : (okN ? (rateManual || !varies ? `${+F('fRate').value || 0} × ${n} ${n === 1 ? 'noapte' : 'nopți'}, îl poți modifica` : 'după tarifele fiecărei nopți, îl poți modifica') : 'Se calculează, dar îl poți scrie tu'); F('fTotalHint').classList.toggle('manual', totalManual);
+  F('fRateHint').textContent = [mRooms.length > 1 ? 'suma camerelor' : '', varies && !rateManual ? 'medie, prețul variază pe nopți' : ''].filter(Boolean).join(' · ');
   const total = +F('fTotal').value || 0, p = editId ? paid(S.reservations.find(x => x.id === editId)) : (+F('fPaid').value || 0), rem = Math.max(0, total - p);
   F('cNights').textContent = okN ? n : '–'; F('cTotal').textContent = money(total); F('cPaid').textContent = money(p); F('cRem').textContent = rem === 0 && total > 0 ? 'Achitat' : money(rem);
   F('cRemWrap').classList.toggle('zero', rem === 0 && total > 0);
@@ -1671,7 +1755,7 @@ function recalc(fromRate = false) {
   else F('resAlert').classList.remove('on');
 }
 ['fIn','fOut'].forEach(id => F(id).addEventListener('change', () => { if (id === 'fIn' && F('fOut').value <= F('fIn').value) F('fOut').value = addDays(F('fIn').value, 1); recalc(true); }));
-F('fRate').addEventListener('input', () => { totalManual = false; recalc(true); });   // typing a rate goes back to the automatic total
+F('fRate').addEventListener('input', () => { totalManual = false; rateManual = true; recalc(true); });   // typing a rate goes back to the automatic total
 F('fTotal').addEventListener('input', () => { totalManual = F('fTotal').value !== ''; recalc(false); });
 F('fPaid').addEventListener('input', () => recalc(false));
 function showChip() { const c = F('guestChip'); if (selGuest) { c.style.display = ''; c.innerHTML = `<span class="chip">${esc(guestName(selGuest))} · ${esc(selGuest.phone || '')}<button onclick="clearGuest()" title="Schimbă">×</button></span>`; F('fGuest').style.display = 'none'; } else { c.style.display = 'none'; F('fGuest').style.display = ''; } }
@@ -1811,9 +1895,10 @@ function renderPropBar() {
   const fbtn = f => `<button class="${view.floor === f.id ? 'on' : ''}" data-f="${f.id}">${esc(f.name)}</button>`;
   const groups = view.prop === 'all' && props.length > 1 ? props.map(p => ({ p, fl: floors.filter(f => f.propertyId === p.id) })).filter(x => x.fl.length) : [{ p: null, fl: floors }];
   const fb = floors.length ? `<span class="pb-l">Etaj</span><div class="seg"><button class="all ${view.floor === 'all' ? 'on' : ''}" data-f="all">Toate</button></div>` + groups.map(x => `${x.p ? `<span class="pb-g">${esc(shortProp(x.p))}</span>` : ''}<div class="seg">${x.fl.map(fbtn).join('')}</div>`).join('') : '';
-  $('#propbar').innerHTML = `<button class="btn sm" onclick="goBack()" title="Ecranul de dinainte (Alt + ←)">‹ Înapoi</button><span class="sep"></span>` + pb + fb + `<button class="btn sm ghost" onclick="go('rooms')">Etaje și proprietăți…</button>`;
+  const pbHtml = `<button class="btn sm" onclick="goBack()" title="Ecranul de dinainte (Alt + ←)">‹ Înapoi</button><span class="sep"></span>` + pb + fb + `<button class="btn sm ghost" onclick="go('rooms')">Etaje și proprietăți…</button>`;
+  $('#propbar').innerHTML = pbHtml; if ($('#rtProp')) $('#rtProp').innerHTML = pbHtml;
   const bs = $('#brandSub'); if (bs) bs.textContent = curP ? curP.name : (props[0]?.name || '');
-  $('#propbar').onclick = e => { const b = e.target.closest('button[data-p],button[data-f]'); if (!b) return;
+  $('#propbar').onclick = $('#rtProp').onclick = e => { const b = e.target.closest('button[data-p],button[data-f]'); if (!b) return;
     if (b.dataset.p) { view.prop = b.dataset.p; view.floor = 'all'; } else view.floor = b.dataset.f;
     pushNav(); saveView(); renderAll(); };
   $('#propName').textContent = curP ? `${curP.name}${curP.city ? ' · ' + curP.city : ''}${view.floor !== 'all' ? ' · ' + (floorById(view.floor)?.name || '') : ''}` : (props.length > 1 ? `${props.length} proprietăți` : `${props[0]?.name || ''}${props[0]?.city ? ' · ' + props[0].city : ''}`);
@@ -1834,7 +1919,7 @@ function renderTodayBar() {
     { k: 'arr', t: 'Sosiri', n: arr.length + late.length, c: 'var(--st-confirmed)', warn: late.length > 0, title: late.length ? `${late.length} întârziate` : '', items: [...late, ...arr].map(item) },
     { k: 'dep', t: 'Plecări', n: dep.length, c: 'var(--st-out)', warn: dep.some(r => remaining(r) > 0), items: dep.map(item) },
     { k: 'in', t: 'Cazați', n: inh.length, c: 'var(--st-in)', items: inh.map(item) },
-    { k: 'free', t: 'Libere', n: free.length, c: 'var(--line)', items: free.map(rm => ({ room: rm.name, label: `${rm.type} · ${rm.capacity} pers · ${rm.price} lei`, sub: 'Click: rezervare pentru azi', go: () => openResModal({ roomId: rm.id, checkIn: TODAY, checkOut: addDays(TODAY, 1) }) })) },
+    { k: 'free', t: 'Libere', n: free.length, c: 'var(--line)', items: free.map(rm => ({ room: rm.name, label: `${rm.type} · ${rm.capacity} pers · ${rateFor(rm.id, TODAY)} lei`, sub: 'Click: rezervare pentru azi', go: () => openResModal({ roomId: rm.id, checkIn: TODAY, checkOut: addDays(TODAY, 1) }) })) },
     { k: 'owed', t: 'De încasat', n: owed.length, right: owedSum ? money(owedSum) : '', c: 'var(--warn)', warn: owed.length > 0, items: owed.map(item) },
   ];
   $('#todaybar').innerHTML = `<span class="tb-d">${fmtDL(TODAY)}</span>` + chips.map((c, i) => `<button class="tb-chip ${c.warn ? 'warn' : ''}" data-i="${i}" title="${esc(c.title || '')}"><i style="--c:${c.c}"></i>${c.t} <b>${c.n}</b>${c.right ? `<span style="color:var(--ink-3)">· ${c.right}</span>` : ''}</button>`).join('');
@@ -1858,7 +1943,78 @@ function focusRes(id) {
   openDrawer(id);
 }
 function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderPage(); }
-function renderPage(page = view.page) { if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
+function renderPage(page = view.page) { if (page === 'rates') renderRates(); else if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
+
+/* ---------- Rates page: rooms in columns, nights in rows ---------- */
+let rv = { start: addDays(TODAY, -3), days: 62 }, rsel = { rooms: [], from: TODAY, to: addDays(TODAY, 6) }, rdrag = null, rtBusy = false, rtLastTop = 0;
+function renderRates() {
+  renderPropBar(); renderRtQuick();
+  const cols = columns().map(c => c.room), days = Array.from({ length: rv.days }, (_, i) => addDays(rv.start, i));
+  const g = $('#rtGrid'), keepT = g.scrollTop, keepL = g.scrollLeft;
+  const head = `<tr><th class="rt-corner">Noaptea din ↓</th>${cols.map(r => `<th data-r="${r.id}" style="--rc:${r.color || 'transparent'}"><div class="rn">${esc(r.name)}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span>bază <b>${r.price}</b></div></th>`).join('')}</tr>`;
+  const rows = days.map(d => { const dt = fromIso(d), wk = isWkNight(d);
+    return `<tr class="${wk ? 'wk' : ''} ${d === TODAY ? 'today' : ''} ${d < TODAY ? 'past' : ''} ${dt.getDate() === 1 ? 'm1' : ''}"><th><b>${dt.getDate()} ${MONTHS[dt.getMonth()]}</b>${d === TODAY ? 'AZI' : DOWS[dt.getDay()]}</th>${cols.map(r => {
+      const v = S.rates[r.id] && S.rates[r.id][d], cls = v == null ? '' : v > r.price ? 'up' : v < r.price ? 'down' : '';
+      return `<td data-r="${r.id}" data-d="${d}" class="${cls}">${v != null ? v : r.price}</td>`; }).join('')}</tr>`; }).join('');
+  g.innerHTML = `<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;
+  g.scrollTop = keepT; g.scrollLeft = keepL; paintSel();
+}
+function renderRtQuick() {
+  const tops = columns().map(c => c.room), fl = [...new Set(tops.map(r => r.floorId).filter(Boolean))].map(floorById).filter(Boolean);
+  const grp = [['Toate camerele', () => true], ['2 persoane', r => r.capacity === 2], ['4 persoane', r => r.capacity === 4],
+    ...fl.map(f => [(view.prop === 'all' && S.properties.length > 1 ? shortProp(propById(f.propertyId)) + ' · ' : '') + f.name, r => r.floorId === f.id])];
+  $('#rtQuick').innerHTML = `<span class="pb-l">Selectează</span>` + grp.map((x, i) => `<button class="btn sm" data-g="${i}">${esc(x[0])}</button>`).join('') +
+    `<span class="rt-leg"><i class="up"></i>mai scump decât baza <i class="down"></i>mai ieftin</span>`;
+  $('#rtQuick').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; rsel.rooms = tops.filter(grp[+b.dataset.g][1]).map(r => r.id); paintSel(); $('#rtPrice').focus(); };
+}
+function paintSel() {
+  $$('#rtGrid td[data-r]').forEach(td => td.classList.toggle('sel', rsel.rooms.includes(td.dataset.r) && td.dataset.d >= rsel.from && td.dataset.d <= rsel.to));
+  $('#rtFrom').value = rsel.from; $('#rtTo').value = rsel.to;
+  const n = diffDays(rsel.from, rsel.to) + 1, k = rsel.rooms.length;
+  $('#rtInfo').innerHTML = k ? `<b>${n}</b> ${n === 1 ? 'noapte' : 'nopți'} · <b>${k}</b> ${k === 1 ? 'cameră' : 'camere'} · ${fmtD(rsel.from)} – ${fmtD(rsel.to)}<small>${esc(rsel.rooms.map(id => roomById(id)?.name).slice(0, 10).join(', '))}${k > 10 ? '…' : ''}</small>`
+                           : 'Trage pe grilă peste camere și zile, sau alege un grup de camere de mai sus.';
+  $('#rtApply').disabled = $('#rtReset').disabled = !k;
+}
+function rtSelect(td) {
+  const c1 = rdrag.cols.indexOf(td.dataset.r), a = Math.min(rdrag.c0, c1), b = Math.max(rdrag.c0, c1), d1 = td.dataset.d;
+  rsel.rooms = rdrag.cols.slice(a, b + 1); rsel.from = d1 < rdrag.d0 ? d1 : rdrag.d0; rsel.to = d1 < rdrag.d0 ? rdrag.d0 : d1; paintSel();
+}
+$('#rtGrid').addEventListener('pointerdown', e => {
+  const td = e.target.closest('td[data-r]'); if (!td || e.button !== 0) return; e.preventDefault();
+  const cols = columns().map(c => c.room.id); rdrag = { cols, c0: cols.indexOf(td.dataset.r), d0: td.dataset.d }; rtSelect(td);
+});
+window.addEventListener('pointermove', e => { if (!rdrag) return; const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest('#rtGrid td[data-r]'); if (td) rtSelect(td); });
+window.addEventListener('pointerup', () => { if (!rdrag) return; rdrag = null; $('#rtPrice').focus(); $('#rtPrice').select(); });
+// click a room header: change its base price
+$('#rtGrid').addEventListener('click', e => {
+  const th = e.target.closest('thead th[data-r]'); if (!th) return; const rm = roomById(th.dataset.r); if (!rm) return;
+  const v = prompt(`Prețul de bază pentru ${rm.name}, în lei pe noapte. Se folosește în zilele fără tarif special.`, rm.price); if (v == null) return;
+  const n = Math.round(+v); if (!(n > 0)) { toast('Scrie un preț mai mare ca zero', 'bad'); return; }
+  const old = rm.price; rm.price = n; save(); renderAll(); undoToast(`Prețul de bază pentru ${rm.name}: ${n} lei`, () => { rm.price = old; }, 'ok');
+});
+// endless nights, both ways
+$('#rtGrid').addEventListener('scroll', e => {
+  const g = e.target, up = g.scrollTop < rtLastTop; rtLastTop = g.scrollTop; if (rtBusy) return;
+  if (g.scrollTop + g.clientHeight > g.scrollHeight - 150) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
+  else if (up && g.scrollTop < 60) { rtBusy = true; const rh = (g.querySelector('tbody tr') || {}).offsetHeight || 36; rv.start = addDays(rv.start, -31); rv.days += 31; renderRates(); g.scrollTop += 31 * rh; rtLastTop = g.scrollTop; rtBusy = false; }
+}, { passive: true });
+function rtJump(d) { rv.start = d; rv.days = 62; renderRates(); $('#rtGrid').scrollTop = 0; }
+$('#rtToday').onclick = () => rtJump(addDays(TODAY, -3));
+$('#rtJump').addEventListener('change', e => { if (e.target.value) rtJump(e.target.value); });
+['rtFrom', 'rtTo'].forEach(id => $('#' + id).addEventListener('change', () => {
+  let a = $('#rtFrom').value, b = $('#rtTo').value; if (!a || !b) return; if (b < a) [a, b] = [b, a]; rsel.from = a; rsel.to = b; paintSel();
+}));
+function rtApply(reset) {
+  if (!rsel.rooms.length) return;
+  const price = reset ? null : Math.round(+$('#rtPrice').value);
+  if (!reset && !(price > 0)) { toast('Scrie prețul pe noapte', 'bad'); $('#rtPrice').focus(); return; }
+  const snap = JSON.stringify(S.rates), wk = $('#rtWk').checked, k = rsel.rooms.length, per = `${fmtD(rsel.from)} – ${fmtD(rsel.to)}`;
+  setRates(rsel.rooms, rsel.from, rsel.to, price, wk); save(); renderAll();
+  undoToast(reset ? `Prețul de bază revine pe ${k} ${k === 1 ? 'cameră' : 'camere'}, ${per}` : `${price} lei pe noapte pe ${k} ${k === 1 ? 'cameră' : 'camere'}, ${per}${wk ? ', doar vineri și sâmbătă' : ''}`, () => { S.rates = JSON.parse(snap); }, 'ok');
+}
+$('#rtApply').onclick = () => rtApply(false);
+$('#rtReset').onclick = () => rtApply(true);
+$('#rtPrice').addEventListener('keydown', e => { if (e.key === 'Enter') rtApply(false); });
 
 /* ---------- Navigation, shortcuts, theme ---------- */
 function go(page, silent = false) { if (addMode && page !== 'calendar') endAddRooms(); if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); renderPage(page); }
@@ -1888,6 +2044,9 @@ function updatePeriodLabel() {
   const ROWH = px('--rowh'), a = Math.max(0, Math.floor(chart.scrollTop / ROWH)), b = Math.min(shownDays - 1, Math.floor((chart.scrollTop + chart.clientHeight - px('--headh') - 1) / ROWH));
   const d0 = addDays(view.start, a), d1 = addDays(view.start, Math.max(a, b));
   $('#periodLbl').textContent = `${fmtD(d0)} – ${fmtD(d1)} ${fromIso(d1).getFullYear()}`;
+  // prices in the room headers are the ones for the first night on screen
+  $$('.pr[data-pr]', rhead).forEach(b => { const rm = roomById(b.dataset.pr); if (!rm) return; const v = rateFor(rm.id, d0);
+    b.textContent = v + ' lei'; b.classList.toggle('up', v > rm.price); b.classList.toggle('down', v < rm.price); });
 }
 $('#periodLbl').onclick = e => { e.preventDefault(); const d = $('#jumpDate'); d.value = view.start; if (d.showPicker) d.showPicker(); else d.click(); };
 $('#jumpDate').addEventListener('change', e => { if (e.target.value) jumpTo(e.target.value); });
