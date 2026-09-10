@@ -487,6 +487,14 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 @media (max-width:900px){#finBody .cols{grid-template-columns:1fr}}
 /* charts: validated two-series palette (blue = in, orange = out), light and dark steps */
 .viz,.vztip{--s1:#2a78d6;--s2:#eb6834}
+.fx{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.fx input{width:70px;border:1px solid var(--line);border-radius:8px;padding:5px 7px;background:var(--surface);font-weight:800;font-variant-numeric:tabular-nums}
+table.t thead th{cursor:pointer;user-select:none;transition:color .12s}
+table.t thead th:hover{color:var(--ink)}
+table.t thead th:empty{cursor:default}
+table.t thead th.s-asc,table.t thead th.s-desc{color:var(--accent)}
+table.t thead th.s-asc::after{content:" \25B2";font-size:9px}
+table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 :root[data-theme="dark"] .viz,:root[data-theme="dark"] .vztip{--s1:#3987e5;--s2:#d95926}
 .viz-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
 @media (max-width:900px){.viz-grid{grid-template-columns:1fr}}
@@ -541,6 +549,21 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .rt-grid tr.past td,.rt-grid tr.past th{opacity:.55}
 .rt-grid tr.today th{background:var(--today);color:var(--brass);font-weight:800}
 .rt-grid tr.m1 td,.rt-grid tr.m1 th{border-top:2px solid var(--ink-3)}
+.rt-grid.flip thead th.dh{min-width:68px;padding:7px 6px;text-align:center;cursor:default;box-shadow:none;white-space:nowrap}
+.rt-grid.flip thead th.dh b{display:block;font-family:var(--font-d);font-weight:600;font-size:14px;color:var(--ink)}
+.rt-grid.flip thead th.dh small{font-size:10.5px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.04em}
+.rt-grid.flip thead th.dh.today{background:var(--today)}
+.rt-grid.flip thead th.dh.today small{color:var(--brass);font-weight:800}
+.rt-grid.flip thead th.dh.wk{background:var(--weekend)}
+.rt-grid.flip tbody th.rh2{min-width:128px;height:46px;cursor:pointer;box-shadow:inset 4px 0 0 var(--rc,transparent);padding:4px 10px 4px 14px}
+.rt-grid.flip tbody th.rh2:hover{background:var(--surface-2)}
+.rt-grid .rh2 .rn{font-family:var(--font-d);font-weight:700;font-size:15px;color:var(--ink)}
+.rt-grid .rh2 .rt{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);margin-top:2px}
+.rt-grid .rh2 .rt b{color:var(--ink-2)}
+.rt-grid.flip td{min-width:68px;height:46px}
+.rt-grid.flip td.wk:not(.up):not(.down){background:var(--weekend)}
+.rt-grid.flip td.past,.rt-grid.flip th.dh.past{opacity:.55}
+.rt-grid.flip .m1{border-left:2px solid var(--ink-3)}
 .rt-grid td.sel{outline:2px solid var(--accent);outline-offset:-2px;background:var(--sel)!important;color:var(--ink)}
 :root[data-theme="dark"] .rt-grid td.up{color:#F2A65A}
 :root[data-theme="dark"] .rt-grid td.down{color:#8FB5F5}
@@ -732,6 +755,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 
     <section class="page" id="page-rates">
       <div class="topbar"><h1>Tarife <small>preț pe noapte, pe cameră și pe zi</small></h1><div class="spacer"></div>
+        <div class="seg" id="rtView"><button data-v="0" title="Camerele sus, zilele în jos">Ca în calendar</button><button data-v="1" title="Camerele în stânga, zilele spre dreapta">Ca pe Booking</button></div>
         <button class="btn" id="rtToday">Azi</button>
         <label class="btn" style="cursor:pointer">Sari la <input type="date" id="rtJump" style="border:0;background:transparent;padding:0;font:inherit;color:inherit"></label>
       </div>
@@ -753,6 +777,8 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
     <section class="page" id="page-finance">
       <div class="topbar"><h1>Financiar <small id="finSub"></small></h1><div class="spacer"></div>
         <div class="seg" id="finProp"></div>
+        <div class="seg" id="finCur" title="Afișează sumele în lei sau în euro"><button data-c="RON">lei</button><button data-c="EUR">€</button></div>
+        <label class="fx" id="finFx" hidden>1 € = <input type="number" id="finRate" step="0.01" min="1"> lei</label>
         <button class="btn icon" id="finPrev" title="Luna anterioară"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
         <div class="period" id="finMonth"></div>
         <button class="btn icon" id="finNext" title="Luna următoare"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
@@ -2050,16 +2076,32 @@ function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderP
 function renderPage(page = view.page) { if (page === 'finance') renderFinance(); else if (page === 'rates') renderRates(); else if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
 
 /* ---------- Rates page: rooms in columns, nights in rows ---------- */
-let rv = { start: addDays(TODAY, -3), days: 62 }, rsel = { rooms: [], from: TODAY, to: addDays(TODAY, 6) }, rdrag = null, rtBusy = false, rtLastTop = 0;
+let rv = { start: addDays(TODAY, -3), days: 62, flip: false }, rsel = { rooms: [], from: TODAY, to: addDays(TODAY, 6) }, rdrag = null, rtBusy = false, rtLastTop = 0, rtLastLeft = 0;
+try { rv.flip = localStorage.getItem('velora-stay-demo-rtview') === '1'; } catch(e){}
 function renderRates() {
   renderPropBar(); renderRtQuick();
+  $$('#rtView button').forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === rv.flip));
+  if (rv.flip) { renderRatesFlip(); return; }
   const cols = columns().map(c => c.room), days = Array.from({ length: rv.days }, (_, i) => addDays(rv.start, i));
-  const g = $('#rtGrid'), keepT = g.scrollTop, keepL = g.scrollLeft;
+  const g = $('#rtGrid'), keepT = g.scrollTop, keepL = g.scrollLeft; g.classList.remove('flip');
   const head = `<tr><th class="rt-corner">Noaptea din ↓</th>${cols.map(r => `<th data-r="${r.id}" style="--rc:${r.color || 'transparent'}"><div class="rn">${esc(r.name)}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span>bază <b>${r.price}</b></div></th>`).join('')}</tr>`;
   const rows = days.map(d => { const dt = fromIso(d), wk = isWkNight(d);
     return `<tr class="${wk ? 'wk' : ''} ${d === TODAY ? 'today' : ''} ${d < TODAY ? 'past' : ''} ${dt.getDate() === 1 ? 'm1' : ''}"><th><b>${dt.getDate()} ${MONTHS[dt.getMonth()]}</b>${d === TODAY ? 'AZI' : DOWS[dt.getDay()]}</th>${cols.map(r => {
       const v = S.rates[r.id] && S.rates[r.id][d], cls = v == null ? '' : v > r.price ? 'up' : v < r.price ? 'down' : '';
       return `<td data-r="${r.id}" data-d="${d}" class="${cls}">${v != null ? v : r.price}</td>`; }).join('')}</tr>`; }).join('');
+  g.innerHTML = `<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;
+  g.scrollTop = keepT; g.scrollLeft = keepL; paintSel();
+}
+// "Ca pe Booking": rooms down the left, nights across
+function renderRatesFlip() {
+  const cols = columns().map(c => c.room), days = Array.from({ length: rv.days }, (_, i) => addDays(rv.start, i));
+  const g = $('#rtGrid'), keepT = g.scrollTop, keepL = g.scrollLeft; g.classList.add('flip');
+  const dcls = d => { const dt = fromIso(d); return `${isWkNight(d) ? 'wk' : ''} ${d === TODAY ? 'today' : ''} ${d < TODAY ? 'past' : ''} ${dt.getDate() === 1 ? 'm1' : ''}`; };
+  const head = `<tr><th class="rt-corner">Camera ↓<br>noaptea din →</th>${days.map(d => { const dt = fromIso(d);
+    return `<th class="dh ${dcls(d)}"><b>${dt.getDate()} ${MONTHS[dt.getMonth()]}</b><small>${d === TODAY ? 'Azi' : DOWS[dt.getDay()]}</small></th>`; }).join('')}</tr>`;
+  const rows = cols.map(r => `<tr><th class="rh2" data-r="${r.id}" style="--rc:${r.color || 'transparent'}"><div class="rn">${esc(r.name)}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span>bază <b>${r.price}</b></div></th>${days.map(d => {
+    const v = S.rates[r.id] && S.rates[r.id][d], cls = v == null ? '' : v > r.price ? 'up' : v < r.price ? 'down' : '';
+    return `<td data-r="${r.id}" data-d="${d}" class="${cls} ${dcls(d)}">${v != null ? v : r.price}</td>`; }).join('')}</tr>`).join('');
   g.innerHTML = `<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;
   g.scrollTop = keepT; g.scrollLeft = keepL; paintSel();
 }
@@ -2091,7 +2133,7 @@ window.addEventListener('pointermove', e => { if (!rdrag) return; const el = doc
 window.addEventListener('pointerup', () => { if (!rdrag) return; rdrag = null; $('#rtPrice').focus(); $('#rtPrice').select(); });
 // click a room header: change its base price
 $('#rtGrid').addEventListener('click', e => {
-  const th = e.target.closest('thead th[data-r]'); if (!th) return; const rm = roomById(th.dataset.r); if (!rm) return;
+  const th = e.target.closest('th[data-r]'); if (!th) return; const rm = roomById(th.dataset.r); if (!rm) return;
   const v = prompt(`Prețul de bază pentru ${rm.name}, în lei pe noapte. Se folosește în zilele fără tarif special.`, rm.price); if (v == null) return;
   const n = Math.round(+v); if (!(n > 0)) { toast('Scrie un preț mai mare ca zero', 'bad'); return; }
   const old = rm.price; rm.price = n; save(); renderAll(); undoToast(`Prețul de bază pentru ${rm.name}: ${n} lei`, () => { rm.price = old; }, 'ok');
@@ -2099,10 +2141,16 @@ $('#rtGrid').addEventListener('click', e => {
 // endless nights, both ways
 $('#rtGrid').addEventListener('scroll', e => {
   const g = e.target, up = g.scrollTop < rtLastTop; rtLastTop = g.scrollTop; if (rtBusy) return;
+  if (rv.flip) { const back = g.scrollLeft < rtLastLeft; rtLastLeft = g.scrollLeft;
+    if (g.scrollLeft + g.clientWidth > g.scrollWidth - 220) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
+    else if (back && g.scrollLeft < 80) { rtBusy = true; const cw = (g.querySelector('thead th.dh') || {}).offsetWidth || 68; rv.start = addDays(rv.start, -31); rv.days += 31; renderRates(); g.scrollLeft += 31 * cw; rtLastLeft = g.scrollLeft; rtBusy = false; }
+    return; }
   if (g.scrollTop + g.clientHeight > g.scrollHeight - 150) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
   else if (up && g.scrollTop < 60) { rtBusy = true; const rh = (g.querySelector('tbody tr') || {}).offsetHeight || 36; rv.start = addDays(rv.start, -31); rv.days += 31; renderRates(); g.scrollTop += 31 * rh; rtLastTop = g.scrollTop; rtBusy = false; }
 }, { passive: true });
-function rtJump(d) { rv.start = d; rv.days = 62; renderRates(); $('#rtGrid').scrollTop = 0; }
+function rtJump(d) { rv.start = d; rv.days = 62; renderRates(); $('#rtGrid').scrollTop = 0; $('#rtGrid').scrollLeft = 0; }
+$('#rtView').onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; rv.flip = b.dataset.v === '1';
+  try { localStorage.setItem('velora-stay-demo-rtview', rv.flip ? '1' : '0'); } catch(e){} rtJump(rv.start); };
 $('#rtToday').onclick = () => rtJump(addDays(TODAY, -3));
 $('#rtJump').addEventListener('change', e => { if (e.target.value) rtJump(e.target.value); });
 ['rtFrom', 'rtTo'].forEach(id => $('#' + id).addEventListener('change', () => {
@@ -2121,7 +2169,10 @@ $('#rtReset').onclick = () => rtApply(true);
 $('#rtPrice').addEventListener('keydown', e => { if (e.key === 'Enter') rtApply(false); });
 
 /* ---------- Finance: what came in, what went out, what is left ---------- */
-let fin = { month: TODAY.slice(0, 7), prop: 'all' };
+let fin = { month: TODAY.slice(0, 7), prop: 'all', cur: 'RON', rate: 5.09 };
+try { const c = JSON.parse(localStorage.getItem('velora-stay-demo-fin')); if (c) { fin.cur = c.cur === 'EUR' ? 'EUR' : 'RON'; if (c.rate > 0) fin.rate = c.rate; } } catch(e){}
+const saveFin = () => { try { localStorage.setItem('velora-stay-demo-fin', JSON.stringify({ cur: fin.cur, rate: fin.rate })); } catch(e){} };
+const curK = () => fin.cur === 'EUR' ? 1 / fin.rate : 1;
 const EXP_CATS = ['Salarii','Utilități','Curățenie','Întreținere și reparații','Consumabile','Comisioane','Taxe și impozite','Marketing','Altele'];
 const COMM = { booking: .15, travelminit: .12, airbnb: .03 };      // estimated platform commission
 const MONTHS_L = ['Ianuarie','Februarie','Martie','Aprilie','Mai','Iunie','Iulie','August','Septembrie','Octombrie','Noiembrie','Decembrie'];
@@ -2151,7 +2202,9 @@ function finMonth(m, prop) {
   const exps = expensesIn(m, prop), spent = exps.reduce((t, e) => t + Number(e.amount), 0);
   return { earned, cashed, spent, comm, profit: cashed - spent - comm, outstanding, occ: rooms.length ? roomNights / (rooms.length * days) : 0, roomNights, bySrc, byMethod, pays, exps };
 }
-const lei = v => Math.round(v).toLocaleString('ro-RO') + ' lei';
+// every amount is stored in lei; the finance page can show it converted to euro
+const lei = v => fin.cur === 'EUR' ? Math.round(v / fin.rate).toLocaleString('ro-RO') + ' €' : Math.round(v).toLocaleString('ro-RO') + ' lei';
+const axfmt = v => kfmt(v) + (fin.cur === 'EUR' ? ' €' : '');
 /* ---------- Charts (plain SVG, one axis each, hover on every mark) ---------- */
 const VZ = { h: 230, pl: 52, pr: 14, pt: 16, pb: 28 };
 let vzTips = [];
@@ -2170,11 +2223,11 @@ const col = (x, w, y, base, cls) => { const h = base - y; if (h <= 0.5) return '
   return `<path class="${cls}" d="M${x},${base}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${base}Z"/>`; };
 const svgWrap = (W, H, body) => `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img">${body}</svg>`;
 function drawMonthly(el, data, cur) {
-  const sc = niceScale(Math.max(1, ...data.map(d => Math.max(d.cashed, d.spent)))), W = Math.max(320, el.clientWidth), max = sc.max;
+  const k = curK(), sc = niceScale(Math.max(1, ...data.map(d => Math.max(d.cashed, d.spent) * k))), W = Math.max(320, el.clientWidth), max = sc.max;
   const base = VZ.h - VZ.pb, band = (W - VZ.pl - VZ.pr) / data.length, bw = Math.min(24, (band - 18) / 2);
-  let s = yAxis(W, max, kfmt, sc.ticks);
+  let s = yAxis(W, max, axfmt, sc.ticks);
   data.forEach((d, i) => { const cx = VZ.pl + band * i + band / 2;
-    s += col(cx - bw - 1, bw, yOf(d.cashed, max), base, 'vz-s1') + col(cx + 1, bw, yOf(d.spent, max), base, 'vz-s2');
+    s += col(cx - bw - 1, bw, yOf(d.cashed * k, max), base, 'vz-s1') + col(cx + 1, bw, yOf(d.spent * k, max), base, 'vz-s2');
     s += `<text x="${cx}" y="${base + 18}" text-anchor="middle" class="vz-x ${d.m === cur ? 'cur' : ''}">${MONTHS_L[+d.m.slice(5) - 1].slice(0, 3)}</text>`;
     s += `<rect class="vz-hit" data-m="${d.m}" x="${VZ.pl + band * i}" y="${VZ.pt}" width="${band}" height="${base - VZ.pt}" ${tipAttr(`<b>${monthName(d.m)}</b><div><i class="k s1"></i>Încasat <b>${lei(d.cashed)}</b></div><div><i class="k s2"></i>Cheltuieli <b>${lei(d.spent)}</b></div><div>Profit <b>${lei(d.profit)}</b></div>`)}/>`; });
   el.innerHTML = svgWrap(W, VZ.h, s);
@@ -2182,13 +2235,13 @@ function drawMonthly(el, data, cur) {
 function drawDaily(el, m, pays) {
   const a = m + '-01', n = diffDays(a, addDays(monthEnd(m), 1)), sums = Array(n).fill(0), cnt = Array(n).fill(0);
   pays.forEach(({ pm }) => { const i = diffDays(a, pm.date); if (i >= 0 && i < n) { sums[i] += Number(pm.amount); cnt[i]++; } });
-  const sc = niceScale(Math.max(1, ...sums)), W = Math.max(320, el.clientWidth), max = sc.max, base = VZ.h - VZ.pb, band = (W - VZ.pl - VZ.pr) / n, bw = Math.max(2, Math.min(24, band - 3));
-  let s = yAxis(W, max, kfmt, sc.ticks), top = sums.indexOf(Math.max(...sums));
+  const k = curK(), sc = niceScale(Math.max(1, ...sums) * k), W = Math.max(320, el.clientWidth), max = sc.max, base = VZ.h - VZ.pb, band = (W - VZ.pl - VZ.pr) / n, bw = Math.max(2, Math.min(24, band - 3));
+  let s = yAxis(W, max, axfmt, sc.ticks), top = sums.indexOf(Math.max(...sums));
   sums.forEach((v, i) => { const x = VZ.pl + band * i + (band - bw) / 2, d = addDays(a, i);
-    s += col(x, bw, yOf(v, max), base, 'vz-s1' + (d > TODAY ? ' fut' : ''));
+    s += col(x, bw, yOf(v * k, max), base, 'vz-s1' + (d > TODAY ? ' fut' : ''));
     if (i % 5 === 0 || i === n - 1) s += `<text x="${x + bw / 2}" y="${base + 18}" text-anchor="middle" class="vz-x">${i + 1}</text>`;
     s += `<rect class="vz-hit" x="${VZ.pl + band * i}" y="${VZ.pt}" width="${band}" height="${base - VZ.pt}" ${tipAttr(`<b>${fmtDL(d)}</b><div>Încasat <b>${lei(v)}</b></div><div>${cnt[i]} ${cnt[i] === 1 ? 'plată' : 'plăți'}</div>`)}/>`; });
-  if (sums[top] > 0) s += `<text x="${VZ.pl + band * top + band / 2}" y="${yOf(sums[top], max) - 6}" text-anchor="middle" class="vz-val">${kfmt(sums[top])}</text>`;
+  if (sums[top] > 0) s += `<text x="${VZ.pl + band * top + band / 2}" y="${yOf(sums[top] * k, max) - 6}" text-anchor="middle" class="vz-val">${axfmt(sums[top] * k)}</text>`;
   el.innerHTML = svgWrap(W, VZ.h, s);
 }
 function drawOcc(el, m, prop) {
@@ -2225,6 +2278,7 @@ const pct = v => Math.round(v * 100) + '%';
 function renderFinance() {
   const m = fin.month, f = finMonth(m, fin.prop), P = fin.prop === 'all' ? null : propById(fin.prop);
   $('#finMonth').textContent = monthName(m);
+  $$('#finCur button').forEach(b => b.classList.toggle('on', b.dataset.c === fin.cur)); $('#finFx').hidden = fin.cur !== 'EUR'; if (document.activeElement !== $('#finRate')) $('#finRate').value = fin.rate;
   $('#finSub').textContent = P ? P.name : 'toate proprietățile';
   $('#finProp').innerHTML = (S.properties.length > 1 ? [['all', 'Toate'], ...S.properties.map(x => [x.id, shortProp(x)])] : []).map(([id, nm]) => `<button class="${fin.prop === id ? 'on' : ''}" data-p="${id}">${esc(nm)}</button>`).join('');
   const tile = (label, value, small, cls = '') => `<div class="tile ${cls}"><label>${label}</label><b>${value}</b><small>${small}</small></div>`;
@@ -2279,6 +2333,8 @@ $('#finPrev').onclick = () => { fin.month = addMonths(fin.month, -1); renderFina
 $('#finNext').onclick = () => { fin.month = addMonths(fin.month, 1); renderFinance(); };
 $('#finProp').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; fin.prop = b.dataset.p; renderFinance(); };
 $('#finAdd').onclick = () => openExp();
+$('#finCur').onclick = e => { const b = e.target.closest('[data-c]'); if (!b) return; fin.cur = b.dataset.c; saveFin(); renderFinance(); };
+$('#finRate').addEventListener('change', e => { const v = parseFloat(String(e.target.value).replace(',', '.')); if (!(v > 0)) { toast('Cursul trebuie să fie mai mare ca zero', 'bad'); return; } fin.rate = v; saveFin(); renderFinance(); });
 $('#finBody').addEventListener('mousemove', e => {
   const plot = e.target.closest('.vz-plot'), h = e.target.closest('[data-tip]');
   if (plot) { const holder = plot.closest('.viz-body'), o = holder._occ, r = plot.ownerSVGElement.getBoundingClientRect();
@@ -2320,6 +2376,43 @@ F('eSave').onclick = () => {
   save(); closeOverlay('expOverlay'); fin.month = data.recurring && data.date.slice(0, 7) > fin.month ? data.date.slice(0, 7) : (data.recurring ? fin.month : data.date.slice(0, 7)); renderFinance();
   toast(expEdit ? 'Cheltuială actualizată' : `Cheltuială adăugată: ${lei(amount)}${data.recurring ? ' pe lună' : ''}`, 'ok');
 };
+
+/* ---------- Sortable tables: click a column header, click again to reverse ---------- */
+const sortState = {};
+const MON_S = { ian: 0, feb: 1, mar: 2, apr: 3, mai: 4, iun: 5, iul: 6, aug: 7, sep: 8, oct: 9, noi: 10, nov: 10, dec: 11 };
+function sortVal(td) {
+  if (!td) return -Infinity;
+  const t = td.textContent.trim();
+  if (t === '✓') return 0; if (t === '—' || t === '') return -Infinity;
+  let m = t.match(/^(\d{1,2}) (ian|feb|mar|apr|mai|iun|iul|aug|sep|oct|noi|nov|dec)\b/i); if (m) return MON_S[m[2].toLowerCase()] * 100 + +m[1];
+  m = t.match(/^(Ianuarie|Februarie|Martie|Aprilie|Mai|Iunie|Iulie|August|Septembrie|Octombrie|Noiembrie|Decembrie) (\d{4})/); if (m) return +m[2] * 100 + MONTHS_L.indexOf(m[1]);
+  m = t.match(/^[−-]?\d[\d.]*(,\d+)?/); if (m) return parseFloat(m[0].replace(/\./g, '').replace(',', '.').replace('−', '-'));
+  return t.toLowerCase();
+}
+const tableKey = tbl => { const holder = tbl.closest('[id]'); return (holder ? holder.id : '') + '#' + [...(holder || document).querySelectorAll('table.t')].indexOf(tbl); };
+function sortTable(tbl, col, dir) {
+  const tb = tbl.tBodies[0]; if (!tb || !tbl.tHead) return; const rows = [...tb.rows]; if (rows.length < 2) return;
+  rows.sort((a, b) => { const x = sortVal(a.cells[col]), y = sortVal(b.cells[col]);
+    const c = typeof x === 'number' && typeof y === 'number' ? x - y : typeof x === 'number' ? -1 : typeof y === 'number' ? 1 : String(x).localeCompare(String(y), 'ro'); return dir * c; });
+  rows.forEach(r => tb.appendChild(r));
+  [...tbl.tHead.rows[0].cells].forEach((th, i) => { th.classList.toggle('s-asc', i === col && dir > 0); th.classList.toggle('s-desc', i === col && dir < 0); });
+}
+document.addEventListener('click', e => {
+  const th = e.target.closest('table.t thead th'); if (!th || !th.textContent.trim()) return;
+  const tbl = th.closest('table'), col = th.cellIndex, key = tableKey(tbl), prev = sortState[key];
+  const first = sortVal(tbl.tBodies[0] && tbl.tBodies[0].rows[0] && tbl.tBodies[0].rows[0].cells[col]);
+  const dir = prev && prev.col === col ? -prev.dir : (typeof first === 'number' ? -1 : 1);   // amounts and counts: biggest first
+  sortState[key] = { col, dir }; sortTable(tbl, col, dir);
+});
+// keep the chosen order when a page redraws its tables
+const sortObs = new MutationObserver(() => {
+  sortObs.disconnect();
+  for (const key in sortState) { const i = key.lastIndexOf('#'), hid = key.slice(0, i), holder = hid ? document.getElementById(hid) : document;
+    const tbl = holder && holder.querySelectorAll('table.t')[+key.slice(i + 1)];
+    if (tbl && !tbl.querySelector('th.s-asc,th.s-desc')) sortTable(tbl, sortState[key].col, sortState[key].dir); }
+  sortObs.observe($('.main'), { childList: true, subtree: true });
+});
+sortObs.observe($('.main'), { childList: true, subtree: true });
 
 /* ---------- Navigation, shortcuts, theme ---------- */
 function go(page, silent = false) { if (addMode && page !== 'calendar') endAddRooms(); if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); renderPage(page); }
