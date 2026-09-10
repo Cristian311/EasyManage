@@ -485,6 +485,35 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 #finBody .rec{font-size:10.5px;font-weight:800;color:var(--accent);background:var(--accent-soft);padding:1px 6px;border-radius:5px;margin-left:6px}
 #finBody .note{font-size:12px;color:var(--ink-3);padding:8px 16px 12px}
 @media (max-width:900px){#finBody .cols{grid-template-columns:1fr}}
+/* charts: validated two-series palette (blue = in, orange = out), light and dark steps */
+.viz,.vztip{--s1:#2a78d6;--s2:#eb6834}
+:root[data-theme="dark"] .viz,:root[data-theme="dark"] .vztip{--s1:#3987e5;--s2:#d95926}
+.viz-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
+@media (max-width:900px){.viz-grid{grid-template-columns:1fr}}
+.viz-body{padding:10px 12px 6px;overflow:hidden}
+.viz svg{display:block;max-width:100%;font-family:var(--font)}
+.vz-grid{stroke:var(--line-2);stroke-width:1}
+.vz-base{stroke:var(--line);stroke-width:1}
+.vz-tick,.vz-x{fill:var(--ink-3);font-size:11px;font-variant-numeric:tabular-nums}
+.vz-x.cur{fill:var(--ink);font-weight:800}
+.vz-val{fill:var(--ink-2);font-size:11.5px;font-weight:700;font-variant-numeric:tabular-nums}
+.vz-lab{fill:var(--ink);font-size:12.5px;font-weight:600}
+.vz-s1{fill:var(--s1)}
+.vz-s2{fill:var(--s2)}
+.vz-s1.fut{opacity:.4}
+.vz-line{fill:none;stroke:var(--s1);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.vz-area{fill:var(--s1);opacity:.1}
+.vz-cross{stroke:var(--ink-3);stroke-width:1}
+.vz-dot{fill:var(--s1);stroke:var(--surface);stroke-width:2}
+.vz-hit,.vz-plot{fill:transparent}
+.vz-hit:hover{fill:var(--ink);fill-opacity:.05}
+.vz-leg{margin-left:auto;display:flex;gap:12px;align-items:center;font-family:var(--font);font-size:12px;font-weight:600;color:var(--ink-2)}
+.k{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+.k.s1{background:var(--s1)}
+.k.s2{background:var(--s2)}
+.vztip{position:fixed;z-index:400;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow-lg);padding:8px 11px;font-size:12.5px;line-height:1.5;color:var(--ink-2);display:none;min-width:160px}
+.vztip b{color:var(--ink);font-variant-numeric:tabular-nums}
+.vztip > b:first-child{display:block;margin-bottom:3px;font-family:var(--font-d);font-size:13.5px}
 /* ---------- Rates page ---------- */
 .rt-quick{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:0 2px 10px}
 .rt-leg{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3)}
@@ -854,6 +883,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 <div class="ctx" id="ctx"></div>
 <div class="toasts" id="toasts"></div>
 <div class="dragtip" id="dragtip"></div>
+<div class="vztip" id="vzTip"></div>
 <div class="dragtip below" id="dragtip2"></div>
 
 
@@ -2122,6 +2152,75 @@ function finMonth(m, prop) {
   return { earned, cashed, spent, comm, profit: cashed - spent - comm, outstanding, occ: rooms.length ? roomNights / (rooms.length * days) : 0, roomNights, bySrc, byMethod, pays, exps };
 }
 const lei = v => Math.round(v).toLocaleString('ro-RO') + ' lei';
+/* ---------- Charts (plain SVG, one axis each, hover on every mark) ---------- */
+const VZ = { h: 230, pl: 52, pr: 14, pt: 16, pb: 28 };
+let vzTips = [];
+const tipAttr = html => { vzTips.push(html); return `data-tip="${vzTips.length - 1}"`; };
+function niceScale(v) { if (v <= 0) return { max: 1, ticks: 4 }; const raw = v / 4, p = Math.pow(10, Math.floor(Math.log10(raw))), n = raw / p, st = (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p, t = Math.max(2, Math.ceil(v / st)); return { max: st * t, ticks: t }; }
+function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))), n = v / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 2.5 ? 2.5 : n <= 5 ? 5 : 10) * p; }
+const kfmt = v => v >= 1e6 ? (v / 1e6).toLocaleString('ro-RO', { maximumFractionDigits: 1 }) + ' mil' : v >= 1000 ? Math.round(v / 1000) + 'k' : String(Math.round(v));
+const yOf = (v, max) => VZ.pt + (VZ.h - VZ.pt - VZ.pb) * (1 - v / max);
+function yAxis(W, max, fmt, ticks = 4) {
+  let s = ''; for (let i = 0; i <= ticks; i++) { const v = max * i / ticks, y = yOf(v, max);
+    s += `<line x1="${VZ.pl}" x2="${W - VZ.pr}" y1="${y}" y2="${y}" class="${i ? 'vz-grid' : 'vz-base'}"/><text x="${VZ.pl - 8}" y="${y + 4}" class="vz-tick" text-anchor="end">${fmt(v)}</text>`; }
+  return s;
+}
+// column: 4px rounded data end, square at the baseline
+const col = (x, w, y, base, cls) => { const h = base - y; if (h <= 0.5) return ''; const r = Math.min(4, h, w / 2);
+  return `<path class="${cls}" d="M${x},${base}V${y + r}Q${x},${y} ${x + r},${y}H${x + w - r}Q${x + w},${y} ${x + w},${y + r}V${base}Z"/>`; };
+const svgWrap = (W, H, body) => `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img">${body}</svg>`;
+function drawMonthly(el, data, cur) {
+  const sc = niceScale(Math.max(1, ...data.map(d => Math.max(d.cashed, d.spent)))), W = Math.max(320, el.clientWidth), max = sc.max;
+  const base = VZ.h - VZ.pb, band = (W - VZ.pl - VZ.pr) / data.length, bw = Math.min(24, (band - 18) / 2);
+  let s = yAxis(W, max, kfmt, sc.ticks);
+  data.forEach((d, i) => { const cx = VZ.pl + band * i + band / 2;
+    s += col(cx - bw - 1, bw, yOf(d.cashed, max), base, 'vz-s1') + col(cx + 1, bw, yOf(d.spent, max), base, 'vz-s2');
+    s += `<text x="${cx}" y="${base + 18}" text-anchor="middle" class="vz-x ${d.m === cur ? 'cur' : ''}">${MONTHS_L[+d.m.slice(5) - 1].slice(0, 3)}</text>`;
+    s += `<rect class="vz-hit" data-m="${d.m}" x="${VZ.pl + band * i}" y="${VZ.pt}" width="${band}" height="${base - VZ.pt}" ${tipAttr(`<b>${monthName(d.m)}</b><div><i class="k s1"></i>Încasat <b>${lei(d.cashed)}</b></div><div><i class="k s2"></i>Cheltuieli <b>${lei(d.spent)}</b></div><div>Profit <b>${lei(d.profit)}</b></div>`)}/>`; });
+  el.innerHTML = svgWrap(W, VZ.h, s);
+}
+function drawDaily(el, m, pays) {
+  const a = m + '-01', n = diffDays(a, addDays(monthEnd(m), 1)), sums = Array(n).fill(0), cnt = Array(n).fill(0);
+  pays.forEach(({ pm }) => { const i = diffDays(a, pm.date); if (i >= 0 && i < n) { sums[i] += Number(pm.amount); cnt[i]++; } });
+  const sc = niceScale(Math.max(1, ...sums)), W = Math.max(320, el.clientWidth), max = sc.max, base = VZ.h - VZ.pb, band = (W - VZ.pl - VZ.pr) / n, bw = Math.max(2, Math.min(24, band - 3));
+  let s = yAxis(W, max, kfmt, sc.ticks), top = sums.indexOf(Math.max(...sums));
+  sums.forEach((v, i) => { const x = VZ.pl + band * i + (band - bw) / 2, d = addDays(a, i);
+    s += col(x, bw, yOf(v, max), base, 'vz-s1' + (d > TODAY ? ' fut' : ''));
+    if (i % 5 === 0 || i === n - 1) s += `<text x="${x + bw / 2}" y="${base + 18}" text-anchor="middle" class="vz-x">${i + 1}</text>`;
+    s += `<rect class="vz-hit" x="${VZ.pl + band * i}" y="${VZ.pt}" width="${band}" height="${base - VZ.pt}" ${tipAttr(`<b>${fmtDL(d)}</b><div>Încasat <b>${lei(v)}</b></div><div>${cnt[i]} ${cnt[i] === 1 ? 'plată' : 'plăți'}</div>`)}/>`; });
+  if (sums[top] > 0) s += `<text x="${VZ.pl + band * top + band / 2}" y="${yOf(sums[top], max) - 6}" text-anchor="middle" class="vz-val">${kfmt(sums[top])}</text>`;
+  el.innerHTML = svgWrap(W, VZ.h, s);
+}
+function drawOcc(el, m, prop) {
+  const a = m + '-01', b = addDays(monthEnd(m), 1), n = diffDays(a, b), used = Array(n).fill(0);
+  const rooms = S.rooms.filter(r => r.active && !S.rooms.some(u => u.parentId === r.id) && (prop === 'all' || r.propertyId === prop)).length;
+  S.reservations.forEach(r => { if (r.status === 'cancelled' || (prop !== 'all' && resProp(r) !== prop)) return; const k = resRoomIds(r).length;
+    for (let d = r.checkIn > a ? r.checkIn : a; d < r.checkOut && d < b; d = addDays(d, 1)) used[diffDays(a, d)] += k; });
+  const W = Math.max(320, el.clientWidth), base = VZ.h - VZ.pb, step = (W - VZ.pl - VZ.pr) / Math.max(1, n - 1);
+  const pts = used.map((u, i) => [VZ.pl + step * i, yOf(rooms ? Math.min(1, u / rooms) : 0, 1)]);
+  const line = pts.map((q, i) => (i ? 'L' : 'M') + q[0].toFixed(1) + ',' + q[1].toFixed(1)).join('');
+  let s = yAxis(W, 1, v => Math.round(v * 100) + '%');
+  s += `<path class="vz-area" d="${line}L${pts[n - 1][0]},${base}L${pts[0][0]},${base}Z"/><path class="vz-line" d="${line}"/>`;
+  pts.forEach((q, i) => { if (i % 5 === 0 || i === n - 1) s += `<text x="${q[0]}" y="${base + 18}" text-anchor="middle" class="vz-x">${i + 1}</text>`; });
+  s += `<line class="vz-cross" id="occX" x1="0" x2="0" y1="${VZ.pt}" y2="${base}" style="display:none"/><circle class="vz-dot" id="occD" r="4.5" style="display:none"/>`;
+  s += `<rect class="vz-plot" x="${VZ.pl - step / 2}" y="${VZ.pt}" width="${W - VZ.pl - VZ.pr + step}" height="${base - VZ.pt}"/>`;
+  el.innerHTML = svgWrap(W, VZ.h, s); el._occ = { a, n, rooms, used, pts, step };
+}
+function drawSrc(el, bySrc) {
+  const keys = Object.keys(SRC).filter(k => bySrc[k]).sort((x, y) => bySrc[y].v - bySrc[x].v);
+  if (!keys.length) { el.innerHTML = '<div class="empty">Nicio noapte vândută în această lună</div>'; return; }
+  const W = Math.max(320, el.clientWidth), rowH = 34, lw = 112, vw = 92, H = keys.length * rowH + 6, max = Math.max(...keys.map(k => bySrc[k].v)), span = W - lw - vw, bh = 18;
+  let s = '';
+  keys.forEach((k, i) => { const y = 3 + i * rowH, w = Math.max(3, bySrc[k].v / max * span), by = y + (rowH - bh) / 2, r = Math.min(4, w / 2), x0 = lw, cy = y + rowH / 2;
+    s += `<circle cx="10" cy="${cy}" r="4.5" style="fill:var(--src-${k}, var(--src-other))"/><text x="22" y="${cy + 4}" class="vz-lab">${SRC[k]}</text>`;
+    s += `<path class="vz-s1" d="M${x0},${by}H${x0 + w - r}Q${x0 + w},${by} ${x0 + w},${by + r}V${by + bh - r}Q${x0 + w},${by + bh} ${x0 + w - r},${by + bh}H${x0}Z"/>`;
+    s += `<text x="${x0 + w + 8}" y="${cy + 4}" class="vz-val">${lei(bySrc[k].v)}</text>`;
+    s += `<rect class="vz-hit" x="0" y="${y}" width="${W}" height="${rowH}" ${tipAttr(`<b>${SRC[k]}</b><div>Venit <b>${lei(bySrc[k].v)}</b></div><div>${bySrc[k].res} rezervări · ${bySrc[k].n} nopți</div>${COMM[k] ? `<div>Comision estimat <b>${lei(bySrc[k].v * COMM[k])}</b></div>` : ''}`)}/>`; });
+  el.innerHTML = svgWrap(W, H, s);
+}
+function showVzTip(e, html) { const t = $('#vzTip'); t.innerHTML = html; t.style.display = 'block'; const w = t.offsetWidth, h = t.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + h > innerHeight - 8) y = e.clientY - h - 14; t.style.left = x + 'px'; t.style.top = y + 'px'; }
+function hideVzTip() { $('#vzTip').style.display = 'none'; const X = $('#occX'), D = $('#occD'); if (X) X.style.display = 'none'; if (D) D.style.display = 'none'; }
 const pct = v => Math.round(v * 100) + '%';
 function renderFinance() {
   const m = fin.month, f = finMonth(m, fin.prop), P = fin.prop === 'all' ? null : propById(fin.prop);
@@ -2152,12 +2251,20 @@ function renderFinance() {
   // month by month
   const first = [...S.reservations.map(r => r.checkIn.slice(0, 7)), ...S.expenses.map(e => e.date.slice(0, 7))].sort()[0] || m;
   const months = []; for (let k = -5; k <= 2; k++) { const mm = addMonths(TODAY.slice(0, 7), k); if (mm >= first) months.push(mm); }
+  const mSeries = months.map(mm => { const q = finMonth(mm, fin.prop); return { m: mm, cashed: q.cashed, spent: q.spent, profit: q.profit }; });
   const monthsT = `<table class="t"><thead><tr><th>Luna</th><th class="r">Ocupare</th><th class="r">Venit din nopți</th><th class="r">Încasat</th><th class="r">Cheltuieli</th><th class="r">Comisioane</th><th class="r">Profit</th></tr></thead><tbody>${
     months.map(mm => { const q = finMonth(mm, fin.prop); return `<tr data-m="${mm}" class="${mm === m ? 'cur' : ''}"><td><b>${monthName(mm)}</b>${mm > TODAY.slice(0, 7) ? ' <small style="color:var(--ink-3)">în viitor</small>' : ''}</td><td class="r">${pct(q.occ)}</td><td class="r">${lei(q.earned)}</td><td class="r">${lei(q.cashed)}</td><td class="r">${lei(q.spent)}</td><td class="r">${lei(q.comm)}</td><td class="r ${q.profit >= 0 ? 'pos' : 'neg'}">${lei(q.profit)}</td></tr>`; }).join('')}</tbody></table>`;
   // payments list
   const pays = f.pays.slice().sort((x, y) => y.pm.date.localeCompare(x.pm.date)), shown = pays.slice(0, 60);
   const paysT = `<table class="t"><thead><tr><th>Data</th><th>Oaspete</th><th>Cameră</th><th>Metodă</th><th>Notă</th><th class="r">Sumă</th></tr></thead><tbody>${shown.map(({ r, pm }) => `<tr data-r="${r.id}"><td>${fmtD(pm.date)}</td><td><b>${esc(resGuest(r))}</b></td><td>${esc(roomLabel(r))}</td><td>${METHOD[pm.method] || pm.method}</td><td>${esc(pm.note || '')}</td><td class="r">${lei(pm.amount)}</td></tr>`).join('') || '<tr><td colspan="6" class="empty">Nicio plată</td></tr>'}</tbody></table>${pays.length > shown.length ? `<div class="note">Afișez cele mai recente ${shown.length} din ${pays.length} plăți.</div>` : ''}`;
+  vzTips = []; hideVzTip();
   $('#finBody').innerHTML = `<div class="tiles">${tiles}</div>
+    <div class="viz-grid">
+      <div class="card viz"><div class="ch">Încasat și cheltuieli, lună de lună<span class="vz-leg"><span><i class="k s1"></i>Încasat</span><span><i class="k s2"></i>Cheltuieli</span></span></div><div class="viz-body" id="vzMonthly"></div></div>
+      <div class="card viz"><div class="ch">Venit din nopți, pe sursă<span class="cnt">${monthName(m)}</span></div><div class="viz-body" id="vzSrc"></div></div>
+      <div class="card viz"><div class="ch">Încasări pe zi<span class="cnt">${monthName(m)}</span></div><div class="viz-body" id="vzDaily"></div></div>
+      <div class="card viz"><div class="ch">Ocupare pe zi<span class="cnt">${monthName(m)}</span></div><div class="viz-body" id="vzOcc"></div></div>
+    </div>
     <div class="cols">
       <div class="card"><div class="ch">Încasări pe metodă<span class="cnt">${lei(f.cashed)}</span></div><div class="tbl-wrap">${byMethod}</div></div>
       <div class="card"><div class="ch">Pe sursă de rezervare<span class="cnt">${f.roomNights} nopți</span></div><div class="tbl-wrap">${bySrc}</div></div>
@@ -2166,11 +2273,24 @@ function renderFinance() {
       <div class="card wide"><div class="ch">Lună de lună<span class="cnt">click pe o lună ca s-o deschizi</span></div><div class="tbl-wrap">${monthsT}</div></div>
       <div class="card wide"><div class="ch">Plăți încasate în ${monthName(m).toLowerCase()}<span class="cnt">${pays.length}</span></div><div class="tbl-wrap">${paysT}</div></div>
     </div>`;
+  drawMonthly($('#vzMonthly'), mSeries, m); drawSrc($('#vzSrc'), f.bySrc); drawDaily($('#vzDaily'), m, f.pays); drawOcc($('#vzOcc'), m, fin.prop);
 }
 $('#finPrev').onclick = () => { fin.month = addMonths(fin.month, -1); renderFinance(); };
 $('#finNext').onclick = () => { fin.month = addMonths(fin.month, 1); renderFinance(); };
 $('#finProp').onclick = e => { const b = e.target.closest('[data-p]'); if (!b) return; fin.prop = b.dataset.p; renderFinance(); };
 $('#finAdd').onclick = () => openExp();
+$('#finBody').addEventListener('mousemove', e => {
+  const plot = e.target.closest('.vz-plot'), h = e.target.closest('[data-tip]');
+  if (plot) { const holder = plot.closest('.viz-body'), o = holder._occ, r = plot.ownerSVGElement.getBoundingClientRect();
+    const i = Math.max(0, Math.min(o.n - 1, Math.round((e.clientX - r.left - VZ.pl) / o.step))), [x, y] = o.pts[i];
+    const X = $('#occX'), D = $('#occD'); X.setAttribute('x1', x); X.setAttribute('x2', x); X.style.display = ''; D.setAttribute('cx', x); D.setAttribute('cy', y); D.style.display = '';
+    showVzTip(e, `<b>${fmtDL(addDays(o.a, i))}</b><div>Ocupare <b>${o.rooms ? Math.round(Math.min(1, o.used[i] / o.rooms) * 100) : 0}%</b></div><div>${o.used[i]} din ${o.rooms} camere ocupate</div>`); return; }
+  if (h) { showVzTip(e, vzTips[+h.dataset.tip]); const X = $('#occX'), D = $('#occD'); if (X) X.style.display = 'none'; if (D) D.style.display = 'none'; return; }
+  hideVzTip();
+});
+$('#finBody').addEventListener('mouseleave', hideVzTip);
+$('#finBody').addEventListener('click', e => { const r = e.target.closest('.vz-hit[data-m]'); if (r) { fin.month = r.dataset.m; renderFinance(); } }, true);
+window.addEventListener('resize', () => { if (view.page !== 'finance') return; clearTimeout(window._fr); window._fr = setTimeout(renderFinance, 150); });
 $('#finBody').addEventListener('click', e => {
   const st = e.target.closest('[data-stop]'), dl = e.target.closest('[data-del]'), mr = e.target.closest('tr[data-m]'), er = e.target.closest('tr[data-e]'), pr = e.target.closest('tr[data-r]');
   if (st) { const x = S.expenses.find(q => q.id === st.dataset.stop); const prev = x.until; x.until = monthEnd(addMonths(fin.month, -1)); if (x.until < x.date) x.until = addDays(x.date, -1);
