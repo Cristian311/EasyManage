@@ -564,6 +564,22 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 .rt-grid.flip td.wk:not(.up):not(.down){background:var(--weekend)}
 .rt-grid.flip td.past,.rt-grid.flip th.dh.past{opacity:.55}
 .rt-grid.flip .m1{border-left:2px solid var(--ink-3)}
+.rt-grid,.rt-leg{--g1:#EAF6EE;--g2:#CBEBD5;--g3:#98D4AC;--g4:#4DAA6E;--g5:#1E7443;--gt1:#1E3B2A;--gt4:#FFFFFF}
+:root[data-theme="dark"] .rt-grid,:root[data-theme="dark"] .rt-leg{--g1:#17271D;--g2:#1D3B27;--g3:#265A37;--g4:#35864F;--g5:#57C07C;--gt1:#DDEFE3;--gt4:#FFFFFF}
+.rt-grid td.h1{background:var(--g1);color:var(--gt1)}
+.rt-grid td.h2{background:var(--g2);color:var(--gt1)}
+.rt-grid td.h3{background:var(--g3);color:var(--gt1)}
+.rt-grid td.h4{background:var(--g4);color:var(--gt4)}
+.rt-grid td.h5{background:var(--g5);color:var(--gt4)}
+:root[data-theme="dark"] .rt-grid td.h5{color:#0F1F14}
+.rt-grid td{font-weight:600}
+.rt-grid td.cus{font-weight:900}
+.rt-leg i.g{width:18px;height:12px;border-radius:3px}
+.rt-leg i.h1{background:var(--g1)}
+.rt-leg i.h2{background:var(--g2)}
+.rt-leg i.h3{background:var(--g3)}
+.rt-leg i.h4{background:var(--g4)}
+.rt-leg i.h5{background:var(--g5)}
 .rt-grid td.sel{outline:2px solid var(--accent);outline-offset:-2px;background:var(--sel)!important;color:var(--ink)}
 :root[data-theme="dark"] .rt-grid td.up{color:#F2A65A}
 :root[data-theme="dark"] .rt-grid td.down{color:#8FB5F5}
@@ -2078,8 +2094,16 @@ function renderPage(page = view.page) { if (page === 'finance') renderFinance();
 /* ---------- Rates page: rooms in columns, nights in rows ---------- */
 let rv = { start: addDays(TODAY, -3), days: 62, flip: false }, rsel = { rooms: [], from: TODAY, to: addDays(TODAY, 6) }, rdrag = null, rtBusy = false, rtLastTop = 0, rtLastLeft = 0;
 try { rv.flip = localStorage.getItem('velora-stay-demo-rtview') === '1'; } catch(e){}
+// shade of green = price compared with the room's average for that month (so August and June are judged by their own level)
+let heatAvg = {};
+function heatCls(rid, d, price) {
+  const ym = d.slice(0, 7), key = rid + ym;
+  if (heatAvg[key] == null) { let t = 0, n = 0; for (let x = ym + '-01', e = monthEnd(ym); x <= e; x = addDays(x, 1)) { t += rateFor(rid, x); n++; } heatAvg[key] = t / n; }
+  const q = price / heatAvg[key];
+  return 'h' + (q < .88 ? 1 : q < .96 ? 2 : q <= 1.04 ? 3 : q <= 1.12 ? 4 : 5);
+}
 function renderRates() {
-  renderPropBar(); renderRtQuick();
+  heatAvg = {}; renderPropBar(); renderRtQuick();
   $$('#rtView button').forEach(b => b.classList.toggle('on', (b.dataset.v === '1') === rv.flip));
   if (rv.flip) { renderRatesFlip(); return; }
   const cols = columns().map(c => c.room), days = Array.from({ length: rv.days }, (_, i) => addDays(rv.start, i));
@@ -2087,7 +2111,7 @@ function renderRates() {
   const head = `<tr><th class="rt-corner">Noaptea din ↓</th>${cols.map(r => `<th data-r="${r.id}" style="--rc:${r.color || 'transparent'}"><div class="rn">${esc(r.name)}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span>bază <b>${r.price}</b></div></th>`).join('')}</tr>`;
   const rows = days.map(d => { const dt = fromIso(d), wk = isWkNight(d);
     return `<tr class="${wk ? 'wk' : ''} ${d === TODAY ? 'today' : ''} ${d < TODAY ? 'past' : ''} ${dt.getDate() === 1 ? 'm1' : ''}"><th><b>${dt.getDate()} ${MONTHS[dt.getMonth()]}</b>${d === TODAY ? 'AZI' : DOWS[dt.getDay()]}</th>${cols.map(r => {
-      const v = S.rates[r.id] && S.rates[r.id][d], cls = v == null ? '' : v > r.price ? 'up' : v < r.price ? 'down' : '';
+      const v = S.rates[r.id] && S.rates[r.id][d], cls = heatCls(r.id, d, v != null ? v : r.price) + (v != null ? ' cus' : '');
       return `<td data-r="${r.id}" data-d="${d}" class="${cls}">${v != null ? v : r.price}</td>`; }).join('')}</tr>`; }).join('');
   g.innerHTML = `<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;
   g.scrollTop = keepT; g.scrollLeft = keepL; paintSel();
@@ -2100,7 +2124,7 @@ function renderRatesFlip() {
   const head = `<tr><th class="rt-corner">Camera ↓<br>noaptea din →</th>${days.map(d => { const dt = fromIso(d);
     return `<th class="dh ${dcls(d)}"><b>${dt.getDate()} ${MONTHS[dt.getMonth()]}</b><small>${d === TODAY ? 'Azi' : DOWS[dt.getDay()]}</small></th>`; }).join('')}</tr>`;
   const rows = cols.map(r => `<tr><th class="rh2" data-r="${r.id}" style="--rc:${r.color || 'transparent'}"><div class="rn">${esc(r.name)}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span>bază <b>${r.price}</b></div></th>${days.map(d => {
-    const v = S.rates[r.id] && S.rates[r.id][d], cls = v == null ? '' : v > r.price ? 'up' : v < r.price ? 'down' : '';
+    const v = S.rates[r.id] && S.rates[r.id][d], cls = heatCls(r.id, d, v != null ? v : r.price) + (v != null ? ' cus' : '');
     return `<td data-r="${r.id}" data-d="${d}" class="${cls} ${dcls(d)}">${v != null ? v : r.price}</td>`; }).join('')}</tr>`).join('');
   g.innerHTML = `<table><thead>${head}</thead><tbody>${rows}</tbody></table>`;
   g.scrollTop = keepT; g.scrollLeft = keepL; paintSel();
@@ -2110,7 +2134,7 @@ function renderRtQuick() {
   const grp = [['Toate camerele', () => true], ['2 persoane', r => r.capacity === 2], ['4 persoane', r => r.capacity === 4],
     ...fl.map(f => [(view.prop === 'all' && S.properties.length > 1 ? shortProp(propById(f.propertyId)) + ' · ' : '') + f.name, r => r.floorId === f.id])];
   $('#rtQuick').innerHTML = `<span class="pb-l">Selectează</span>` + grp.map((x, i) => `<button class="btn sm" data-g="${i}">${esc(x[0])}</button>`).join('') +
-    `<span class="rt-leg"><i class="up"></i>mai scump decât baza <i class="down"></i>mai ieftin</span>`;
+    `<span class="rt-leg">mai ieftin <i class="g h1"></i><i class="g h2"></i><i class="g h3"></i><i class="g h4"></i><i class="g h5"></i> mai scump, față de media camerei în acea lună</span>`;
   $('#rtQuick').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; rsel.rooms = tops.filter(grp[+b.dataset.g][1]).map(r => r.id); paintSel(); $('#rtPrice').focus(); };
 }
 function paintSel() {
