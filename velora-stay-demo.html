@@ -664,6 +664,44 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
 @media (hover:none){.res{touch-action:auto}}
 
 /* ---------- Responsive ---------- */
+/* phone turned sideways: little height, so buttons and bars share one line and the calendar gets the rest */
+@media (max-height:520px) and (min-width:721px){
+  .brand{display:none}
+  .nav{padding:6px}
+  input:not(.cp-in):not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
+  .topbar{padding:6px 10px;gap:6px;flex-wrap:nowrap}
+  .topbar h1 small,.topbar .search,.kbd-hint{display:none}
+  #page-calendar.on,#page-rates.on{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto}
+  #page-calendar .chart-wrap,#page-rates .chart-wrap{display:contents}
+  #page-calendar .topbar,#page-rates .topbar{grid-area:1/1}
+  #page-calendar .topbar h1{display:none}
+  #page-calendar .topbar .spacer{display:none}
+  #page-calendar .period{min-width:0;font-size:14px}
+  .propbar{grid-area:1/2;min-width:0;align-self:stretch;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:0 10px!important;background:var(--surface);border-bottom:1px solid var(--line)}
+  .propbar::-webkit-scrollbar,.rt-quick::-webkit-scrollbar{display:none}
+  .propbar>*,.rt-quick>*{flex:none}
+  .propbar .pb-l,.propbar>.btn.sm:first-child,.propbar>.btn.sm:first-child+.sep,.propbar .btn.ghost{display:none}
+  .propbar .seg button{padding:5px 10px}
+  #page-calendar .todaybar,#page-calendar .legend{display:none}
+  #page-calendar .chart{grid-column:1/-1;grid-row:2/4;margin:6px 8px 8px}
+  #newResBtn{position:fixed;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:90;width:52px;height:52px;border-radius:50%;padding:0;justify-content:center;gap:0;font-size:0;box-shadow:0 12px 26px -8px rgba(14,124,134,.7)}
+  #newResBtn svg{width:24px;height:24px}
+  /* rates: group buttons on one sliding line, the panel only when something is chosen */
+  #page-rates .topbar h1{font-size:16px}
+  .rt-quick{grid-column:1/-1;grid-row:2;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:6px 8px 4px}
+  .rt-leg{white-space:nowrap}
+  #page-rates .rt-grid{grid-column:1/-1;grid-row:3;margin:0 8px 6px}
+  .rt-panel{grid-column:1/-1;grid-row:4;flex-wrap:nowrap;overflow-x:auto;align-items:center;gap:8px;padding:6px 10px}
+  .rt-panel>*{flex:none}
+  .rt-panel .rt-info{flex:0 1 auto;max-width:190px}
+  .rt-panel .rt-info small{display:none}
+  .rt-panel .f label{display:none}
+  .rt-panel .chk{padding:0}
+  .rt-panel.idle{display:none}
+  .overlay{padding:6px}
+  .modal{max-height:calc(100dvh - 12px)}
+  .overlay .ft .hint{display:none!important}
+}
 .menu-toggle{display:none}
 @media (max-width:1100px){
   .app{grid-template-columns:var(--sidebar-min) 1fr}
@@ -1283,11 +1321,11 @@ const mctx = document.createElement('canvas').getContext('2d');   // measures gu
 let addMode = null;   // id of the reservation that is getting extra rooms drawn onto it
 let zoom = 1; try { zoom = +localStorage.getItem(KEY + '-zoom') || 1; } catch(e){}
 function applyZoom() {
-  const m = matchMedia('(max-width:720px)').matches;
+  const m = matchMedia('(max-width:720px), (max-height:520px)').matches, short = matchMedia('(max-height:520px)').matches;   // short: phone turned sideways
   chart.style.setProperty('--colw', Math.round((m ? 128 : 156) * zoom) + 'px');
   chart.style.setProperty('--rowh', Math.round((m ? 46 : 52) * zoom) + 'px');
   chart.style.setProperty('--peekw', Math.round(Math.max(240, 156 * zoom * 1.7)) + 'px');
-  chart.style.setProperty('--headh', (Math.round(Math.max(50, (m ? 62 : 70) * zoom)) + (view.floor === 'all' && S && S.floors.length ? 14 : 0)) + 'px');
+  chart.style.setProperty('--headh', (Math.round(Math.max(short ? 44 : 50, (short ? 48 : m ? 62 : 70) * zoom)) + (view.floor === 'all' && S && S.floors.length ? 14 : 0)) + 'px');
   chart.style.setProperty('--datew', Math.round(Math.max(72, (m ? 64 : 84) * zoom)) + 'px');
   chart.style.setProperty('--z', zoom);
   chart.classList.toggle('zoomed-out', zoom < 1);
