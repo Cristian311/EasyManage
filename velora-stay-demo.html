@@ -202,6 +202,7 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res .out{margin-right:auto;font-size:max(9.5px,calc(10.5px*var(--z)));font-weight:800;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .res{container-type:inline-size}
 @container (max-width:96px){.res:not(.peek) .src{display:none}}
+.chart.zoomed-out .res:not(.peek) .src{display:none}
 @container (max-width:30px){.res:not(.peek) .out{display:none}}
 .res .src{font-size:max(8px,calc(9.5px*var(--z)));font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:5px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);z-index:1}
 .res .src.booking{color:var(--src-booking);border-color:var(--src-booking)}
@@ -1009,6 +1010,7 @@ function applyZoom() {
   chart.style.setProperty('--headh', (Math.round(Math.max(50, (m ? 62 : 70) * zoom)) + (view.floor === 'all' && S && S.floors.length ? 14 : 0)) + 'px');
   chart.style.setProperty('--datew', Math.round(Math.max(72, (m ? 64 : 84) * zoom)) + 'px');
   chart.style.setProperty('--z', zoom);
+  chart.classList.toggle('zoomed-out', zoom < 1);
   chart.classList.toggle('tight', Math.round((m ? 46 : 52) * zoom) < 38);
   $('#zoomLbl').textContent = Math.round(zoom * 100) + '%';
   try { localStorage.setItem(KEY + '-zoom', zoom); } catch(e){}
