@@ -79,7 +79,8 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .main{display:flex;flex-direction:column;min-width:0;min-height:0}
 .topbar{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
 .topbar h1{font-size:18px;font-weight:600;letter-spacing:-.01em;display:flex;align-items:center;gap:10px}
-.topbar h1 small{font-family:var(--font);font-size:12px;color:var(--ink-3);font-weight:500}
+.topbar h1 small{font-family:var(--font);font-size:12px;color:var(--ink-3);font-weight:500;max-width:190px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar h1{min-width:0}
 .spacer{flex:1}
 .btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:9px;font-weight:700;font-size:13px;border:1px solid var(--line);background:var(--surface);color:var(--ink);transition:background .12s,border-color .12s,transform .06s;white-space:nowrap}
 .btn:hover{background:var(--surface-2);border-color:var(--ink-3)}
@@ -97,11 +98,11 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .seg button{padding:7px 11px;font-weight:700;font-size:12px;color:var(--ink-2)}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button.on{background:var(--accent-soft);color:var(--accent)}
-.period{font-family:var(--font-d);font-weight:600;font-size:15px;min-width:180px;text-align:center}
+.period{font-family:var(--font-d);font-weight:600;font-size:15px;min-width:150px;text-align:center}
 .legend{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--ink-2);flex-wrap:wrap}
 @media (max-width:1400px){.hint-long{display:none}}
 .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:0 10px;height:34px;min-width:200px}
+.search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:0 10px;height:34px;min-width:150px}
 .search input{border:0;background:transparent;outline:0;width:100%}
 .search svg{width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:2.2;stroke-linecap:round}
 .kbd{font-family:ui-monospace,monospace;font-size:10.5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;padding:0 5px;color:var(--ink-3);background:var(--surface)}
@@ -430,7 +431,8 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 /* Today bar */
 .propbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:0 2px 10px}
 .propbar .pb-l{font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;font-weight:800;margin-right:2px}
-.propbar .seg button{padding:6px 12px}
+.propbar .seg button{padding:6px 12px;white-space:nowrap}
+.propbar .pb-g{font-size:12px;color:var(--ink-2);font-weight:800;margin-left:6px}
 .propbar .seg button.all{color:var(--ink-3)}
 .propbar .seg button.on.all{color:var(--accent)}
 .propbar .sep{width:1px;height:22px;background:var(--line)}
@@ -740,7 +742,7 @@ function toast(msg, kind='') {
 }
 
 /* ---------- State ---------- */
-const KEY = 'velora-stay-demo-v7';
+const KEY = 'velora-stay-demo-v8';
 const ROOM_COLORS = ['#3A7BD5','#0E7C86','#2F8F5B','#B8862B','#D9761B','#C9453A','#6B5BD6','#B3437C','#5E7C8A','#8E5A3C'];
 let S;            // {rooms, guests, reservations}
 let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '', prop: 'all', floor: 'all', extra: 0 };
@@ -748,6 +750,13 @@ try { const v = JSON.parse(localStorage.getItem('velora-stay-demo-view')); if (v
 function saveView() { try { localStorage.setItem('velora-stay-demo-view', JSON.stringify({ prop: view.prop, floor: view.floor })); } catch(e){} }
 
 function seed() {
+  // deterministic pseudo-random numbers, so the demo looks the same on every load
+  let rs = 20260910;
+  const rnd = () => { rs |= 0; rs = rs + 0x6D2B79F5 | 0; let t = Math.imul(rs ^ rs >>> 15, 1 | rs); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+  const pick = a => a[Math.floor(rnd() * a.length)];
+  const plain = x => x.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+
+  /* ---------- Guests: the regulars plus a realistic guest book ---------- */
   const g = (f, l, phone, email, country, notes='') => ({ id: uid('g_'), firstName: f, lastName: l, phone, email, country, notes });
   const guests = [
     g('Mihai','Popescu','0722 111 222','mihai.popescu@gmail.com','România','Vine des, preferă etajul 1.'),
@@ -759,78 +768,118 @@ function seed() {
     g('Radu','Marin','0766 999 000','radu.marin@gmail.com','România'),
     g('Ioana','Stan','0740 222 333','ioana.stan@gmail.com','România'),
   ];
+  const FN = ['Alexandru','Maria','Ion','Ana','Cristian','Gabriela','Florin','Daniela','Bogdan','Irina','Vlad','Diana','Sorin','Andreea','Adrian','Simona','Cătălin','Roxana','George','Alina','Paul','Oana','Marius','Bianca','Ștefan','Carmen','Dan','Iulia','Victor','Raluca'];
+  const LN = ['Popa','Dumitru','Stoica','Gheorghe','Rusu','Munteanu','Matei','Constantin','Tudor','Dobre','Barbu','Nistor','Florea','Ene','Toma','Dinu','Lazăr','Moldovan','Sandu','Cristea','Neagu','Ungureanu','Voicu','Preda','Olteanu','Radu','Mocanu','Ilie','Pavel','Enache'];
+  const seen = new Set(guests.map(x => x.firstName + x.lastName));
+  while (guests.length < 148) {
+    const f = pick(FN), l = pick(LN); if (seen.has(f + l)) continue; seen.add(f + l);
+    guests.push(g(f, l, `07${20 + Math.floor(rnd() * 70)} ${100 + Math.floor(rnd() * 900)} ${100 + Math.floor(rnd() * 900)}`, `${plain(f)}.${plain(l)}@gmail.com`, 'România'));
+  }
+  [['Julia','Novak','Cehia','+420 601 234 567'],['Tomasz','Kowalski','Polonia','+48 512 345 678'],['Emma','Schmidt','Germania','+49 151 2345678'],['Luca','Bianchi','Italia','+39 347 1234567'],
+   ['Anna','Horváth','Ungaria','+36 30 123 4567'],['Pierre','Martin','Franța','+33 6 12 34 56 78'],['Sophie','Wagner','Austria','+43 664 1234567'],['David','Cohen','Israel','+972 52 123 4567']]
+    .forEach(([f, l, c, ph]) => guests.push(g(f, l, ph, `${plain(f)}.${plain(l)}@mail.com`, c)));
+
+  /* ---------- Properties, floors, rooms ---------- */
   const properties = [{ id: uid('p_'), name: 'Vila Duduleanu', city: 'Brașov' }, { id: uid('p_'), name: 'Vila Mateo', city: 'Râșnov' }];
   const P1 = properties[0].id, P2 = properties[1].id;
-  const floors = [{ id: uid('f_'), propertyId: P1, name: 'Etaj 1 M' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 1 I' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 2 M' }, { id: uid('f_'), propertyId: P1, name: 'Etaj 2 I' },
-                  { id: uid('f_'), propertyId: P2, name: 'Parter' }, { id: uid('f_'), propertyId: P2, name: 'Etaj 1' }];
-  const r = (name, type, cap, price, desc='', active=true) => ({ id: uid('r_'), name, type, capacity: cap, price, desc, active, parentId: null, propertyId: P1, floorId: null });
-  const rooms = [
-    r('101','Dublă',2,250,'Vedere la grădină'),
-    r('102','Dublă',2,250,'Balcon'),
-    r('103','Twin',2,240),
-    r('104','Single',1,180),
-    r('201','Triplă',3,320,'Vedere la munte'),
-    r('202','Familială',4,380),
-    r('Ap. 1','Apartament',4,520,'2 dormitoare, bucătărie'),
-    r('Ap. 2','Apartament',4,520,'Mansardă'),
-  ];
-  ['#3A7BD5','#3A7BD5','#3A7BD5','#5E7C8A','#2F8F5B','#2F8F5B','#B8862B','#D9761B'].forEach((c, i) => rooms[i].color = c);
-  [0,0,0,0,1,1,2,3].forEach((f, i) => rooms[i].floorId = floors[f].id);
-  const v = (name, type, cap, price, f, color) => ({ id: uid('r_'), name, type, capacity: cap, price, desc: '', active: true, parentId: null, propertyId: P2, floorId: floors[f].id, color });
-  const vila = [v('V1','Dublă',2,220,4,'#6B5BD6'), v('V2','Dublă',2,220,4,'#6B5BD6'), v('V3','Familială',4,340,5,'#B3437C'), v('V4','Studio',2,260,5,'#B3437C')];
-  // Split Ap. 1 into two units to show the feature off
-  const ap1 = rooms[6];
-  const units = ['A','B'].map(l => ({ id: uid('r_'), name: `${ap1.name} · ${l}`, type: 'Dormitor', capacity: 2, price: 280, desc: '', active: true, parentId: ap1.id, label: l, color: ap1.color, propertyId: ap1.propertyId, floorId: ap1.floorId }));
-  rooms.splice(7, 0, ...units);
+  const floors = [], rooms = [];
+  const addFloor = (pid, name, color, list) => { const f = { id: uid('f_'), propertyId: pid, name }; floors.push(f);
+    list.forEach(([nm, cap, type, price]) => rooms.push({ id: uid('r_'), name: nm, type, capacity: cap, price, desc: '', active: true, parentId: null, propertyId: pid, floorId: f.id, color })); };
+  // Vila Duduleanu: every floor is split between M and I; on the main floors rooms 1 and 5 take 4 people, the others 2
+  const five = (lvl, side) => [1, 2, 3, 4, 5].map(k => { const big = k === 1 || k === 5; return [`${lvl}${k}${side}`, big ? 4 : 2, big ? 'Familială' : 'Dublă', big ? 400 : 250]; });
+  const two = (lvl, side, type, price) => [1, 2].map(k => [`${lvl}${k}${side}`, 2, type, price]);
+  addFloor(P1, 'Subsol M', '#5E7C8A', two('S', 'M', 'Dublă', 220));
+  addFloor(P1, 'Subsol I', '#8E5A3C', two('S', 'I', 'Dublă', 220));
+  addFloor(P1, 'Etaj 1 M', '#3A7BD5', five(1, 'M'));
+  addFloor(P1, 'Etaj 1 I', '#0E7C86', five(1, 'I'));
+  addFloor(P1, 'Etaj 2 M', '#2F8F5B', five(2, 'M'));
+  addFloor(P1, 'Etaj 2 I', '#B8862B', five(2, 'I'));
+  addFloor(P1, 'Etaj 3 M', '#D9761B', two(3, 'M', 'Mansardă', 280));
+  addFloor(P1, 'Etaj 3 I', '#C9453A', two(3, 'I', 'Mansardă', 280));
+  // Vila Mateo: same rule, room 1 and room 5 take 4 people
+  addFloor(P2, 'Parter', '#6B5BD6', [1, 2, 3, 4].map(k => [`P${k}`, k === 1 ? 4 : 2, k === 1 ? 'Familială' : 'Dublă', k === 1 ? 380 : 230]));
+  addFloor(P2, 'Etaj 1', '#B3437C', [1, 2, 3, 4, 5].map(k => { const big = k === 1 || k === 5; return [`1${k}`, big ? 4 : 2, big ? 'Familială' : 'Dublă', big ? 380 : 230]; }));
+  const RM = Object.fromEntries(rooms.map(x => [x.name, x]));
 
+  /* ---------- Reservations ---------- */
   const resRoomIdsSeed = x => x.roomIds && x.roomIds.length ? x.roomIds : [x.roomId];
   const R = (gi, room, inOff, nights, opts={}) => {
-    const rm = typeof room === 'number' ? rooms[room] : room;
-    const roomIds = opts.rooms ? opts.rooms.map(x => typeof x === 'number' ? rooms[x].id : x.id) : [rm.id];
+    const rm = typeof room === 'string' ? RM[room] : room;
+    const roomIds = opts.rooms ? opts.rooms.map(x => (typeof x === 'string' ? RM[x] : x).id) : [rm.id];
     const checkIn = addDays(TODAY, inOff), checkOut = addDays(checkIn, nights);
-    const total = opts.total ?? rm.price * nights;
+    const total = opts.total ?? roomIds.reduce((t, id) => t + rooms.find(q => q.id === id).price, 0) * nights;
     const payments = (opts.pay || []).map(p => ({ id: uid('p_'), amount: p[0], method: p[1], date: p[2] ?? checkIn, note: p[3] ?? '' }));
     return { id: uid('res_'), guestId: guests[gi].id, roomId: roomIds[0], roomIds, checkIn, checkOut, pax: opts.pax ?? Math.min(2, rm.capacity), total, source: opts.src ?? 'direct', status: opts.status ?? 'confirmed', notes: opts.notes ?? '', payments, invoiceNo: opts.inv ?? '', createdAt: Date.now() };
   };
-  const reservations = [
-    R(0, 0, -2, 4, { status:'checked_in', src:'phone', pay:[[500,'cash']], notes:'Preferă micul dejun la 8:00.' }),
-    R(1, 2, -1, 3, { status:'checked_in', src:'booking', pay:[[720,'card']], notes:'Vine cu câinele. Pat suplimentar pentru copil.' }),
-    R(2, 1, 0, 2, { status:'confirmed', src:'direct', pay:[[200,'transfer']] }),
-    R(3, 4, 0, 5, { status:'confirmed', src:'booking', pay:[[1600,'card']], pax:3 }),
-    R(4, rooms[9], 1, 3, { status:'confirmed', src:'phone', notes:'De emis e-Factura pe SC Alfa SRL.', pax:4 }),
-    R(5, 5, 2, 4, { status:'pending', src:'airbnb', pax:4 }),
-    R(6, 3, 3, 2, { status:'confirmed', src:'direct', pay:[[360,'cash']] }),
-    R(7, 1, 4, 3, { status:'confirmed', src:'direct' }),
-    R(0, 7, 5, 2, { status:'pending', src:'phone', pax:2 }),
-    R(3, 0, 6, 3, { status:'confirmed', src:'booking', pay:[[750,'card']] }),
-    R(2, 8, 2, 2, { status:'confirmed', src:'direct', pay:[[560,'card']] }),
-    R(6, 4, 7, 2, { status:'cancelled', src:'airbnb' }),
-    R(1, 2, 9, 4, { status:'confirmed', src:'direct' }),
-    R(5, 3, -4, 3, { status:'checked_out', src:'booking', pay:[[540,'card']], inv:'VS-2026-0141' }),
-    R(7, 3, -1, 1, { status:'checked_in', src:'direct', pay:[[90,'cash']], notes:'Pleacă azi, rest de plată la plecare.' }),
-    R(6, 5, -1, 2, { status:'confirmed', src:'phone', notes:'A sunat că ajunge târziu.' }),
-    R(3, 0, 12, 2, { status:'confirmed', src:'phone', rooms:[0, 1], pax:4, total:1000, pay:[[400,'transfer']], notes:'Familie cu copii, două camere alăturate, o singură plată.' }),
-  ];
-  reservations.push(
-    R(1, vila[0], 0, 3, { status:'checked_in', src:'airbnb', pay:[[660,'card']] }),
-    R(7, vila[2], 2, 4, { status:'confirmed', src:'booking', pax:4, pay:[[600,'card']] }),
-    R(5, vila[3], -1, 2, { status:'checked_in', src:'direct', pay:[[520,'cash']] }),
-    R(4, vila[1], 5, 2, { status:'pending', src:'phone' }));
-  rooms.push(...vila);
-  // August full: back-to-back stays in every bookable room, deterministic so the demo looks the same every time
-  { const y = fromIso(TODAY).getFullYear(), aug1 = `${y}-08-01`, end = `${y}-09-02`;
-    const bookable = rooms.filter(rm => !rooms.some(u => u.parentId === rm.id));
-    const srcs = ['direct','booking','booking','airbnb','phone','direct'];
-    let k = 0;
-    bookable.forEach((rm, ri) => { let day = addDays(aug1, (ri * 3) % 4 === 0 ? 0 : -((ri * 3) % 4));
-      while (day < end) { const n = 2 + ((ri * 7 + k * 5) % 4); let out = addDays(day, n); if (out > end) out = end; if (diffDays(day, out) < 1) break;
-        const g = guests[(ri * 3 + k) % guests.length], price = rm.price * diffDays(day, out);
-        const inOff = diffDays(TODAY, day), late = out > TODAY;
-        if (!reservations.some(x => resRoomIdsSeed(x).includes(rm.id) && day < x.checkOut && x.checkIn < out))
-          reservations.push(R(guests.indexOf(g), rm, inOff, diffDays(day, out), { status: late ? 'checked_in' : 'checked_out', src: srcs[(ri + k) % srcs.length], pay: [[price, k % 3 === 0 ? 'cash' : 'card']], pax: Math.min(rm.capacity, 1 + (k % 3)), inv: !late && k % 4 === 0 ? `VS-${y}-0${100 + ri * 10 + k}` : '' }));
-        day = out; k++; if (k % 5 === 0) day = addDays(day, 1);   // a free night now and then
-      } });
-  }
+  const reservations = [];
+  const busy = (id, a, b) => reservations.some(x => x.status !== 'cancelled' && resRoomIdsSeed(x).includes(id) && a < x.checkOut && x.checkIn < b);
+  const put = r => { if (!resRoomIdsSeed(r).some(id => busy(id, r.checkIn, r.checkOut))) reservations.push(r); };
+  const y = fromIso(TODAY).getFullYear(), aug1 = `${y}-08-01`, sep1 = `${y}-09-01`, horizon = addDays(TODAY, 80);
+  const dated = x => x <= TODAY;
+
+  // today at the desk: arrivals, departures, a late guest, a balance to collect
+  [
+    R(0, '11M', -2, 4, { status:'checked_in', src:'phone', pax:3, pay:[[800,'cash']], notes:'Preferă micul dejun la 8:00.' }),
+    R(1, '13M', -1, 3, { status:'checked_in', src:'booking', pay:[[750,'card']], notes:'Vine cu câinele. Pat suplimentar pentru copil.' }),
+    R(2, '12M', 0, 2, { status:'confirmed', src:'direct', pay:[[200,'transfer']] }),
+    R(3, '11I', 0, 5, { status:'confirmed', src:'booking', pax:3, pay:[[2000,'card']] }),
+    R(7, '12I', -1, 1, { status:'checked_in', src:'direct', pay:[[100,'cash']], notes:'Pleacă azi, rest de plată la plecare.' }),
+    R(6, '13I', -1, 2, { status:'confirmed', src:'phone', notes:'A sunat că ajunge târziu.' }),
+    R(5, '14M', -4, 3, { status:'checked_out', src:'booking', pay:[[750,'card']], inv:`VS-${y}-0141` }),
+    // coming up
+    R(4, '21M', 1, 3, { status:'confirmed', src:'phone', pax:4, notes:'De emis e-Factura pe SC Alfa SRL.' }),
+    R(5, '15I', 2, 4, { status:'pending', src:'airbnb', pax:4 }),
+    R(6, '14M', 3, 2, { status:'confirmed', src:'direct', pay:[[500,'cash']] }),
+    R(7, '12M', 4, 3, { status:'confirmed', src:'direct' }),
+    R(0, '23M', 5, 2, { status:'pending', src:'phone' }),
+    R(3, '11M', 6, 3, { status:'confirmed', src:'booking', pay:[[1200,'card']] }),
+    R(2, '21I', 2, 2, { status:'confirmed', src:'direct', pay:[[500,'card']] }),
+    R(6, '14I', 7, 2, { status:'cancelled', src:'airbnb' }),
+    R(1, '13M', 9, 4, { status:'confirmed', src:'direct' }),
+    // one booking over several rooms side by side
+    R(3, '12I', 12, 2, { status:'confirmed', src:'phone', rooms:['12I','13I'], pax:4, total:1000, pay:[[400,'transfer']], notes:'Familie cu copii, două camere alăturate, o singură plată.' }),
+    R(8, '22M', 14, 2, { status:'confirmed', src:'direct', rooms:['22M','23M'], pax:4, pay:[[250,'transfer']], notes:'Două familii prietene.' }),
+    R(4, '12', 23, 2, { status:'confirmed', src:'phone', rooms:['12','13','14'], pax:6, pay:[[600,'transfer']], notes:'Teambuilding SC Alfa SRL, factură pe firmă.' }),
+    // Vila Mateo
+    R(1, 'P1', 0, 3, { status:'checked_in', src:'airbnb', pax:3, pay:[[1140,'card']] }),
+    R(7, '11', 2, 4, { status:'confirmed', src:'booking', pax:4, pay:[[600,'card']] }),
+    R(5, '14', -1, 2, { status:'checked_in', src:'direct', pay:[[460,'cash']] }),
+    R(4, 'P2', 5, 2, { status:'pending', src:'phone' }),
+  ].forEach(put);
+  // a wedding group in August, three rooms on one booking
+  { const a = `${y}-08-14`, b = addDays(a, 3), st = dated(b) ? 'checked_out' : dated(a) ? 'checked_in' : 'confirmed';
+    put(R(9, '22I', diffDays(TODAY, a), 3, { status: st, src:'phone', rooms:['22I','23I','24I'], pax:6, pay:[[2250,'transfer', a]], inv: st === 'checked_out' ? `VS-${y}-0098` : '', notes:'Nuntă, grup de 6 persoane, o singură factură.' })); }
+
+  // August completely full; after that, random bookings that thin out the further ahead they are
+  const SRC = ['direct','direct','direct','booking','booking','booking','booking','airbnb','airbnb','phone','phone','other'];
+  const NOTES = ['Pat suplimentar pentru copil.','Sosire târzie, după ora 22.','Aniversare, ar vrea flori în cameră.','Vine cu un câine mic.','Factură pe firmă.','Pleacă devreme, la 7:00.','Parcare pentru două mașini.','Alergic la puf, perne sintetice.'];
+  let inv = 142;
+  rooms.forEach(rm => {
+    let day = addDays(aug1, -Math.floor(rnd() * 4));
+    while (day < horizon) {
+      const blocking = reservations.filter(x => x.status !== 'cancelled' && resRoomIdsSeed(x).includes(rm.id));
+      const inside = blocking.find(x => x.checkIn <= day && day < x.checkOut);
+      if (inside) { day = inside.checkOut; continue; }
+      if (day >= sep1) { const far = diffDays(TODAY, day), occ = far < 0 ? .85 : far < 20 ? .7 : far < 45 ? .5 : .32;
+        if (rnd() > occ) { day = addDays(day, 1 + Math.floor(rnd() * 3)); continue; } }
+      let out = addDays(day, day < sep1 ? 2 + Math.floor(rnd() * 4) : 1 + Math.floor(rnd() * 5));
+      const next = blocking.filter(x => x.checkIn > day).sort((a, b) => a.checkIn.localeCompare(b.checkIn))[0];
+      if (next && next.checkIn < out) out = next.checkIn;
+      const n = diffDays(day, out); if (n < 1) { day = addDays(day, 1); continue; }
+      let st = dated(out) ? 'checked_out' : dated(day) ? 'checked_in' : (rnd() < .82 ? 'confirmed' : 'pending');
+      if (st !== 'checked_out' && st !== 'checked_in' && rnd() < .04) st = 'cancelled';
+      const src = pick(SRC), total = rm.price * n, method = pick(['cash','card','card','transfer']), pays = [];
+      if (st === 'checked_out') pays.push([rnd() < .95 ? total : Math.round(total * .5 / 10) * 10, method, day]);
+      else if (st === 'checked_in') { const q = rnd(); if (q < .5) pays.push([total, method, day]); else if (q < .85) pays.push([Math.round(total * .3 / 10) * 10, method, day]); }
+      else if (st !== 'cancelled') { const q = rnd(), early = addDays(TODAY, -Math.floor(rnd() * 20));
+        if ((src === 'booking' || src === 'airbnb') && q < .35) pays.push([total, 'card', early]);
+        else if (q < .4) pays.push([Math.round(total * .3 / 10) * 10, pick(['transfer','cash']), early]); }
+      const pax = rm.capacity === 4 ? 2 + Math.floor(rnd() * 3) : (rnd() < .85 ? 2 : 1);
+      put(R(Math.floor(rnd() * guests.length), rm, diffDays(TODAY, day), n, { status: st, src, pax, pay: pays,
+        inv: st === 'checked_out' && rnd() < .3 ? `VS-${y}-0${inv++}` : '', notes: rnd() < .08 ? pick(NOTES) : '' }));
+      day = out;
+    }
+  });
   return { properties, floors, rooms, guests, reservations };
 }
 function load() { let s = null; try { const j = JSON.parse(localStorage.getItem(KEY)); if (j && j.rooms && j.reservations) s = j; } catch(e){} if (!s) s = seed();
@@ -1617,11 +1666,15 @@ function renderRooms() {
 // the word that tells properties apart: „Vila Duduleanu” → „Duduleanu”
 function shortProp(p) { if (!p) return ''; const w = p.name.trim().split(/\s+/); return w.length > 1 && /^(vila|pensiunea|casa|hotel|cabana)$/i.test(w[0]) ? w.slice(1).join(' ') : w[0]; }
 function renderPropBar() {
+  if (view.prop !== 'all' && !propById(view.prop)) { view.prop = 'all'; view.floor = 'all'; }
   const props = S.properties, curP = view.prop === 'all' ? null : propById(view.prop);
   const floors = S.floors.filter(f => view.prop === 'all' || f.propertyId === view.prop);
+  if (view.prop !== 'all' && !propById(view.prop)) { view.prop = 'all'; view.floor = 'all'; }
   if (view.floor !== 'all' && !floors.some(f => f.id === view.floor)) view.floor = 'all';
   const pb = props.length > 1 ? `<span class="pb-l">Proprietate</span><div class="seg" id="pbProp"><button class="all ${view.prop === 'all' ? 'on' : ''}" data-p="all">Toate</button>${props.map(x => `<button class="${view.prop === x.id ? 'on' : ''}" data-p="${x.id}">${esc(x.name)}</button>`).join('')}</div><span class="sep"></span>` : '';
-  const fb = floors.length ? `<span class="pb-l">Etaj</span><div class="seg" id="pbFloor"><button class="all ${view.floor === 'all' ? 'on' : ''}" data-f="all">Toate</button>${floors.map(f => `<button class="${view.floor === f.id ? 'on' : ''}" data-f="${f.id}">${esc((view.prop === 'all' && props.length > 1 ? shortProp(propById(f.propertyId)) + ' · ' : '') + f.name)}</button>`).join('')}</div>` : '';
+  const fbtn = f => `<button class="${view.floor === f.id ? 'on' : ''}" data-f="${f.id}">${esc(f.name)}</button>`;
+  const groups = view.prop === 'all' && props.length > 1 ? props.map(p => ({ p, fl: floors.filter(f => f.propertyId === p.id) })).filter(x => x.fl.length) : [{ p: null, fl: floors }];
+  const fb = floors.length ? `<span class="pb-l">Etaj</span><div class="seg"><button class="all ${view.floor === 'all' ? 'on' : ''}" data-f="all">Toate</button></div>` + groups.map(x => `${x.p ? `<span class="pb-g">${esc(shortProp(x.p))}</span>` : ''}<div class="seg">${x.fl.map(fbtn).join('')}</div>`).join('') : '';
   $('#propbar').innerHTML = `<button class="btn sm" onclick="goBack()" title="Ecranul de dinainte (Alt + ←)">‹ Înapoi</button><span class="sep"></span>` + pb + fb + `<button class="btn sm ghost" onclick="go('rooms')">Etaje și proprietăți…</button>`;
   const bs = $('#brandSub'); if (bs) bs.textContent = curP ? curP.name : (props[0]?.name || '');
   $('#propbar').onclick = e => { const b = e.target.closest('button[data-p],button[data-f]'); if (!b) return;
@@ -1639,6 +1692,7 @@ function renderTodayBar() {
   const free = rooms.filter(r => !occ.has(r.id));
   const owed = act.filter(r => r.status !== 'checked_out' && r.checkIn <= TODAY && remaining(r) > 0);
   const owedSum = owed.reduce((s, r) => s + remaining(r), 0);
+  $('#todayBadge').textContent = (arr.length + dep.length) || '';
   const item = r => ({ room: roomLabel(r), label: resGuest(r), sub: `${fmtD(r.checkIn)} – ${fmtD(r.checkOut)} · ${STATUS[r.status]}${remaining(r) ? ' · rest ' + money(remaining(r)) : ''}`, go: () => focusRes(r.id) });
   const chips = [
     { k: 'arr', t: 'Sosiri', n: arr.length + late.length, c: 'var(--st-confirmed)', warn: late.length > 0, title: late.length ? `${late.length} întârziate` : '', items: [...late, ...arr].map(item) },
@@ -1667,10 +1721,11 @@ function focusRes(id) {
   el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400);
   openDrawer(id);
 }
-function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderToday(); renderResList(); renderGuests(); renderRooms(); }
+function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderPage(); }
+function renderPage(page = view.page) { if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
 
 /* ---------- Navigation, shortcuts, theme ---------- */
-function go(page, silent = false) { if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); }
+function go(page, silent = false) { if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); renderPage(page); }
 $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page); });
 // browser Back / Forward and the „Înapoi” button walk through pages and property/floor choices
 const navState = () => ({ page: view.page, prop: view.prop, floor: view.floor });
