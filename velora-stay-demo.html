@@ -546,7 +546,7 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 .rt-grid td.up{color:#9A4A00;font-weight:800}
 .rt-grid td.down{color:#1F4E9A;font-weight:800}
 .rt-grid tr.wk th{background:var(--weekend)}
-.rt-grid tr.past td,.rt-grid tr.past th{opacity:.55}
+.rt-grid tr.past th{opacity:.55}
 .rt-grid tr.today th{background:var(--today);color:var(--brass);font-weight:800}
 .rt-grid tr.m1 td,.rt-grid tr.m1 th{border-top:2px solid var(--ink-3)}
 .rt-grid.flip thead th.dh{min-width:68px;padding:7px 6px;text-align:center;cursor:default;box-shadow:none;white-space:nowrap}
@@ -561,16 +561,15 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 .rt-grid .rh2 .rt{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--ink-3);margin-top:2px}
 .rt-grid .rh2 .rt b{color:var(--ink-2)}
 .rt-grid.flip td{min-width:68px;height:46px}
-.rt-grid.flip td.past,.rt-grid.flip th.dh.past{opacity:.55}
+.rt-grid.flip th.dh.past{opacity:.55}
 .rt-grid.flip .m1{border-left:2px solid var(--ink-3)}
-.rt-grid,.rt-leg{--g1:#EAF6EE;--g2:#CBEBD5;--g3:#98D4AC;--g4:#4DAA6E;--g5:#1E7443;--gt1:#1E3B2A;--gt4:#FFFFFF}
-:root[data-theme="dark"] .rt-grid,:root[data-theme="dark"] .rt-leg{--g1:#17271D;--g2:#1D3B27;--g3:#265A37;--g4:#35864F;--g5:#57C07C;--gt1:#DDEFE3;--gt4:#FFFFFF}
+.rt-grid,.rt-leg{--g1:#E4F3E9;--g2:#BEE3C9;--g3:#93CEA7;--g4:#5DB27F;--g5:#2F8D58;--gt1:#173424;--gt4:#FFFFFF}
+:root[data-theme="dark"] .rt-grid,:root[data-theme="dark"] .rt-leg{--g1:#1A2D21;--g2:#1F442D;--g3:#2A5F3C;--g4:#3B7F51;--g5:#56A770;--gt1:#DDEFE3;--gt4:#FFFFFF}
 .rt-grid td.h1{background:var(--g1);color:var(--gt1)}
 .rt-grid td.h2{background:var(--g2);color:var(--gt1)}
 .rt-grid td.h3{background:var(--g3);color:var(--gt1)}
 .rt-grid td.h4{background:var(--g4);color:var(--gt4)}
 .rt-grid td.h5{background:var(--g5);color:var(--gt4)}
-:root[data-theme="dark"] .rt-grid td.h5{color:#0F1F14}
 .rt-grid td{font-weight:600}
 .rt-grid td.cus{font-weight:900}
 .rt-leg i.g{width:18px;height:12px;border-radius:3px}
@@ -579,6 +578,17 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 .rt-leg i.h3{background:var(--g3)}
 .rt-leg i.h4{background:var(--g4)}
 .rt-leg i.h5{background:var(--g5)}
+.cellpop{position:fixed;z-index:260;width:250px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow-lg);padding:10px 12px;display:flex;flex-direction:column;gap:8px;animation:pop .14s ease}
+.cellpop .cp-h{font-size:12px;color:var(--ink-3)}
+.cellpop .cp-h b{color:var(--ink);font-family:var(--font-d);font-size:14px}
+.cp-row{display:flex;align-items:stretch;gap:6px}
+.cp-b{width:42px;border:1px solid var(--line);border-radius:9px;font-size:20px;font-weight:700;color:var(--ink);background:var(--surface-2)}
+.cp-b:hover{border-color:var(--accent);color:var(--accent)}
+.cp-in{flex:1;min-width:0;text-align:center;font-family:var(--font-d);font-size:22px;font-weight:700;border:1px solid var(--line);border-radius:9px;padding:6px;background:var(--surface);color:var(--ink);cursor:ns-resize;-moz-appearance:textfield;touch-action:none}
+.cp-in:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent);cursor:text}
+.cp-in::-webkit-inner-spin-button,.cp-in::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.cp-hint{font-size:11.5px;color:var(--ink-3);line-height:1.35}
+.cp-ft{display:flex;justify-content:space-between;gap:6px}
 .rt-grid td.sel{outline:2px solid var(--accent);outline-offset:-2px;background:var(--sel)!important;color:var(--ink)}
 :root[data-theme="dark"] .rt-grid td.up{color:#F2A65A}
 :root[data-theme="dark"] .rt-grid td.down{color:#8FB5F5}
@@ -1456,7 +1466,10 @@ window.addEventListener('pointerup', e => {
   }
   hideDragTip();
   d.el.classList.remove('dragging');
-  if (!d.moved) { openDrawer(d.r.id); return; }
+  if (!d.moved) {
+    if (e.pointerType === 'touch' || (d.el.classList.contains('peek') && !d.el.classList.contains('unpeek'))) { peekTarget = null; openDrawer(d.r.id); return; }
+    peekTarget = d.el; d.el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: e.pointerType || 'mouse', clientX: e.clientX, clientY: Math.min(e.clientY, d.el.getBoundingClientRect().bottom - 20) }));
+    return; }
   if (!d.cand || (d.cand.roomIds.join() === d.rooms0.join() && d.cand.checkIn === d.in0 && d.cand.checkOut === d.out0)) { renderChart(); return; }
   if (!d.valid) {
     const c = conflictAny(d.cand.roomIds, d.cand.checkIn, d.cand.checkOut, d.r.id);
@@ -1551,8 +1564,9 @@ function offerMerge(r) {
 let peekT = null;
 const EASE = 'cubic-bezier(.2,.8,.2,1)';
 const nearBottom = (el, e) => e.clientY > el.getBoundingClientRect().bottom - 18;
+let peekTarget = null;   // the block the user clicked to expand
 body.addEventListener('pointerover', e => {
-  const el = e.target.closest('.res'); if (!el || drag || addMode || e.pointerType === 'touch') return;
+  const el = e.target.closest('.res'); if (!el || drag || addMode || e.pointerType === 'touch' || el !== peekTarget) return;
   if (!el.classList.contains('peek') && nearBottom(el, e)) { clearTimeout(peekT); peekT = null; return; }
   clearTimeout(peekT); peekT = setTimeout(() => { peekT = null; if (drag || addMode || (el.classList.contains('peek') && !el.classList.contains('unpeek'))) return;
     el.classList.remove('unpeek');
@@ -1570,7 +1584,7 @@ body.addEventListener('pointerover', e => {
     const cr = chart.getBoundingClientRect(), er = el.getBoundingClientRect();
     el.style.marginLeft = er.left + w1 > cr.right - 12 ? -dw + 'px' : '';   // grow right, unless it would run off the visible grid
     el.style.marginTop = er.top + h1 > cr.bottom - 12 ? -dh + 'px' : '';    // grow down, unless there is no room below
-  }, 220);
+  }, 0);
 });
 // moving inside a block: cancel the peek near the bottom edge, start it again once back in the middle
 body.addEventListener('pointermove', e => {
@@ -1582,7 +1596,7 @@ body.addEventListener('pointermove', e => {
 body.addEventListener('pointerout', e => {
   const el = e.target.closest('.res'); if (!el) return;
   if (e.relatedTarget && el.contains(e.relatedTarget)) return;
-  clearTimeout(peekT); unpeek(el);
+  clearTimeout(peekT); peekTarget = null; unpeek(el);
 });
 // everything the receptionist needs at a glance, shown inside the expanded block
 function peekHtml(r) {
@@ -1596,7 +1610,7 @@ function peekHtml(r) {
     ${r.notes ? `<div class="pc-notes">${esc(r.notes)}</div>` : ''}
     ${g && (g.phone || g.email) ? `<div class="pc-row"><span>${esc(g.phone || '')}</span><span>${esc(g.email || '')}</span></div>` : ''}
     ${r.invoiceNo ? `<div class="pc-row"><span>Factură</span><span>${esc(r.invoiceNo)}</span></div>` : ''}
-    <div class="pc-hint">${qa ? `<button class="qa ${qa.cls || ''}" data-qa="${r.id}">${qa.label}</button>` : ''}<span>click: detalii · click dreapta: acțiuni · trage: mută</span></div>`;
+    <div class="pc-hint">${qa ? `<button class="qa ${qa.cls || ''}" data-qa="${r.id}">${qa.label}</button>` : ''}<span>încă un click: detalii · click dreapta: acțiuni · trage: mută</span></div>`;
 }
 function unpeek(el) {
   if (!el.classList.contains('peek')) return;
@@ -2096,8 +2110,9 @@ try { rv.flip = localStorage.getItem('velora-stay-demo-rtview') === '1'; } catch
 // shade of green = price compared with the room's average for that month (so August and June are judged by their own level)
 let heatAvg = {};
 function heatCls(rid, d, price) {
-  const ym = d.slice(0, 7), key = rid + ym;
-  if (heatAvg[key] == null) { let t = 0, n = 0; for (let x = ym + '-01', e = monthEnd(ym); x <= e; x = addDays(x, 1)) { t += rateFor(rid, x); n++; } heatAvg[key] = t / n; }
+  const rm = roomById(rid), ym = d.slice(0, 7), key = rm.propertyId + '|' + rm.capacity + '|' + ym;
+  if (heatAvg[key] == null) { const grp = S.rooms.filter(x => x.propertyId === rm.propertyId && x.capacity === rm.capacity && !S.rooms.some(u => u.parentId === x.id)); let t = 0, n = 0;
+    for (let x = ym + '-01', e = monthEnd(ym); x <= e; x = addDays(x, 1)) grp.forEach(g => { t += rateFor(g.id, x); n++; }); heatAvg[key] = n ? t / n : price; }
   const q = price / heatAvg[key];
   return 'h' + (q < .88 ? 1 : q < .96 ? 2 : q <= 1.04 ? 3 : q <= 1.12 ? 4 : 5);
 }
@@ -2133,7 +2148,7 @@ function renderRtQuick() {
   const grp = [['Toate camerele', () => true], ['2 persoane', r => r.capacity === 2], ['4 persoane', r => r.capacity === 4],
     ...fl.map(f => [(view.prop === 'all' && S.properties.length > 1 ? shortProp(propById(f.propertyId)) + ' · ' : '') + f.name, r => r.floorId === f.id])];
   $('#rtQuick').innerHTML = `<span class="pb-l">Selectează</span>` + grp.map((x, i) => `<button class="btn sm" data-g="${i}">${esc(x[0])}</button>`).join('') +
-    `<span class="rt-leg">mai ieftin <i class="g h1"></i><i class="g h2"></i><i class="g h3"></i><i class="g h4"></i><i class="g h5"></i> mai scump, față de media camerei în acea lună</span>`;
+    `<span class="rt-leg">mai ieftin <i class="g h1"></i><i class="g h2"></i><i class="g h3"></i><i class="g h4"></i><i class="g h5"></i> mai scump, față de camerele de aceeași mărime (2p, 4p) din luna respectivă</span>`;
   $('#rtQuick').onclick = e => { const b = e.target.closest('[data-g]'); if (!b) return; rsel.rooms = tops.filter(grp[+b.dataset.g][1]).map(r => r.id); paintSel(); $('#rtPrice').focus(); };
 }
 function paintSel() {
@@ -2141,19 +2156,23 @@ function paintSel() {
   $('#rtFrom').value = rsel.from; $('#rtTo').value = rsel.to;
   const n = diffDays(rsel.from, rsel.to) + 1, k = rsel.rooms.length;
   $('#rtInfo').innerHTML = k ? `<b>${n}</b> ${n === 1 ? 'noapte' : 'nopți'} · <b>${k}</b> ${k === 1 ? 'cameră' : 'camere'} · ${fmtD(rsel.from)} – ${fmtD(rsel.to)}<small>${esc(rsel.rooms.map(id => roomById(id)?.name).slice(0, 10).join(', '))}${k > 10 ? '…' : ''}</small>`
-                           : 'Trage pe grilă peste camere și zile, sau alege un grup de camere de mai sus.';
+                           : 'Click pe un preț ca să-l schimbi direct. Trage pe grilă peste camere și zile, sau alege un grup de camere de mai sus.';
   $('#rtApply').disabled = $('#rtReset').disabled = !k;
 }
 function rtSelect(td) {
+  if (td.dataset.r !== rdrag.r0 || td.dataset.d !== rdrag.d0) rdrag.moved = true;
   const c1 = rdrag.cols.indexOf(td.dataset.r), a = Math.min(rdrag.c0, c1), b = Math.max(rdrag.c0, c1), d1 = td.dataset.d;
   rsel.rooms = rdrag.cols.slice(a, b + 1); rsel.from = d1 < rdrag.d0 ? d1 : rdrag.d0; rsel.to = d1 < rdrag.d0 ? rdrag.d0 : d1; paintSel();
 }
 $('#rtGrid').addEventListener('pointerdown', e => {
   const td = e.target.closest('td[data-r]'); if (!td || e.button !== 0) return; e.preventDefault();
-  const cols = columns().map(c => c.room.id); rdrag = { cols, c0: cols.indexOf(td.dataset.r), d0: td.dataset.d }; rtSelect(td);
+  if (cellEd) saveCellEditor();
+  const cols = columns().map(c => c.room.id); rdrag = { cols, c0: cols.indexOf(td.dataset.r), d0: td.dataset.d, r0: td.dataset.r, moved: false }; rtSelect(td);
 });
 window.addEventListener('pointermove', e => { if (!rdrag) return; const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest('#rtGrid td[data-r]'); if (td) rtSelect(td); });
-window.addEventListener('pointerup', () => { if (!rdrag) return; rdrag = null; $('#rtPrice').focus(); $('#rtPrice').select(); });
+window.addEventListener('pointerup', () => { if (!rdrag) return; const d = rdrag; rdrag = null;
+  if (!d.moved) { openCellEditor(d.r0, d.d0); return; }   // a click on one price: edit it right there
+  $('#rtPrice').focus(); $('#rtPrice').select(); });
 // click a room header: change its base price
 $('#rtGrid').addEventListener('click', e => {
   const th = e.target.closest('th[data-r]'); if (!th) return; const rm = roomById(th.dataset.r); if (!rm) return;
@@ -2163,6 +2182,7 @@ $('#rtGrid').addEventListener('click', e => {
 });
 // endless nights, both ways
 $('#rtGrid').addEventListener('scroll', e => {
+  if (cellEd && !rtBusy) saveCellEditor();
   const g = e.target, up = g.scrollTop < rtLastTop; rtLastTop = g.scrollTop; if (rtBusy) return;
   if (rv.flip) { const back = g.scrollLeft < rtLastLeft; rtLastLeft = g.scrollLeft;
     if (g.scrollLeft + g.clientWidth > g.scrollWidth - 220) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
@@ -2171,6 +2191,49 @@ $('#rtGrid').addEventListener('scroll', e => {
   if (g.scrollTop + g.clientHeight > g.scrollHeight - 150) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
   else if (up && g.scrollTop < 60) { rtBusy = true; const rh = (g.querySelector('tbody tr') || {}).offsetHeight || 36; rv.start = addDays(rv.start, -31); rv.days += 31; renderRates(); g.scrollTop += 31 * rh; rtLastTop = g.scrollTop; rtBusy = false; }
 }, { passive: true });
+let cellEd = null;
+function openCellEditor(rid, d) {
+  closeCellEditor(false);
+  const td = $('#rtGrid').querySelector(`td[data-r="${rid}"][data-d="${d}"]`), rm = roomById(rid); if (!td || !rm) return;
+  const start = rateFor(rid, d), pop = document.createElement('div'); pop.className = 'cellpop'; pop.id = 'cellPop';
+  pop.innerHTML = `<div class="cp-h"><b>${esc(rm.name)}</b> · ${fmtDL(d)}</div>
+    <div class="cp-row"><button type="button" class="cp-b" data-step="-10" aria-label="Scade 10 lei">−</button><input class="cp-in" type="number" step="10" min="0" value="${start}" aria-label="Preț pe noapte"><button type="button" class="cp-b" data-step="10" aria-label="Crește 10 lei">+</button></div>
+    <div class="cp-hint">Trage de preț în sus sau în jos (câte 10 lei) sau scrie-l direct. Prețul de bază: ${rm.price} lei.</div>
+    <div class="cp-ft"><button type="button" class="btn sm" data-base>Prețul de bază</button><button type="button" class="btn sm primary" data-save>Salvează</button></div>`;
+  document.body.appendChild(pop);
+  const r = td.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
+  let x = r.left + r.width / 2 - w / 2, y = r.bottom + 8; if (y + h > innerHeight - 8) y = r.top - h - 8;
+  pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + 'px'; pop.style.top = Math.max(8, y) + 'px';
+  const inp = pop.querySelector('.cp-in'), preview = () => { const c = $('#rtGrid').querySelector(`td[data-r="${rid}"][data-d="${d}"]`); if (c) c.textContent = inp.value || start; };
+  cellEd = { rid, d, start, inp, pop };
+  const bump = k => { inp.value = Math.max(0, (Math.round(+inp.value) || 0) + k); preview(); };
+  pop.querySelectorAll('.cp-b').forEach(b => b.onclick = () => bump(+b.dataset.step));
+  inp.addEventListener('input', preview);
+  inp.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); saveCellEditor(); }
+    else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); closeCellEditor(false); }
+    else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') { e.preventDefault(); bump(e.key === 'ArrowUp' ? 10 : -10); } });
+  // drag on the number: 10 lei for every 8 pixels, up or right to raise it
+  inp.addEventListener('pointerdown', e => {
+    if (document.activeElement === inp) return;   // already typing: let the caret work
+    const y0 = e.clientY, x0 = e.clientX, v0 = Math.round(+inp.value) || 0; let moved = false; e.preventDefault();
+    const mv = ev => { const dist = (y0 - ev.clientY) + (ev.clientX - x0); if (!moved && Math.abs(dist) < 4) return; moved = true; inp.value = Math.max(0, v0 + Math.round(dist / 8) * 10); preview(); };
+    const up = () => { window.removeEventListener('pointermove', mv); window.removeEventListener('pointerup', up); if (!moved) { inp.focus(); inp.select(); } };
+    window.addEventListener('pointermove', mv); window.addEventListener('pointerup', up);
+  });
+  pop.querySelector('[data-save]').onclick = saveCellEditor;
+  pop.querySelector('[data-base]').onclick = () => { inp.value = rm.price; saveCellEditor(); };
+}
+function closeCellEditor(keep) { if (!cellEd) return; const { pop, rid, d, start } = cellEd; pop.remove(); cellEd = null;
+  if (!keep) { const c = $('#rtGrid').querySelector(`td[data-r="${rid}"][data-d="${d}"]`); if (c) c.textContent = start; } }
+function saveCellEditor() {
+  if (!cellEd) return; const { rid, d, start, inp } = cellEd, v = Math.round(+inp.value); closeCellEditor(true);
+  if (!(v > 0)) { toast('Prețul trebuie să fie mai mare ca zero', 'bad'); renderRates(); return; }
+  if (v === start) { renderRates(); return; }
+  const snap = JSON.stringify(S.rates); setRates([rid], d, d, v, false); save(); renderAll();
+  undoToast(`${roomById(rid).name}, ${fmtD(d)}: ${v} lei pe noapte`, () => { S.rates = JSON.parse(snap); }, 'ok');
+}
+document.addEventListener('pointerdown', e => { if (cellEd && !e.target.closest('#cellPop') && !e.target.closest('#rtGrid')) saveCellEditor(); }, true);
 function rtJump(d) { rv.start = d; rv.days = 62; renderRates(); $('#rtGrid').scrollTop = 0; $('#rtGrid').scrollLeft = 0; }
 $('#rtView').onclick = e => { const b = e.target.closest('[data-v]'); if (!b) return; rv.flip = b.dataset.v === '1';
   try { localStorage.setItem('velora-stay-demo-rtview', rv.flip ? '1' : '0'); } catch(e){} rtJump(rv.start); };
@@ -2484,7 +2547,7 @@ document.documentElement.dataset.theme = 'light'; try { const t = localStorage.g
 $$('.overlay').forEach(o => o.addEventListener('pointerdown', e => { if (e.target === o) o.classList.remove('open'); }));
 document.addEventListener('keydown', e => {
   const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
-  if (e.key === 'Escape') { $$('.overlay.open').forEach(o => o.classList.remove('open')); closeDrawer(); ctx.style.display = 'none'; if (addMode) endAddRooms(); return; }
+  if (e.key === 'Escape') { if (cellEd) { closeCellEditor(false); return; } $$('.overlay.open').forEach(o => o.classList.remove('open')); closeDrawer(); ctx.style.display = 'none'; if (addMode) endAddRooms(); return; }
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && F('resOverlay').classList.contains('open')) { saveRes(); return; }
   if (typing) return;
   if (e.key === 'n' || e.key === 'N') openResModal();
