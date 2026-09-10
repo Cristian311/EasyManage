@@ -117,14 +117,26 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .chart-wrap{flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 18px 18px}
 .chart{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);position:relative;display:grid;grid-template-columns:var(--datew) max-content;grid-template-rows:var(--headh) max-content;--datew:84px;--headh:70px;--colw:156px;--rowh:52px;--peekw:260px;--z:1;user-select:none}
 .corner{position:sticky;top:0;left:0;z-index:40;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:flex-end;padding:8px 10px;font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
-.rhead{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:1px solid var(--line);display:flex;height:var(--headh)}
+.rhead{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:2px solid var(--line);display:flex;height:var(--headh)}
 .rh{width:var(--colw);flex:none;border-right:1px solid var(--line-2);display:flex;flex-direction:column;justify-content:flex-end;padding:6px max(6px,calc(10px*var(--z))) 8px;position:relative;cursor:grab;transition:background .12s}
 .rh:hover{background:var(--surface-2)}
 .rh.dragging{opacity:.5}
 .rh.drop-before::before,.rh.drop-after::after{content:"";position:absolute;top:8px;bottom:8px;width:3px;background:var(--accent);border-radius:2px}
 .rh.drop-before::before{left:-2px}.rh.drop-after::after{right:-2px}
-.rh .rn{font-family:var(--font-d);font-weight:600;font-size:max(12px,calc(15px*var(--z)));line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh .rn{font-family:var(--font-d);font-weight:700;font-size:max(13px,calc(17px*var(--z)));color:var(--ink);letter-spacing:-.01em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rh .rt{font-size:max(9.5px,calc(11px*var(--z)));color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rh .rt{display:flex;align-items:center;gap:5px;overflow:hidden}
+.rh .rt .ty{color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.rh .rt .pr{color:var(--ink-2);font-weight:800;white-space:nowrap;margin-left:auto}
+.rh .cap{flex:none;font-weight:900;font-size:max(9px,calc(10.5px*var(--z)));padding:1px 6px;border-radius:6px;background:var(--surface-3);color:var(--ink-2);letter-spacing:.02em}
+.rh .cap.c1{background:#E8EDF1;color:#5E7C8A}
+.rh .cap.c2{background:var(--accent-soft);color:var(--accent)}
+.rh .cap.c3{background:#EAE4F9;color:#6B5BD6}
+.rh .cap.c4{background:var(--warn-soft);color:#9A6A00}
+:root[data-theme="dark"] .rh .cap.c1{background:#25323A;color:#A9BCC7}
+:root[data-theme="dark"] .rh .cap.c3{background:#2C2646;color:#B9A8F2}
+:root[data-theme="dark"] .rh .cap.c4{background:#3A2D12;color:#F2BE3A}
+.rh{background:linear-gradient(to bottom,var(--surface),var(--surface-2))}
 .rh .rt b{color:var(--ink-2);font-weight:700}
 .rh .grp{position:absolute;top:22px;left:6px;right:6px;font-size:10.5px;font-weight:700;color:var(--accent);letter-spacing:.04em;text-transform:uppercase;border-top:2px solid var(--accent);padding-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rh.unit-first .grp{border-top-left-radius:3px}
@@ -1021,7 +1033,7 @@ function renderChart() {
     const grp = c.parent ? `<div class="grp">${esc(c.parent.name)} · ${esc(c.parent.type)}</div>` : fl;
     const nm = c.parent ? esc(r.label || r.name.split('·').pop().trim()) : esc(r.name);
     return `<div class="rh ${c.pos} ${r.active ? '' : 'inactive'} ${r.color ? 'colored' : ''} ${sep ? 'fsep' : ''}" data-col="${i}" data-room="${r.id}" data-top="${c.parent ? c.parent.id : r.id}" style="${r.color ? `--rc:${r.color}` : ''}">
-      ${grp}<div class="rn">${nm}</div><div class="rt">${esc(r.type)} · ${r.capacity}p · <b class="num">${r.price}</b> lei</div>
+      ${grp}<div class="rn">${nm}</div><div class="rt"><span class="cap c${Math.min(r.capacity, 4)}">${r.capacity}p</span><span class="ty">${esc(r.type)}</span><b class="num pr">${r.price} lei</b></div>
       <button class="menu-btn" data-menu="${r.id}" title="Opțiuni cameră"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
     </div>`;
   }).join('') + `<div class="rh add" id="addRoomCol">+ Cameră</div>`;
