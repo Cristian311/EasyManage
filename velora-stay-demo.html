@@ -290,6 +290,19 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.peek .out{font-size:10.5px}
 .res.peek .ft{left:14px;right:10px;bottom:6px}
 .res.peek.unpeek .g,.res.peek.unpeek .m,.res.peek.unpeek .x{white-space:nowrap}
+/* one-row blocks open up as a normal card when peeked */
+.res.peek.short{flex-direction:column;align-items:stretch;gap:2px;padding:9px 12px 26px 14px}
+.res.peek.short .g{flex:none}
+.res.peek.short .ft{position:absolute;left:14px;right:10px;bottom:6px;top:auto}
+.res.peek.short .al{position:absolute;top:3px;right:3px}
+.res.peek.short .m,.res.peek.short .nt,.res.peek.short .x{display:block}
+/* adding rooms to a reservation by drawing */
+.chart.adding .body,.chart.adding .res{cursor:crosshair}
+.chart.adding .selbox{z-index:25}
+.res.adding-src{box-shadow:0 0 0 3px var(--accent),var(--shadow-lg)!important;z-index:20}
+.selbox .lab{white-space:nowrap}
+.selbox.merge{border-color:var(--ok);background:color-mix(in srgb,var(--ok) 14%,transparent)}
+.selbox.merge .lab{color:var(--ok)}
 .res.peek .ft{top:auto;bottom:6px}
 .res.peek .out{display:inline}
 
@@ -552,7 +565,6 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <label class="period num" id="periodLbl" for="jumpDate" title="Click: sari la o dată" style="cursor:pointer"></label>
         <button class="btn icon" id="jumpBtn" title="Sari la o dată"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none"/></svg></button>
         <input type="date" id="jumpDate" style="width:0;height:0;opacity:0;position:absolute;pointer-events:none">
-        <div class="seg" id="rangeSeg" title="Minimul de zile afișate; calendarul continuă cât încape pe ecran"><button data-n="7">7 zile</button><button data-n="14" class="on">14 zile</button><button data-n="30">30 zile</button></div>
         <button class="btn primary" id="newResBtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Rezervare nouă <span class="kbd kbd-hint" style="color:rgba(255,255,255,.8);border-color:rgba(255,255,255,.4);background:transparent">N</span></button>
       </div>
       <div class="chart-wrap">
@@ -565,7 +577,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
           <span><i style="background:var(--st-out)"></i>Plecat</span>
           <span><i style="background:var(--st-cancel)"></i>Anulată</span>
           <span style="font-weight:700;color:var(--ink-2)">1 rând = 1 noapte (data sosirii)</span>
-          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Derulează în jos sau în sus pentru zilele următoare sau anterioare · trage blocul pentru a muta · marginea de jos prelungește · marginea din dreapta întinde pe camere · click dreapta pe bloc pentru acțiuni</span>
+          <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Derulează în jos sau în sus pentru zilele următoare sau anterioare · trage blocul pentru a muta · marginea de jos prelungește · click dreapta pe bloc: adaugă camere și alte acțiuni</span>
           <div class="seg" id="zoomSeg" title="Zoom calendar (Ctrl + rotiță sau tastele + / −)" style="margin-left:6px"><button id="zoomOut" aria-label="Micșorează" style="padding:4px 9px">−</button><button id="zoomLbl" class="num" style="min-width:48px;padding:4px 6px">100%</button><button id="zoomIn" aria-label="Mărește" style="padding:4px 9px">+</button></div>
         </div>
         <div class="chart" id="chart">
@@ -706,7 +718,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 <div class="toasts" id="toasts"></div>
 <div class="dragtip" id="dragtip"></div>
 <div class="dragtip below" id="dragtip2"></div>
-<div class="peekcard" id="peekcard"></div>
+
 
 <script>
 /* =========================================================
@@ -959,6 +971,7 @@ const dayList = () => Array.from({ length: shownDays }, (_, i) => addDays(view.s
 /* ---------- Tape chart rendering ---------- */
 const chart = $('#chart'), rhead = $('#rhead'), dcol = $('#dcol'), body = $('#body');
 const mctx = document.createElement('canvas').getContext('2d');   // measures guest names for wrapping
+let addMode = null;   // id of the reservation that is getting extra rooms drawn onto it
 let zoom = 1; try { zoom = +localStorage.getItem(KEY + '-zoom') || 1; } catch(e){}
 function applyZoom() {
   const m = matchMedia('(max-width:720px)').matches;
@@ -1069,7 +1082,7 @@ function renderChart() {
       ${al ? `<span class="al ${al.level === 'warn' ? 'warn' : ''}">!</span>` : ''}
       <div class="ft">${showQa ? `<button class="qa ${qa.cls || ''}" data-qa="${r.id}">${qa.label}</button>` : `<span class="out">→ ${fmtD(r.checkOut)}</span>`}<span class="src ${r.source}">${SRC_SHORT[r.source]}</span><span class="pay ${ps}"></span></div>
       ${span > 1 && tier > 0 ? `<span class="rooms">${span} camere</span>` : ''}
-      <div class="rs"></div><div class="rsx"></div>`;
+      <div class="rs"></div>`;
     body.appendChild(el);
     });
   });
@@ -1077,6 +1090,7 @@ function renderChart() {
   // if the layout ended up taller than measured (scrollbars, resize), fill the rest once
   if (!refilling) { const want = daysThatFit() + view.extra; if (want > shownDays) { refilling = true; shownDays = want; renderChart(); refilling = false; } }
   updatePeriodLabel();
+  if (addMode) guideAdd();
 }
 
 /* ---------- Pointer interactions on the chart ---------- */
@@ -1088,17 +1102,17 @@ body.addEventListener('pointerdown', e => {
   const COLW = px('--colw'), ROWH = px('--rowh');
   const resEl = e.target.closest('.res');
   const rect = body.getBoundingClientRect();
-  if (resEl) {
+  if (resEl && !addMode) {
     const r = S.reservations.find(x => x.id === resEl.dataset.id);
     const mode = e.target.classList.contains('rs') ? 'resize' : e.target.classList.contains('rsx') ? 'resizex' : 'move';
     drag = { mode, r, el: resEl, x0: e.clientX, y0: e.clientY, in0: r.checkIn, out0: r.checkOut, room0: r.roomId, rooms0: resRoomIds(r).slice(), left0: parseFloat(resEl.style.left) || 0, w0: parseFloat(resEl.dataset.w0) || resEl.offsetWidth, moved: false, valid: true };
-    resEl.setPointerCapture(e.pointerId); clearTimeout(peekT); hideCard();
+    resEl.setPointerCapture(e.pointerId); clearTimeout(peekT);
     if (e.pointerType === 'touch') { clearTimeout(lpTimer); lpTimer = setTimeout(() => { if (drag && !drag.moved) { drag = null; openBlockMenu(r.id, e.clientX, e.clientY); } }, 550); }
   } else {
     // range-select on empty cells
     const col = Math.floor((e.clientX - rect.left) / COLW), row = Math.floor((e.clientY - rect.top) / ROWH);
     const cols = columns(); if (col < 0 || col >= cols.length || row < 0 || row >= shownDays) return;
-    drag = { mode: 'select', col, col0: col, col1: col, row0: row, row1: row, moved: false };
+    drag = { mode: 'select', col, col0: col, col1: col, row0: row, row1: row, moved: false, add: addMode };
     body.setPointerCapture(e.pointerId);
     drawSel();
   }
@@ -1107,9 +1121,20 @@ function selRooms() { const cols = columns(), c0 = Math.min(drag.col0, drag.col1
 function drawSel() {
   const COLW = px('--colw'), ROWH = px('--rowh'), sb = $('#selbox'), a = Math.min(drag.row0, drag.row1), b = Math.max(drag.row0, drag.row1);
   const c0 = Math.min(drag.col0, drag.col1), c1 = Math.max(drag.col0, drag.col1), rooms = selRooms(), inD = addDays(view.start, a), outD = addDays(view.start, b + 1);
-  const cf = rooms.some(rm => !rm.active) || conflictAny(rooms.map(rm => rm.id), inD, outD);
+  const nn = `${b-a+1} ${b-a+1 === 1 ? 'noapte' : 'nopți'}`, cam = k => `${k} ${k === 1 ? 'cameră' : 'camere'}`;
+  const r = drag.add ? S.reservations.find(x => x.id === drag.add) : null;
+  let cf, label, merge = false;
+  if (r) {
+    const o = addOutcome(r, rooms, inD, outD); merge = o.kind === 'merge';
+    cf = o.kind === 'none' || rooms.some(rm => !rm.active) || (merge ? conflictAny(o.ids, inD, outD, r.id) : conflictAny(o.ids, inD, outD));
+    label = o.kind === 'none' ? 'Desenează pe camere libere, lângă rezervare' : merge ? `+${cam(o.ids.length)} la ${resGuest(r)}` : `Rezervare separată · ${resGuest(r)} · ${nn} · ${cam(rooms.length)}`;
+  } else {
+    cf = rooms.some(rm => !rm.active) || conflictAny(rooms.map(rm => rm.id), inD, outD);
+    label = `${nn}${rooms.length > 1 ? ` · ${cam(rooms.length)}` : ''}`;
+  }
   sb.style.cssText = `display:block;left:${c0*COLW+3}px;top:${a*ROWH+2}px;width:${(c1-c0+1)*COLW-6}px;height:${(b-a+1)*ROWH}px;${cf ? 'border-color:var(--bad);background:var(--bad-soft)' : ''}`;
-  sb.querySelector('.lab').textContent = `${b-a+1} ${b-a+1 === 1 ? 'noapte' : 'nopți'}${rooms.length > 1 ? ` · ${rooms.length} camere` : ''}`;
+  sb.classList.toggle('merge', merge && !cf);
+  sb.querySelector('.lab').textContent = label;
 }
 window.addEventListener('pointermove', e => {
   if (!drag) return;
@@ -1122,7 +1147,7 @@ window.addEventListener('pointermove', e => {
   }
   const dx = e.clientX - drag.x0, dy = e.clientY - drag.y0;
   if (!drag.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
-  drag.moved = true; clearTimeout(lpTimer); clearTimeout(peekT); hideCard(); drag.el.classList.add('dragging');
+  drag.moved = true; clearTimeout(lpTimer); clearTimeout(peekT); collapsePeek(drag.el); drag.el.classList.add('dragging');
   const dRows = Math.round(dy / ROWH), dCols = Math.round(dx / COLW);
   const cols = columns(), idxs = drag.rooms0.map(id => cols.findIndex(c => c.room.id === id)).filter(i => i >= 0);
   const idx0 = Math.min(...idxs), span0 = Math.max(...idxs) - idx0 + 1;
@@ -1165,6 +1190,8 @@ window.addEventListener('pointerup', e => {
   if (d.mode === 'select') {
     $('#selbox').style.display = 'none';
     const a = Math.min(d.row0, d.row1), b = Math.max(d.row0, d.row1); drag = d; const rooms = selRooms(); drag = null;
+    $('#selbox').classList.remove('merge');
+    if (d.add) { finishAddRooms(d.add, rooms, addDays(view.start, a), addDays(view.start, b + 1)); return; }
     if (rooms.some(rm => !rm.active)) { toast('Una dintre camere este dezactivată', 'bad'); return; }
     openResModal({ roomId: rooms[0].id, roomIds: rooms.map(rm => rm.id), checkIn: addDays(view.start, a), checkOut: addDays(view.start, b + 1) });
     return;
@@ -1262,40 +1289,45 @@ function offerMerge(r) {
   actionToast(`${resGuest(r)} are două rezervări alăturate pe aceleași zile: ${roomLabel(o)} și ${roomLabel(r)}.`, 'Combină într-una', () => mergeRes(o, r), '', 9000);
 }
 
-/* Hover card: full details float next to the block; the block itself never changes size */
-let peekT = null, cardEl = null;
+/* Hover peek: the block grows to the right and downwards over its neighbours; it flips only at the edge of the visible grid */
+let peekT = null;
+const EASE = 'cubic-bezier(.2,.8,.2,1)';
 body.addEventListener('pointerover', e => {
-  const el = e.target.closest('.res'); if (!el || drag || e.pointerType === 'touch') return;
-  if (cardEl === el) return;
-  clearTimeout(peekT); peekT = setTimeout(() => { if (!drag) showCard(el); }, 320);
+  const el = e.target.closest('.res'); if (!el || drag || addMode || e.pointerType === 'touch') return;
+  clearTimeout(peekT); peekT = setTimeout(() => { if (drag || addMode || (el.classList.contains('peek') && !el.classList.contains('unpeek'))) return;
+    el.classList.remove('unpeek');
+    const w0 = parseFloat(el.dataset.w0) || el.offsetWidth, h0 = parseFloat(el.style.height) || el.offsetHeight;
+    el.dataset.h0 = h0; el.style.transition = 'none';
+    el.classList.add('peek'); el.style.width = 'max-content'; el.style.maxWidth = '240px'; el.style.height = 'auto'; el.style.marginLeft = ''; el.style.marginTop = '';
+    const w1 = Math.max(w0 + 36, Math.ceil(el.getBoundingClientRect().width) + 2); el.style.width = w1 + 'px';
+    const h1 = Math.max(h0, Math.ceil(el.getBoundingClientRect().height));
+    el.style.width = w0 + 'px'; el.style.height = h0 + 'px'; el.style.maxWidth = ''; void el.offsetWidth;
+    el.style.transition = `width .3s ${EASE}, height .3s ${EASE}, margin-left .3s ${EASE}, margin-top .3s ${EASE}, box-shadow .25s, background .25s`;
+    const dw = w1 - w0, dh = h1 - h0;
+    el.style.width = w1 + 'px'; el.style.height = h1 + 'px';
+    const cr = chart.getBoundingClientRect(), er = el.getBoundingClientRect();
+    el.style.marginLeft = er.left + w1 > cr.right - 12 ? -dw + 'px' : '';   // grow right, unless it would run off the visible grid
+    el.style.marginTop = er.top + h1 > cr.bottom - 12 ? -dh + 'px' : '';    // grow down, unless there is no room below
+  }, 220);
 });
 body.addEventListener('pointerout', e => {
   const el = e.target.closest('.res'); if (!el) return;
   if (e.relatedTarget && el.contains(e.relatedTarget)) return;
-  clearTimeout(peekT); hideCard();
+  clearTimeout(peekT); unpeek(el);
 });
-function showCard(el) {
-  const r = S.reservations.find(x => x.id === el.dataset.id); if (!r) return;
-  const card = $('#peekcard'), g = guestById(r.guestId), n = nights(r), rem = remaining(r), ps = payStatus(r), al = alertFor(r);
-  cardEl = el;
-  card.style.setProperty('--c', getComputedStyle(el).getPropertyValue('--c'));
-  card.innerHTML = `
-    <div class="pc-h"><b>${esc(resGuest(r))}</b><span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span></div>
-    ${al ? `<div class="pc-al ${al.level}">${esc(al.text)}</div>` : ''}
-    <div class="pc-row"><span>${esc(roomLabel(r))}</span><span>${resRoomIds(r).length > 1 ? resRoomIds(r).length + ' camere' : esc(roomById(r.roomId)?.type || '')}</span></div>
-    <div class="pc-row"><span>${fmtDL(r.checkIn)}</span><span>→ ${fmtDL(r.checkOut)}</span></div>
-    <div class="pc-row"><span>${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers.</span><span>${SRC[r.source]}</span></div>
-    <div class="pc-money"><span>Total <b>${money(r.total)}</b></span><span>Încasat <b>${money(paid(r))}</b></span><span class="${ps}">${rem > 0 ? 'Rest <b>' + money(rem) + '</b>' : '<b>Achitat</b>'}</span></div>
-    ${r.notes ? `<div class="pc-notes">${esc(r.notes)}</div>` : ''}
-    ${g?.phone ? `<div class="pc-row"><span>${esc(g.phone)}</span><span>${esc(g.email || '')}</span></div>` : ''}
-    <div class="pc-hint">click: detalii · click dreapta: acțiuni · trage: mută</div>`;
-  const rc = el.getBoundingClientRect(), cw = 280, ch = card.offsetHeight || 200;
-  let left = rc.right + 10; if (left + cw > innerWidth - 8) left = rc.left - cw - 10; if (left < 8) left = 8;
-  let top = rc.top; if (top + ch > innerHeight - 8) top = Math.max(8, innerHeight - ch - 8);
-  card.style.left = left + 'px'; card.style.top = top + 'px'; card.classList.add('on');
+function unpeek(el) {
+  if (!el.classList.contains('peek')) return;
+  el.style.width = el.dataset.w0 + 'px'; el.style.height = el.dataset.h0 + 'px'; el.style.marginLeft = ''; el.style.marginTop = '';
+  el.classList.add('unpeek');
+  setTimeout(() => { if (el.classList.contains('unpeek')) { el.classList.remove('peek', 'unpeek'); el.style.transition = ''; } }, 300);
 }
-function hideCard() { $('#peekcard').classList.remove('on'); cardEl = null; }
-function unpeek() {}
+// when a peeked block is picked up, it settles back to its real size quickly
+function collapsePeek(el) {
+  if (!el.classList.contains('peek')) return;
+  el.style.transition = 'width .14s ease, height .14s ease, margin .14s ease';
+  el.style.width = el.dataset.w0 + 'px'; el.style.height = el.dataset.h0 + 'px'; el.style.marginLeft = ''; el.style.marginTop = '';
+  el.classList.remove('peek', 'unpeek');
+}
 
 /* Column reorder by dragging room headers */
 let hdrag = null;
@@ -1348,22 +1380,68 @@ function growRoom(r, side) {
   const nb = neighbours(r), rm = nb[side]; if (!rm) return;
   if (!rm.active) { toast(`${rm.name} este dezactivată`, 'bad'); return; }
   const c = conflict(rm.id, r.checkIn, r.checkOut, r.id); if (c) { toast(`${rm.name} e ocupată de ${resGuest(c)} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)})`, 'bad'); return; }
-  const prev = resRoomIds(r).slice(); setRooms(r, side === 'right' ? [...prev, rm.id] : [rm.id, ...prev]);
-  save(); renderAll(); if (drawerId === r.id) openDrawer(r.id); undoToast(`${resGuest(r)} ocupă acum ${roomLabel(r)}`, () => setRooms(r, prev), 'ok'); offerMerge(r);
+  const prev = resRoomIds(r).slice(), prevTotal = r.total, add = rm.price * nights(r);
+  setRooms(r, side === 'right' ? [...prev, rm.id] : [rm.id, ...prev]); r.total = Number(r.total) + add;
+  save(); renderAll(); if (drawerId === r.id) openDrawer(r.id); undoToast(`${resGuest(r)} ocupă acum ${roomLabel(r)} · +${money(add)}`, () => { setRooms(r, prev); r.total = prevTotal; }, 'ok'); offerMerge(r);
 }
 function shrinkRoom(r, side) {
   const prev = resRoomIds(r).slice(); if (prev.length < 2) return;
   const cols = columns(), sorted = prev.slice().sort((a, b) => cols.findIndex(c => c.room.id === a) - cols.findIndex(c => c.room.id === b));
-  const gone = side === 'right' ? sorted.pop() : sorted.shift();
-  setRooms(r, sorted); save(); renderAll(); if (drawerId === r.id) openDrawer(r.id);
-  undoToast(`${roomById(gone)?.name} scoasă. ${resGuest(r)} rămâne pe ${roomLabel(r)}`, () => setRooms(r, prev));
+  const gone = side === 'right' ? sorted.pop() : sorted.shift(), prevTotal = r.total, less = (roomById(gone)?.price || 0) * nights(r);
+  setRooms(r, sorted); r.total = Math.max(0, Number(r.total) - less); save(); renderAll(); if (drawerId === r.id) openDrawer(r.id);
+  undoToast(`${roomById(gone)?.name} scoasă. ${resGuest(r)} rămâne pe ${roomLabel(r)} · −${money(less)}`, () => { setRooms(r, prev); r.total = prevTotal; });
+}
+/* Add rooms by drawing: next to the reservation on the same days they join it, anywhere else they become a separate booking for the same guest */
+function addOutcome(r, rooms, inD, outD) {
+  const own = resRoomIds(r), cols = columns(), idxOf = id => cols.findIndex(c => c.room.id === id);
+  const extra = rooms.map(x => x.id).filter(id => !own.includes(id));
+  if (inD === r.checkIn && outD === r.checkOut) {
+    if (!extra.length) return { kind: 'none', ids: [] };
+    if (contiguous([...own, ...extra].map(idxOf))) return { kind: 'merge', ids: extra };
+  }
+  return { kind: 'new', ids: rooms.map(x => x.id) };
+}
+function guideAdd() {
+  const r = S.reservations.find(x => x.id === addMode); if (!r) { endAddRooms(); return; }
+  lightTarget({ roomIds: resRoomIds(r), checkIn: r.checkIn, checkOut: r.checkOut }, true);
+  $$('.res', body).forEach(x => x.classList.toggle('adding-src', x.dataset.id === r.id));
+}
+function startAddRooms(id) {
+  const r = S.reservations.find(x => x.id === id); if (!r) return;
+  closeDrawer(); addMode = id; chart.classList.add('adding'); guideAdd();
+  let b = $('#addBanner'); if (!b) { b = document.createElement('div'); b.id = 'addBanner'; b.className = 'toast'; $('#toasts').appendChild(b); }
+  b.innerHTML = `<span>Desenează camerele de adăugat pentru ${esc(resGuest(r))}. Pe aceleași zile, lângă rezervare, se unesc cu ea.</span><button type="button">Renunță</button>`;
+  b.querySelector('button').onclick = endAddRooms;
+}
+function endAddRooms() {
+  addMode = null; chart.classList.remove('adding'); lightTarget(null);
+  $$('.res.adding-src', body).forEach(x => x.classList.remove('adding-src'));
+  const b = $('#addBanner'); if (b) b.remove();
+}
+function finishAddRooms(id, rooms, inD, outD) {
+  const r = S.reservations.find(x => x.id === id); endAddRooms(); if (!r || !rooms.length) return;
+  if (rooms.some(x => !x.active)) { toast('Una dintre camere este dezactivată', 'bad'); return; }
+  const o = addOutcome(r, rooms, inD, outD);
+  if (o.kind === 'none') { toast('Desenează pe camere libere, lângă rezervare', 'bad'); return; }
+  const c = o.kind === 'merge' ? conflictAny(o.ids, inD, outD, r.id) : conflictAny(o.ids, inD, outD);
+  if (c) { toast(`${roomLabel(c)} e ocupată de ${resGuest(c)} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)})`, 'bad'); return; }
+  if (o.kind === 'merge') {
+    const cols = columns(), idxOf = x => cols.findIndex(q => q.room.id === x);
+    const prevRooms = resRoomIds(r).slice(), prevTotal = r.total;
+    const add = o.ids.reduce((t, x) => t + (roomById(x)?.price || 0), 0) * nights(r);
+    setRooms(r, [...prevRooms, ...o.ids].sort((x, y) => idxOf(x) - idxOf(y))); r.total = Number(r.total) + add;
+    save(); renderAll();
+    const el = body.querySelector(`.res[data-id="${r.id}"]`); if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); }
+    undoToast(`${resGuest(r)} are acum ${roomLabel(r)} · +${money(add)}`, () => { setRooms(r, prevRooms); r.total = prevTotal; }, 'ok');
+  } else {
+    openResModal({ roomId: o.ids[0], roomIds: o.ids, checkIn: inD, checkOut: outD, guestId: r.guestId, source: r.source });
+  }
 }
 function openBlockMenu(id, x, y) {
   const r = S.reservations.find(v => v.id === id); if (!r) return;
   const nb = neighbours(r), qa = quickAction(r), items = [];
   if (qa) items.push({ t: qa.label, s: STATUS[qa.status], go: () => doQuick(r.id) });
-  if (nb.right) items.push({ t: `Adaugă ${nb.right.name} din dreapta`, s: nb.right.type, go: () => growRoom(r, 'right') });
-  if (nb.left) items.push({ t: `Adaugă ${nb.left.name} din stânga`, s: nb.left.type, go: () => growRoom(r, 'left') });
+  if (r.status !== 'cancelled' && r.status !== 'checked_out') items.push({ t: 'Adaugă camere la rezervare…', s: 'desenezi pe calendar', go: () => startAddRooms(r.id) });
   if (nb.span > 1) { items.push({ t: `Scoate ${nb.last.name}`, s: 'din dreapta', go: () => shrinkRoom(r, 'right') }); items.push({ t: `Scoate ${nb.first.name}`, s: 'din stânga', go: () => shrinkRoom(r, 'left') }); }
   items.push({ hr: true }, { t: 'Detalii și plăți', go: () => openDrawer(r.id) }, { t: 'Editează', go: () => openResModal(null, r.id) });
   if (r.status !== 'cancelled' && r.status !== 'checked_out') items.push({ t: 'Anulează rezervarea', dng: true, go: () => { if (confirm(`Anulezi rezervarea pentru ${resGuest(r)}?`)) changeStatus(r, 'cancelled'); } });
@@ -1498,6 +1576,7 @@ function openResModal(pre = null, id = null) {
     const prs = mRooms.map(roomById).filter(Boolean);
     F('fPax').value = prs.length > 1 ? prs.reduce((t, x) => t + x.capacity, 0) : Math.min(2, prs[0]?.capacity || 2);
     F('fRate').value = prs.reduce((t, x) => t + x.price, 0); F('fTotal').value = ''; F('fSrc').value = 'direct'; F('fStatus').value = 'confirmed'; F('fPaid').value = 0; F('fNotes').value = ''; F('fGuest').value = ''; showChip();
+    if (pre?.guestId) pickGuest(guestById(pre.guestId)); if (pre?.source) F('fSrc').value = pre.source;
     F('fMore').open = false; }
   renderRoomChips(); recalc(true); F('resOverlay').classList.add('open'); closeDrawer();
   setTimeout(() => (selGuest ? F('fIn') : F('fGuest')).focus(), 50);
@@ -1725,7 +1804,7 @@ function renderAll() { renderPropBar(); renderChart(); renderTodayBar(); renderP
 function renderPage(page = view.page) { if (page === 'today') renderToday(); else if (page === 'reservations') renderResList(); else if (page === 'guests') renderGuests(); else if (page === 'rooms') renderRooms(); }
 
 /* ---------- Navigation, shortcuts, theme ---------- */
-function go(page, silent = false) { if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); renderPage(page); }
+function go(page, silent = false) { if (addMode && page !== 'calendar') endAddRooms(); if (!silent && page !== view.page) pushNav(); view.page = page; $$('.page').forEach(p => p.classList.toggle('on', p.id === 'page-' + page)); $$('.nav-item[data-page]').forEach(b => b.classList.toggle('active', b.dataset.page === page)); if (page !== 'calendar') closeDrawer(); renderPage(page); }
 $('#nav').addEventListener('click', e => { const b = e.target.closest('[data-page]'); if (b) go(b.dataset.page); });
 // browser Back / Forward and the „Înapoi” button walk through pages and property/floor choices
 const navState = () => ({ page: view.page, prop: view.prop, floor: view.floor });
@@ -1755,7 +1834,6 @@ function updatePeriodLabel() {
 }
 $('#periodLbl').onclick = e => { e.preventDefault(); const d = $('#jumpDate'); d.value = view.start; if (d.showPicker) d.showPicker(); else d.click(); };
 $('#jumpDate').addEventListener('change', e => { if (e.target.value) jumpTo(e.target.value); });
-$('#rangeSeg').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; $$('#rangeSeg button').forEach(x => x.classList.toggle('on', x === b)); view.days = +b.dataset.n; view.extra = 0; renderChart(); });
 $('#newResBtn').onclick = () => openResModal();
 $('#zoomIn').onclick = () => setZoom(zoom + 0.1);
 $('#zoomOut').onclick = () => setZoom(zoom - 0.1);
@@ -1769,7 +1847,7 @@ document.documentElement.dataset.theme = 'light'; try { const t = localStorage.g
 $$('.overlay').forEach(o => o.addEventListener('pointerdown', e => { if (e.target === o) o.classList.remove('open'); }));
 document.addEventListener('keydown', e => {
   const typing = /INPUT|TEXTAREA|SELECT/.test(e.target.tagName);
-  if (e.key === 'Escape') { $$('.overlay.open').forEach(o => o.classList.remove('open')); closeDrawer(); ctx.style.display = 'none'; return; }
+  if (e.key === 'Escape') { $$('.overlay.open').forEach(o => o.classList.remove('open')); closeDrawer(); ctx.style.display = 'none'; if (addMode) endAddRooms(); return; }
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && F('resOverlay').classList.contains('open')) { saveRes(); return; }
   if (typing) return;
   if (e.key === 'n' || e.key === 'N') openResModal();
