@@ -15,6 +15,7 @@
   --ok:#2F8F5B; --ok-soft:#DFF3E7; --warn:#C98A12; --warn-soft:#FBEFD2; --bad:#C9453A; --bad-soft:#F9E0DD;
   --today:#FFF5DC; --weekend:#F7F9FA; --past:#EDF0F2; --past-2:#E6EAEE; --sel:rgba(14,124,134,.16);
   --st-confirmed:#1B7F8A; --st-pending:#C98A12; --st-in:#2F8F5B; --st-out:#7E8F99; --st-cancel:#C9453A;
+  --src-booking:#2F6FDB; --src-travelminit:#7B4FD6; --src-airbnb:#E0445D; --src-direct:#0E7C86; --src-phone:#0E7C86; --src-other:#5E7C8A; --src-due:#E3A400;
   --shadow:0 1px 2px rgba(22,36,43,.06),0 8px 24px -12px rgba(22,36,43,.18);
   --shadow-lg:0 24px 60px -24px rgba(22,36,43,.35);
   --glass:rgba(255,255,255,.55); --glass-line:rgba(255,255,255,.75);
@@ -29,6 +30,7 @@
   --ok:#4FBF80; --ok-soft:#173327; --warn:#E3A72F; --warn-soft:#3A2D12; --bad:#E36A5F; --bad-soft:#3E1F1C;
   --today:#2E2A1A; --weekend:#141D22; --past:#121A1F; --past-2:#0F1519; --sel:rgba(63,179,189,.22);
   --st-confirmed:#3FB3BD; --st-pending:#E3A72F; --st-in:#4FBF80; --st-out:#7D8E97; --st-cancel:#E36A5F;
+  --src-booking:#6A9BF2; --src-travelminit:#A58BEE; --src-airbnb:#F27A8E; --src-direct:#3FB3BD; --src-phone:#3FB3BD; --src-other:#86A3B0; --src-due:#F2BE3A;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px -12px rgba(0,0,0,.6);
   --shadow-lg:0 24px 60px -24px rgba(0,0,0,.8);
   --glass:rgba(22,31,37,.55); --glass-line:rgba(255,255,255,.14);
@@ -190,8 +192,9 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 @container (max-width:132px){.res:not(.peek) .src{display:none}}
 @container (max-width:30px){.res:not(.peek) .out{display:none}}
 .res .src{font-size:max(8px,calc(9.5px*var(--z)));font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:5px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);z-index:1}
-.res .src.booking{color:#0B4EA2;border-color:#0B4EA2}
-.res .src.airbnb{color:#E0445D;border-color:#E0445D}
+.res .src.booking{color:var(--src-booking);border-color:var(--src-booking)}
+.res .src.travelminit{color:var(--src-travelminit);border-color:var(--src-travelminit)}
+.res .src.airbnb{color:var(--src-airbnb);border-color:var(--src-airbnb)}
 .res .src.phone{color:var(--brass);border-color:var(--brass)}
 .res .pay{width:max(6px,calc(8px*var(--z)));height:max(6px,calc(8px*var(--z)));border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface);flex:none}
 .res .pay.paid{background:var(--ok)}.res .pay.unpaid{background:var(--bad)}
@@ -225,18 +228,18 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .rh.hl.bad .rn{color:var(--bad)}
 .peekcard{position:fixed;z-index:150;pointer-events:none;width:280px;background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--c,var(--accent));border-radius:12px;box-shadow:var(--shadow-lg);padding:11px 13px 9px;opacity:0;transform:translateY(5px);transition:opacity .16s ease,transform .16s ease;font-size:12.5px;color:var(--ink-2)}
 .peekcard.on{opacity:1;transform:none}
-.peekcard .pc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.peekcard .pc-h b{font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--ink);white-space:normal}
-.peekcard .pc-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-variant-numeric:tabular-nums}
-.peekcard .pc-row span:last-child{color:var(--ink-3);text-align:right}
-.peekcard .pc-money{display:flex;justify-content:space-between;gap:8px;margin:7px 0 4px;padding:7px 9px;background:var(--surface-2);border-radius:8px;font-size:12px}
-.peekcard .pc-money b{color:var(--ink);font-variant-numeric:tabular-nums}
-.peekcard .pc-money .unpaid b,.peekcard .pc-money .partial b{color:var(--bad)}
-.peekcard .pc-money .paid b{color:var(--ok)}
-.peekcard .pc-notes{font-style:italic;border-left:3px solid var(--brass);padding:3px 8px;margin:6px 0 2px;color:var(--ink-2);white-space:pre-wrap}
-.peekcard .pc-al{font-weight:700;color:var(--bad);background:var(--bad-soft);padding:4px 8px;border-radius:7px;margin-bottom:6px}
-.peekcard .pc-al.warn{color:var(--warn);background:var(--warn-soft)}
-.peekcard .pc-hint{margin-top:7px;padding-top:6px;border-top:1px solid var(--line-2);font-size:11px;color:var(--ink-3)}
+.pk .pc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.pk .pc-h b{font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--ink);white-space:normal}
+.pk .pc-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-variant-numeric:tabular-nums}
+.pk .pc-row span:last-child{color:var(--ink-3);text-align:right}
+.pk .pc-money{display:flex;justify-content:space-between;gap:8px;margin:7px 0 4px;padding:7px 9px;background:var(--surface-2);border-radius:8px;font-size:12px}
+.pk .pc-money b{color:var(--ink);font-variant-numeric:tabular-nums}
+.pk .pc-money .unpaid b,.pk .pc-money .partial b{color:var(--bad)}
+.pk .pc-money .paid b{color:var(--ok)}
+.pk .pc-notes{font-style:italic;border-left:3px solid var(--brass);padding:3px 8px;margin:6px 0 2px;color:var(--ink-2);white-space:pre-wrap}
+.pk .pc-al{font-weight:700;color:var(--bad);background:var(--bad-soft);padding:4px 8px;border-radius:7px;margin-bottom:6px}
+.pk .pc-al.warn{color:var(--warn);background:var(--warn-soft)}
+.pk .pc-hint{margin-top:7px;padding-top:6px;border-top:1px solid var(--line-2);font-size:11px;color:var(--ink-3)}
 .dragtip{position:fixed;z-index:400;pointer-events:none;background:var(--ink);color:var(--bg);padding:6px 11px;border-radius:9px;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow-lg);opacity:0;transform:translateX(-6px) scale(.97);transition:opacity .22s ease,transform .22s ease}
 .dragtip.on{opacity:1;transform:none}
 .dragtip b{font-family:var(--font-d);font-size:15px;font-weight:600;margin-right:4px}
@@ -296,6 +299,16 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.peek.short .ft{position:absolute;left:14px;right:10px;bottom:6px;top:auto}
 .res.peek.short .al{position:absolute;top:3px;right:3px}
 .res.peek.short .m,.res.peek.short .nt,.res.peek.short .x{display:block}
+/* peeked block shows the full detail card */
+.res .pk{display:none}
+.res.peek .pk{display:block;position:relative;z-index:1;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.res.peek > .g,.res.peek > .m,.res.peek > .x,.res.peek > .nt,.res.peek > .ft,.res.peek > .al,.res.peek > .rooms{display:none!important}
+.res.peek,.res.peek.short{padding:10px 12px 10px 14px}
+.pk .pc-row span{min-width:0;overflow-wrap:anywhere}
+.pk .pc-hint{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pk .pc-hint .qa{margin-right:0}
+.pk .pc-money span{display:flex;flex-direction:column;gap:1px;font-size:11px}
+.pk .pc-money b{white-space:nowrap;font-size:12.5px}
 /* adding rooms to a reservation by drawing */
 .chart.adding .body,.chart.adding .res{cursor:crosshair}
 .chart.adding .selbox{z-index:25}
@@ -476,9 +489,9 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .res .qa:hover{filter:brightness(1.1)}
 .res.short .ft:has(.qa) .src{display:none}
 .res .al{position:absolute;top:3px;right:3px;width:max(11px,calc(16px*var(--z)));height:max(11px,calc(16px*var(--z)));border-radius:50%;background:var(--bad);color:#fff;font-size:max(8px,calc(10.5px*var(--z)));font-weight:900;display:grid;place-items:center;z-index:3;box-shadow:0 0 0 2px var(--surface)}
-.res .al.warn{background:var(--warn)}
+.res .al.warn{background:var(--src-due);color:#3A2A00}
 .res.has-alert{outline:2px solid var(--bad);outline-offset:-1px}
-.res.has-alert.warnlvl{outline-color:var(--warn)}
+.res.has-alert.warnlvl{outline-color:var(--src-due)}
 .res.has-alert .g{padding-right:max(14px,calc(20px*var(--z)))}
 .res.flash{animation:flash 1.3s ease}
 @keyframes flash{0%,100%{box-shadow:none}25%,60%{box-shadow:0 0 0 4px var(--accent),0 14px 34px -8px var(--accent)}}
@@ -571,11 +584,13 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
         <div class="propbar" id="propbar"></div>
         <div class="todaybar" id="todaybar"></div>
         <div class="legend" style="padding:0 2px 10px">
-          <span><i style="background:var(--st-confirmed)"></i>Confirmată</span>
-          <span><i style="background:var(--st-pending);outline:1px dashed var(--st-pending);outline-offset:1px"></i>În așteptare</span>
-          <span><i style="background:var(--st-in)"></i>Cazat</span>
-          <span><i style="background:var(--st-out)"></i>Plecat</span>
-          <span><i style="background:var(--st-cancel)"></i>Anulată</span>
+          <span><i style="background:var(--src-booking)"></i>Booking.com</span>
+          <span><i style="background:var(--src-travelminit)"></i>Travelminit</span>
+          <span><i style="background:var(--src-airbnb)"></i>Airbnb</span>
+          <span><i style="background:var(--src-direct)"></i>Direct / telefon</span>
+          <span><i style="background:var(--src-due)"></i>De cazat !</span>
+          <span><i style="background:transparent;outline:1.5px dashed var(--ink-3);outline-offset:-1.5px"></i>În așteptare</span>
+          <span><i style="background:repeating-linear-gradient(135deg,transparent 0 2px,var(--st-cancel) 2px 4px)"></i>Anulată</span>
           <span style="font-weight:700;color:var(--ink-2)">1 rând = 1 noapte (data sosirii)</span>
           <span style="margin-left:auto;color:var(--ink-3)" class="hint-long">Derulează în jos sau în sus pentru zilele următoare sau anterioare · trage blocul pentru a muta · marginea de jos prelungește · click dreapta pe bloc: adaugă camere și alte acțiuni</span>
           <div class="seg" id="zoomSeg" title="Zoom calendar (Ctrl + rotiță sau tastele + / −)" style="margin-left:6px"><button id="zoomOut" aria-label="Micșorează" style="padding:4px 9px">−</button><button id="zoomLbl" class="num" style="min-width:48px;padding:4px 6px">100%</button><button id="zoomIn" aria-label="Mărește" style="padding:4px 9px">+</button></div>
@@ -663,7 +678,7 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
       </div>
       <details class="more" id="fMore"><summary>Mai multe: sursă, status, observații</summary>
       <div class="g2" style="margin-top:10px">
-        <div class="f"><label>Sursă</label><select id="fSrc"><option value="direct">Direct</option><option value="booking">Booking.com</option><option value="airbnb">Airbnb</option><option value="phone">Telefon</option><option value="other">Altă sursă</option></select></div>
+        <div class="f"><label>Sursă</label><select id="fSrc"><option value="direct">Direct</option><option value="booking">Booking.com</option><option value="travelminit">Travelminit</option><option value="airbnb">Airbnb</option><option value="phone">Telefon</option><option value="other">Altă sursă</option></select></div>
         <div class="f"><label>Status</label><select id="fStatus"><option value="confirmed">Confirmată</option><option value="pending">În așteptare</option><option value="checked_in">Cazat</option><option value="checked_out">Plecat</option><option value="cancelled">Anulată</option></select></div>
       </div>
       <div class="f" style="margin-top:10px"><label>Observații</label><textarea id="fNotes" placeholder="Ex: pat suplimentar, vine cu câinele, factură pe firmă…"></textarea></div>
@@ -744,8 +759,8 @@ const money = n => (Math.round(n) === n ? n : n.toFixed(2)).toLocaleString('ro-R
 const uid = p => p + Math.random().toString(36).slice(2, 8);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const STATUS = { confirmed:'Confirmată', pending:'În așteptare', checked_in:'Cazat', checked_out:'Plecat', cancelled:'Anulată' };
-const SRC = { direct:'Direct', booking:'Booking.com', airbnb:'Airbnb', phone:'Telefon', other:'Altă sursă' };
-const SRC_SHORT = { direct:'DIRECT', booking:'BOOKING', airbnb:'AIRBNB', phone:'TEL', other:'ALT' };
+const SRC = { direct:'Direct', booking:'Booking.com', travelminit:'Travelminit', airbnb:'Airbnb', phone:'Telefon', other:'Altă sursă' };
+const SRC_SHORT = { direct:'DIRECT', booking:'BOOKING', travelminit:'TRAVEL', airbnb:'AIRBNB', phone:'TEL', other:'ALT' };
 const METHOD = { cash:'Numerar', card:'Card', transfer:'Transfer', other:'Altul' };
 
 function toast(msg, kind='') {
@@ -754,7 +769,7 @@ function toast(msg, kind='') {
 }
 
 /* ---------- State ---------- */
-const KEY = 'velora-stay-demo-v8';
+const KEY = 'velora-stay-demo-v9';
 const ROOM_COLORS = ['#3A7BD5','#0E7C86','#2F8F5B','#B8862B','#D9761B','#C9453A','#6B5BD6','#B3437C','#5E7C8A','#8E5A3C'];
 let S;            // {rooms, guests, reservations}
 let view = { start: addDays(TODAY, -2), days: 14, page: 'calendar', q: '', prop: 'all', floor: 'all', extra: 0 };
@@ -863,7 +878,7 @@ function seed() {
     put(R(9, '22I', diffDays(TODAY, a), 3, { status: st, src:'phone', rooms:['22I','23I','24I'], pax:6, pay:[[2250,'transfer', a]], inv: st === 'checked_out' ? `VS-${y}-0098` : '', notes:'Nuntă, grup de 6 persoane, o singură factură.' })); }
 
   // August completely full; after that, random bookings that thin out the further ahead they are
-  const SRC = ['direct','direct','direct','booking','booking','booking','booking','airbnb','airbnb','phone','phone','other'];
+  const SRC = ['direct','direct','booking','booking','booking','booking','travelminit','travelminit','airbnb','airbnb','phone','other'];
   const NOTES = ['Pat suplimentar pentru copil.','Sosire târzie, după ora 22.','Aniversare, ar vrea flori în cameră.','Vine cu un câine mic.','Factură pe firmă.','Pleacă devreme, la 7:00.','Parcare pentru două mașini.','Alergic la puf, perne sintetice.'];
   let inv = 142;
   rooms.forEach(rm => {
@@ -926,10 +941,9 @@ function setRooms(r, ids) { r.roomIds = ids; r.roomId = ids[0]; }
 function alertFor(r) {
   if (!isActiveRes(r)) return null;
   const notIn = r.status === 'confirmed' || r.status === 'pending';
-  if (notIn && r.checkIn < TODAY && r.checkOut > TODAY) return { level: 'bad', text: `Trebuia să sosească pe ${fmtD(r.checkIn)} și nu e cazat` };
+  if (notIn && r.checkIn <= TODAY && r.checkOut > TODAY) return { level: 'warn', text: r.checkIn < TODAY ? `Trebuia să sosească pe ${fmtD(r.checkIn)} și nu e cazat` : (new Date().getHours() >= 14 ? 'A trecut ora de check-in (14:00) și nu e cazat' : 'Sosește azi, încă nu e cazat') };
   if (r.status === 'checked_in' && r.checkOut < TODAY) return { level: 'bad', text: `Trebuia să plece pe ${fmtD(r.checkOut)}` };
   if (r.checkOut === TODAY && r.status !== 'checked_out' && remaining(r) > 0) return { level: 'bad', text: `Pleacă azi cu rest de plată ${money(remaining(r))}` };
-  if (notIn && r.checkIn === TODAY && new Date().getHours() >= 14) return { level: 'warn', text: 'A trecut ora de check-in (14:00) și nu e cazat' };
   return null;
 }
 // One-click action available on the block today
@@ -1040,7 +1054,8 @@ function renderChart() {
     const startIdx = diffDays(d0, r.checkIn), n = nights(r);
     const top = startIdx * ROWH, h = n * ROWH;
     const el = document.createElement('div');
-    const c = { confirmed:'var(--st-confirmed)', pending:'var(--st-pending)', checked_in:'var(--st-in)', checked_out:'var(--st-out)', cancelled:'var(--st-cancel)' }[r.status];
+    const due = (r.status === 'confirmed' || r.status === 'pending') && r.checkIn <= TODAY && r.checkOut > TODAY;
+    const c = r.status === 'cancelled' ? 'var(--st-cancel)' : due ? 'var(--src-due)' : `var(--src-${r.source}, var(--src-other))`;
     const al = alertFor(r), qa = quickAction(r);
     // how many lines of text actually fit in this block at the current zoom
     const gn = resGuest(r);
@@ -1298,8 +1313,10 @@ body.addEventListener('pointerover', e => {
     el.classList.remove('unpeek');
     const w0 = parseFloat(el.dataset.w0) || el.offsetWidth, h0 = parseFloat(el.style.height) || el.offsetHeight;
     el.dataset.h0 = h0; el.style.transition = 'none';
-    el.classList.add('peek'); el.style.width = 'max-content'; el.style.maxWidth = '240px'; el.style.height = 'auto'; el.style.marginLeft = ''; el.style.marginTop = '';
-    const w1 = Math.max(w0 + 36, Math.ceil(el.getBoundingClientRect().width) + 2); el.style.width = w1 + 'px';
+    const r = S.reservations.find(x => x.id === el.dataset.id);
+    if (r && !el.querySelector('.pk')) el.insertAdjacentHTML('beforeend', `<div class="pk">${peekHtml(r)}</div>`);
+    el.classList.add('peek'); el.style.marginLeft = ''; el.style.marginTop = '';
+    const w1 = Math.max(w0, 280); el.style.width = w1 + 'px'; el.style.maxWidth = ''; el.style.height = 'auto';
     const h1 = Math.max(h0, Math.ceil(el.getBoundingClientRect().height));
     el.style.width = w0 + 'px'; el.style.height = h0 + 'px'; el.style.maxWidth = ''; void el.offsetWidth;
     el.style.transition = `width .3s ${EASE}, height .3s ${EASE}, margin-left .3s ${EASE}, margin-top .3s ${EASE}, box-shadow .25s, background .25s`;
@@ -1315,18 +1332,32 @@ body.addEventListener('pointerout', e => {
   if (e.relatedTarget && el.contains(e.relatedTarget)) return;
   clearTimeout(peekT); unpeek(el);
 });
+// everything the receptionist needs at a glance, shown inside the expanded block
+function peekHtml(r) {
+  const g = guestById(r.guestId), n = nights(r), rem = remaining(r), ps = payStatus(r), al = alertFor(r), qa = quickAction(r), ids = resRoomIds(r);
+  return `<div class="pc-h"><b>${esc(resGuest(r))}</b><span class="pill ${r.status}"><i></i>${STATUS[r.status]}</span></div>
+    ${al ? `<div class="pc-al ${al.level}">${esc(al.text)}</div>` : ''}
+    <div class="pc-row"><span>${esc(roomLabel(r))}</span><span>${ids.length > 1 ? ids.length + ' camere' : esc(roomById(r.roomId)?.type || '')}</span></div>
+    <div class="pc-row"><span>${fmtDL(r.checkIn)}</span><span>→ ${fmtDL(r.checkOut)}</span></div>
+    <div class="pc-row"><span>${n} ${n === 1 ? 'noapte' : 'nopți'} · ${r.pax} pers.</span><span>${SRC[r.source]}</span></div>
+    <div class="pc-money"><span>Total <b>${money(r.total)}</b></span><span>Încasat <b>${money(paid(r))}</b></span><span class="${ps}">${rem > 0 ? 'Rest <b>' + money(rem) + '</b>' : '<b>Achitat</b>'}</span></div>
+    ${r.notes ? `<div class="pc-notes">${esc(r.notes)}</div>` : ''}
+    ${g && (g.phone || g.email) ? `<div class="pc-row"><span>${esc(g.phone || '')}</span><span>${esc(g.email || '')}</span></div>` : ''}
+    ${r.invoiceNo ? `<div class="pc-row"><span>Factură</span><span>${esc(r.invoiceNo)}</span></div>` : ''}
+    <div class="pc-hint">${qa ? `<button class="qa ${qa.cls || ''}" data-qa="${r.id}">${qa.label}</button>` : ''}<span>click: detalii · click dreapta: acțiuni · trage: mută</span></div>`;
+}
 function unpeek(el) {
   if (!el.classList.contains('peek')) return;
   el.style.width = el.dataset.w0 + 'px'; el.style.height = el.dataset.h0 + 'px'; el.style.marginLeft = ''; el.style.marginTop = '';
   el.classList.add('unpeek');
-  setTimeout(() => { if (el.classList.contains('unpeek')) { el.classList.remove('peek', 'unpeek'); el.style.transition = ''; } }, 300);
+  setTimeout(() => { if (el.classList.contains('unpeek')) { el.classList.remove('peek', 'unpeek'); el.style.transition = ''; const pk = el.querySelector('.pk'); if (pk) pk.remove(); } }, 300);
 }
 // when a peeked block is picked up, it settles back to its real size quickly
 function collapsePeek(el) {
   if (!el.classList.contains('peek')) return;
   el.style.transition = 'width .14s ease, height .14s ease, margin .14s ease';
   el.style.width = el.dataset.w0 + 'px'; el.style.height = el.dataset.h0 + 'px'; el.style.marginLeft = ''; el.style.marginTop = '';
-  el.classList.remove('peek', 'unpeek');
+  el.classList.remove('peek', 'unpeek'); const pk = el.querySelector('.pk'); if (pk) pk.remove();
 }
 
 /* Column reorder by dragging room headers */
