@@ -2,7 +2,7 @@
 <html lang="ro" data-theme="light">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Velora Stay</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -656,6 +656,13 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 .toast.bad{background:var(--bad);color:#fff}.toast.ok{background:var(--ok);color:#fff}
 @keyframes up{from{transform:translateY(8px);opacity:0}}
 
+/* ---------- Touch ---------- */
+button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
+.chart{-webkit-touch-callout:none;-webkit-user-select:none}
+.res.lifted{z-index:50;transform:scale(1.04);box-shadow:0 0 0 2px var(--accent),var(--shadow-lg)}
+/* on phones and tablets a swipe over a block scrolls the calendar; hold the block to pick it up */
+@media (hover:none){.res{touch-action:auto}}
+
 /* ---------- Responsive ---------- */
 .menu-toggle{display:none}
 @media (max-width:1100px){
@@ -683,6 +690,50 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
   .calc{grid-template-columns:1fr 1fr}
   .cols{grid-template-columns:1fr}
   .scroll{padding:12px}
+  /* bottom bar: every page fits, clear of the phone's home bar */
+  .nav{justify-content:stretch;gap:0;padding:4px 4px max(4px,env(safe-area-inset-bottom))}
+  .nav-item{flex:1 1 0;min-width:0;padding:6px 2px!important;border-radius:10px}
+  /* 16px stops iPhones from zooming in when a field is tapped */
+  input:not(.cp-in):not([type=checkbox]):not([type=radio]),select,textarea{font-size:16px!important}
+  /* calendar: slim top, one scrolling row per bar, round + button for the thumb */
+  #page-calendar .topbar{flex-wrap:nowrap}
+  #page-calendar .topbar h1,#page-calendar .topbar .spacer{display:none}
+  #page-calendar .period{flex:1;font-size:14px}
+  #newResBtn{position:fixed;right:14px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:90;width:56px;height:56px;border-radius:50%;padding:0;justify-content:center;gap:0;font-size:0;box-shadow:0 12px 26px -8px rgba(14,124,134,.7)}
+  #newResBtn svg{width:26px;height:26px}
+  .chart-wrap{padding:6px 8px 8px}
+  .propbar,.todaybar,.rt-quick,#page-calendar .legend{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:0 0 6px!important}
+  .propbar::-webkit-scrollbar,.todaybar::-webkit-scrollbar,.rt-quick::-webkit-scrollbar,#page-calendar .legend::-webkit-scrollbar{display:none}
+  .propbar>*,.todaybar>*,.rt-quick>*,#page-calendar .legend>*{flex:none}
+  .propbar .pb-l,.propbar>.btn.sm:first-child,.propbar>.btn.sm:first-child+.sep,.propbar .btn.ghost{display:none}
+  .propbar .seg button{padding:6px 10px}
+  #page-calendar .legend{font-size:11px}
+  #page-calendar .legend>span:nth-last-of-type(-n+2){display:none}
+  #zoomSeg{order:-1;margin-left:0!important}
+  .rt-leg{white-space:nowrap}
+  /* lists: each row becomes a small card, every value under its column name */
+  table.t thead{display:none}
+  table.t,table.t tbody,table.t tfoot{display:block;width:100%}
+  table.t tr{display:flex;flex-wrap:wrap;align-items:flex-start;gap:6px 16px;padding:11px 14px;border-bottom:1px solid var(--line-2)}
+  table.t td{display:block;padding:0;border:0;white-space:normal}
+  table.t td:first-child{flex:1 1 100%;font-size:14.5px;font-weight:700}
+  table.t td[data-l]:not([data-l=""]):not(:first-child)::before{content:attr(data-l);display:block;font-size:10px;line-height:1.3;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  table.t .r{text-align:left}
+  table.t tr:hover td{background:none}
+  #page-reservations .search,#page-guests .search{display:flex;order:5;flex:1 1 100%;min-width:0}
+  /* rates: the panel only takes room once something is chosen */
+  .rt-panel{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;padding:10px 12px}
+  .rt-panel .rt-info{grid-column:1/-1}
+  .rt-panel .f{order:1}.rt-panel #rtApply{order:2}.rt-panel .chk{order:3;grid-column:1/-1;padding:0}.rt-panel #rtReset{order:4}.rt-panel #rtClear{order:5}
+  .rt-panel .f input,.rt-panel #rtPrice{width:100%}
+  .rt-panel .btn{justify-content:center}
+  .rt-panel.idle{display:block;padding:8px 12px}
+  .rt-panel.idle>:not(.rt-info){display:none}
+  .rt-panel.idle .rt-info{font-size:12px}
+  /* windows use the whole phone */
+  .overlay{padding:8px}
+  .modal{max-height:calc(100dvh - 16px)}
+  .overlay .ft .hint{display:none!important}
 }
 </style>
 </head>
@@ -797,6 +848,7 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
         <label class="chk"><input type="checkbox" id="rtWk"> Doar nopțile de vineri și sâmbătă</label>
         <button class="btn primary" id="rtApply">Aplică prețul</button>
         <button class="btn" id="rtReset">Revino la prețul de bază</button>
+        <button class="btn ghost" id="rtClear">Renunță</button>
       </div>
     </section>
     <section class="page" id="page-finance">
@@ -1363,8 +1415,11 @@ function renderChart() {
 /* ---------- Pointer interactions on the chart ---------- */
 let drag = null;
 let lpTimer = null;
-body.addEventListener('contextmenu', e => { const el = e.target.closest('.res'); if (!el) return; e.preventDefault(); openBlockMenu(el.dataset.id, e.clientX, e.clientY); });
+let lastPtr = 'mouse';
+const TOUCH = matchMedia('(hover: none)').matches;   // phone or tablet
+body.addEventListener('contextmenu', e => { if (lastPtr === 'touch') { e.preventDefault(); return; } const el = e.target.closest('.res'); if (!el) return; e.preventDefault(); openBlockMenu(el.dataset.id, e.clientX, e.clientY); });
 body.addEventListener('pointerdown', e => {
+  lastPtr = e.pointerType;
   if (e.button !== 0 || e.target.closest('.qa')) return;
   const COLW = px('--colw'), ROWH = px('--rowh');
   const resEl = e.target.closest('.res');
@@ -1373,13 +1428,18 @@ body.addEventListener('pointerdown', e => {
     const r = S.reservations.find(x => x.id === resEl.dataset.id);
     const mode = e.target.classList.contains('rs') ? 'resize' : e.target.classList.contains('rsx') ? 'resizex' : 'move';
     drag = { mode, r, el: resEl, x0: e.clientX, y0: e.clientY, in0: r.checkIn, out0: r.checkOut, room0: r.roomId, rooms0: resRoomIds(r).slice(), left0: parseFloat(resEl.style.left) || 0, w0: parseFloat(resEl.dataset.w0) || resEl.offsetWidth, moved: false, valid: true };
-    resEl.setPointerCapture(e.pointerId); clearTimeout(peekT);
-    if (e.pointerType === 'touch') { clearTimeout(lpTimer); lpTimer = setTimeout(() => { if (drag && !drag.moved) { drag = null; openBlockMenu(r.id, e.clientX, e.clientY); } }, 550); }
+    try { resEl.setPointerCapture(e.pointerId); } catch (_) {} clearTimeout(peekT);
+    if (e.pointerType === 'touch') { drag.touch = true; clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { if (drag && !drag.moved) { drag.armed = true; drag.el.classList.add('lifted'); if (navigator.vibrate) navigator.vibrate(12); } }, 420); }
   } else {
     // range-select on empty cells
     const col = Math.floor((e.clientX - rect.left) / COLW), row = Math.floor((e.clientY - rect.top) / ROWH);
     const cols = columns(); if (col < 0 || col >= cols.length || row < 0 || row >= shownDays) return;
     drag = { mode: 'select', col, col0: col, col1: col, row0: row, row1: row, moved: false, add: addMode };
+    if (e.pointerType === 'touch') {   // tap: book this night; hold and drag: several nights or rooms
+      Object.assign(drag, { touch: true, x0: e.clientX, y0: e.clientY }); clearTimeout(lpTimer);
+      lpTimer = setTimeout(() => { if (drag && drag.mode === 'select' && !drag.armed) { drag.armed = true; drawSel(); if (navigator.vibrate) navigator.vibrate(12); } }, 420);
+      return; }
     body.setPointerCapture(e.pointerId);
     drawSel();
   }
@@ -1405,6 +1465,7 @@ function drawSel() {
 }
 window.addEventListener('pointermove', e => {
   if (!drag) return;
+  if (drag.touch && !drag.armed) { if (Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 8) cancelDrag(); return; }   // a swipe: let the page scroll
   const COLW = px('--colw'), ROWH = px('--rowh');
   if (drag.mode === 'select') {
     const rect = body.getBoundingClientRect();
@@ -1455,6 +1516,12 @@ window.addEventListener('pointerup', e => {
   clearTimeout(lpTimer);
   if (!drag) return;
   const d = drag; drag = null;
+  if (d.touch && !d.armed) {   // a quick tap
+    if (d.mode === 'select') { const rm = columns()[d.col0].room, day = addDays(view.start, d.row0);
+      if (d.add) { finishAddRooms(d.add, [rm], day, addDays(day, 1)); return; }
+      if (!rm.active) { toast('Camera este dezactivată', 'bad'); return; }
+      openResModal({ roomId: rm.id, roomIds: [rm.id], checkIn: day, checkOut: addDays(day, 1) }); return; }
+    openDrawer(d.r.id); return; }
   if (d.mode === 'select') {
     $('#selbox').style.display = 'none';
     const a = Math.min(d.row0, d.row1), b = Math.max(d.row0, d.row1); drag = d; const rooms = selRooms(); drag = null;
@@ -1465,8 +1532,9 @@ window.addEventListener('pointerup', e => {
     return;
   }
   hideDragTip();
-  d.el.classList.remove('dragging');
+  d.el.classList.remove('dragging', 'lifted');
   if (!d.moved) {
+    if (d.touch) { openBlockMenu(d.r.id, e.clientX, e.clientY); return; }   // held without moving
     if (e.pointerType === 'touch' || (d.el.classList.contains('peek') && !d.el.classList.contains('unpeek'))) { peekTarget = null; openDrawer(d.r.id); return; }
     peekTarget = d.el; d.el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: e.pointerType || 'mouse', clientX: e.clientX, clientY: Math.min(e.clientY, d.el.getBoundingClientRect().bottom - 20) }));
     return; }
@@ -1482,7 +1550,24 @@ window.addEventListener('pointerup', e => {
   undoToast(msg, () => Object.assign(d.r, prev), 'ok');
   offerMerge(d.r);
 });
-window.addEventListener('pointercancel', () => { hideDragTip(); if (drag) { drag = null; renderChart(); } });
+function cancelDrag() {
+  clearTimeout(lpTimer); if (!drag) return; const d = drag; drag = null;
+  if (d.mode === 'select') { $('#selbox').style.display = 'none'; $('#selbox').classList.remove('merge'); return; }
+  hideDragTip(); d.el.classList.remove('dragging', 'lifted'); if (d.moved) renderChart();
+}
+window.addEventListener('pointercancel', cancelDrag);   // the browser took the gesture over (scroll)
+// while a block is held the finger moves it instead of scrolling; two fingers zoom the calendar
+let pinch = null, pinchZ = 0, pinchRaf = 0;
+const fingers = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+chart.addEventListener('touchstart', e => { if (e.touches.length === 2) { cancelDrag(); pinch = { d0: fingers(e.touches), z0: zoom }; } }, { passive: true });
+chart.addEventListener('touchmove', e => {
+  if (pinch && e.touches.length === 2) {
+    e.preventDefault(); pinchZ = pinch.z0 * fingers(e.touches) / pinch.d0;
+    if (!pinchRaf) pinchRaf = requestAnimationFrame(() => { pinchRaf = 0; if (Math.abs(pinchZ - zoom) >= 0.05) setZoom(pinchZ); });
+    return; }
+  if (drag && drag.armed) e.preventDefault();
+}, { passive: false });
+chart.addEventListener('touchend', e => { if (e.touches.length < 2) pinch = null; });
 const D = s => { const d = fromIso(s); return `${DOWS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 function showDragTip(d) {
   const t = $('#dragtip'), b = $('#dragtip2'), c = d.cand; if (!c) return;
@@ -2156,8 +2241,9 @@ function paintSel() {
   $('#rtFrom').value = rsel.from; $('#rtTo').value = rsel.to;
   const n = diffDays(rsel.from, rsel.to) + 1, k = rsel.rooms.length;
   $('#rtInfo').innerHTML = k ? `<b>${n}</b> ${n === 1 ? 'noapte' : 'nopți'} · <b>${k}</b> ${k === 1 ? 'cameră' : 'camere'} · ${fmtD(rsel.from)} – ${fmtD(rsel.to)}<small>${esc(rsel.rooms.map(id => roomById(id)?.name).slice(0, 10).join(', '))}${k > 10 ? '…' : ''}</small>`
-                           : 'Click pe un preț ca să-l schimbi direct. Trage pe grilă peste camere și zile, sau alege un grup de camere de mai sus.';
-  $('#rtApply').disabled = $('#rtReset').disabled = !k;
+                           : TOUCH ? 'Atinge un preț ca să-l schimbi. Pentru mai multe camere deodată, alege un grup de mai sus.'
+                                   : 'Click pe un preț ca să-l schimbi direct. Trage pe grilă peste camere și zile, sau alege un grup de camere de mai sus.';
+  $('#rtApply').disabled = $('#rtReset').disabled = $('#rtClear').disabled = !k; $('.rt-panel').classList.toggle('idle', !k);
 }
 function rtSelect(td) {
   if (td.dataset.r !== rdrag.r0 || td.dataset.d !== rdrag.d0) rdrag.moved = true;
@@ -2165,14 +2251,17 @@ function rtSelect(td) {
   rsel.rooms = rdrag.cols.slice(a, b + 1); rsel.from = d1 < rdrag.d0 ? d1 : rdrag.d0; rsel.to = d1 < rdrag.d0 ? rdrag.d0 : d1; paintSel();
 }
 $('#rtGrid').addEventListener('pointerdown', e => {
-  const td = e.target.closest('td[data-r]'); if (!td || e.button !== 0) return; e.preventDefault();
+  const td = e.target.closest('td[data-r]'); if (!td || e.button !== 0) return;
+  if (e.pointerType === 'touch') { if (cellEd) saveCellEditor(); rdrag = { touch: true, x0: e.clientX, y0: e.clientY, r0: td.dataset.r, d0: td.dataset.d }; return; }   // tap: edit that price; swipe: scroll
+  e.preventDefault();
   if (cellEd) saveCellEditor();
   const cols = columns().map(c => c.room.id); rdrag = { cols, c0: cols.indexOf(td.dataset.r), d0: td.dataset.d, r0: td.dataset.r, moved: false }; rtSelect(td);
 });
-window.addEventListener('pointermove', e => { if (!rdrag) return; const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest('#rtGrid td[data-r]'); if (td) rtSelect(td); });
+window.addEventListener('pointermove', e => { if (!rdrag) return; if (rdrag.touch) { if (Math.hypot(e.clientX - rdrag.x0, e.clientY - rdrag.y0) > 8) rdrag = null; return; } const el = document.elementFromPoint(e.clientX, e.clientY), td = el && el.closest('#rtGrid td[data-r]'); if (td) rtSelect(td); });
 window.addEventListener('pointerup', () => { if (!rdrag) return; const d = rdrag; rdrag = null;
   if (!d.moved) { openCellEditor(d.r0, d.d0); return; }   // a click on one price: edit it right there
   $('#rtPrice').focus(); $('#rtPrice').select(); });
+window.addEventListener('pointercancel', () => { rdrag = null; });
 // click a room header: change its base price
 $('#rtGrid').addEventListener('click', e => {
   const th = e.target.closest('th[data-r]'); if (!th) return; const rm = roomById(th.dataset.r); if (!rm) return;
@@ -2182,7 +2271,7 @@ $('#rtGrid').addEventListener('click', e => {
 });
 // endless nights, both ways
 $('#rtGrid').addEventListener('scroll', e => {
-  if (cellEd && !rtBusy) saveCellEditor();
+  if (cellEd && !rtBusy && Date.now() - rtResizeT > 800) saveCellEditor();
   const g = e.target, up = g.scrollTop < rtLastTop; rtLastTop = g.scrollTop; if (rtBusy) return;
   if (rv.flip) { const back = g.scrollLeft < rtLastLeft; rtLastLeft = g.scrollLeft;
     if (g.scrollLeft + g.clientWidth > g.scrollWidth - 220) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
@@ -2191,7 +2280,9 @@ $('#rtGrid').addEventListener('scroll', e => {
   if (g.scrollTop + g.clientHeight > g.scrollHeight - 150) { rtBusy = true; rv.days += 31; renderRates(); rtBusy = false; }
   else if (up && g.scrollTop < 60) { rtBusy = true; const rh = (g.querySelector('tbody tr') || {}).offsetHeight || 36; rv.start = addDays(rv.start, -31); rv.days += 31; renderRates(); g.scrollTop += 31 * rh; rtLastTop = g.scrollTop; rtBusy = false; }
 }, { passive: true });
-let cellEd = null;
+$('#rtClear').onclick = () => { rsel.rooms = []; paintSel(); };
+let cellEd = null, rtResizeT = 0;
+window.addEventListener('resize', () => { rtResizeT = Date.now(); });   // the phone keyboard opening must not close the price editor
 function openCellEditor(rid, d) {
   closeCellEditor(false);
   const td = $('#rtGrid').querySelector(`td[data-r="${rid}"][data-d="${d}"]`), rm = roomById(rid); if (!td || !rm) return;
@@ -2202,7 +2293,7 @@ function openCellEditor(rid, d) {
     <div class="cp-ft"><button type="button" class="btn sm" data-base>Prețul de bază</button><button type="button" class="btn sm primary" data-save>Salvează</button></div>`;
   document.body.appendChild(pop);
   const r = td.getBoundingClientRect(), w = pop.offsetWidth, h = pop.offsetHeight;
-  let x = r.left + r.width / 2 - w / 2, y = r.bottom + 8; if (y + h > innerHeight - 8) y = r.top - h - 8;
+  let x = r.left + r.width / 2 - w / 2, y = r.bottom + 8; if (y + h > innerHeight - 8 || (TOUCH && r.top > innerHeight * 0.4)) y = r.top - h - 8;   // above the cell, clear of the phone keyboard
   pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, x)) + 'px'; pop.style.top = Math.max(8, y) + 'px';
   const inp = pop.querySelector('.cp-in'), preview = () => { const c = $('#rtGrid').querySelector(`td[data-r="${rid}"][data-d="${d}"]`); if (c) c.textContent = inp.value || start; };
   cellEd = { rid, d, start, inp, pop };
@@ -2491,8 +2582,12 @@ document.addEventListener('click', e => {
   sortState[key] = { col, dir }; sortTable(tbl, col, dir);
 });
 // keep the chosen order when a page redraws its tables
+function labelTables() {
+  $$('.main table.t').forEach(tbl => { const hs = tbl.tHead ? [...tbl.tHead.rows[0].cells].map(th => th.textContent.trim()) : [];
+    tbl.querySelectorAll('tbody td:not([data-l])').forEach(td => { td.dataset.l = hs[td.cellIndex] || ''; }); });
+}
 const sortObs = new MutationObserver(() => {
-  sortObs.disconnect();
+  sortObs.disconnect(); labelTables();
   for (const key in sortState) { const i = key.lastIndexOf('#'), hid = key.slice(0, i), holder = hid ? document.getElementById(hid) : document;
     const tbl = holder && holder.querySelectorAll('table.t')[+key.slice(i + 1)];
     if (tbl && !tbl.querySelector('th.s-asc,th.s-desc')) sortTable(tbl, sortState[key].col, sortState[key].dir); }
