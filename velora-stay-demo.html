@@ -189,7 +189,7 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res .ft{position:absolute;left:max(10px,calc(12px*var(--z)));right:max(5px,calc(8px*var(--z)));bottom:max(3px,calc(5px*var(--z)));display:flex;align-items:center;justify-content:flex-end;gap:6px;z-index:1}
 .res .out{margin-right:auto;font-size:max(9.5px,calc(10.5px*var(--z)));font-weight:800;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .res{container-type:inline-size}
-@container (max-width:132px){.res:not(.peek) .src{display:none}}
+@container (max-width:96px){.res:not(.peek) .src{display:none}}
 @container (max-width:30px){.res:not(.peek) .out{display:none}}
 .res .src{font-size:max(8px,calc(9.5px*var(--z)));font-weight:800;letter-spacing:.04em;padding:1px 5px;border-radius:5px;background:var(--surface);color:var(--ink-2);border:1px solid var(--line);z-index:1}
 .res .src.booking{color:var(--src-booking);border-color:var(--src-booking)}
@@ -494,6 +494,8 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .res.has-alert.warnlvl{outline-color:var(--src-due)}
 .res.has-alert .g{padding-right:max(14px,calc(20px*var(--z)))}
 .res.flash{animation:flash 1.3s ease}
+.bridge{position:absolute;z-index:9;pointer-events:none;background:linear-gradient(160deg,color-mix(in srgb,var(--c) 30%,var(--glass)),color-mix(in srgb,var(--c) 18%,var(--glass)));border-top:1px solid color-mix(in srgb,var(--c) 45%,var(--glass-line));border-bottom:1px solid color-mix(in srgb,var(--c) 45%,var(--glass-line))}
+.bridge.past{opacity:.72}
 @keyframes flash{0%,100%{box-shadow:none}25%,60%{box-shadow:0 0 0 4px var(--accent),0 14px 34px -8px var(--accent)}}
 .ctx .lh{padding:6px 10px 4px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;font-weight:800}
 .ctx button .rm{min-width:46px;color:var(--accent);font-family:var(--font-d);font-weight:600}
@@ -1045,6 +1047,7 @@ function renderChart() {
   const colIdx = Object.fromEntries(cols.map((c, i) => [c.room.id, i]));
   const rangeStart = d0, rangeEnd = addDays(d1, 1);
   const q = view.q.trim().toLowerCase();
+  const placed = [];
   S.reservations.forEach(r => {
     if (!(r.checkIn < rangeEnd && r.checkOut > rangeStart)) return;
     const cis = [...new Set(resRoomIds(r).map(id => colIdx[id]).filter(x => x !== undefined))].sort((a, b) => a - b); if (!cis.length) return;
@@ -1098,9 +1101,16 @@ function renderChart() {
       <div class="ft">${showQa ? `<button class="qa ${qa.cls || ''}" data-qa="${r.id}">${qa.label}</button>` : `<span class="out">→ ${fmtD(r.checkOut)}</span>`}<span class="src ${r.source}">${SRC_SHORT[r.source]}</span><span class="pay ${ps}"></span></div>
       ${span > 1 && tier > 0 ? `<span class="rooms">${span} camere</span>` : ''}
       <div class="rs"></div>`;
-    body.appendChild(el);
+    body.appendChild(el); placed.push({ r, c0: ci, c1: ci + span - 1, y0: top + 2, y1: top + h - 2, c });
     });
   });
+  // same guest, rooms side by side, nights that overlap: join the blocks across the gap so they read as one stay
+  placed.forEach(a => placed.forEach(b => {
+    if (a === b || a.r.guestId !== b.r.guestId || a.r.id === b.r.id || !isActiveRes(a.r) || !isActiveRes(b.r) || b.c0 !== a.c1 + 1) return;
+    const y0 = Math.max(a.y0, b.y0) + 6, y1 = Math.min(a.y1, b.y1) - 6; if (y1 - y0 < 8) return;
+    const d = document.createElement('div'); d.className = 'bridge' + (a.r.checkOut <= TODAY ? ' past' : '');
+    d.style.cssText = `--c:${a.c};left:${(a.c1 + 1) * COLW - 5}px;width:10px;top:${y0}px;height:${y1 - y0}px`; body.appendChild(d);
+  }));
 
   // if the layout ended up taller than measured (scrollbars, resize), fill the rest once
   if (!refilling) { const want = daysThatFit() + view.extra; if (want > shownDays) { refilling = true; shownDays = want; renderChart(); refilling = false; } }
