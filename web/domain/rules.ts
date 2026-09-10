@@ -97,3 +97,31 @@ export function validateReservation(x: ReservationFields): string | null {
   if (!(x.status in STATUS)) return 'Statusul rezervării nu este valid.';
   return null;
 }
+
+/* ---------- rooms side by side: growing, shrinking and joining stays ---------- */
+export const contiguous = (idxs: number[]) => { const a = [...new Set(idxs)].sort((x, y) => x - y); return a.every((v, i) => i === 0 || v === a[i - 1] + 1); };
+/** The rooms just left and right of a stay on the calendar, plus its first and last room. */
+export function neighbours(s: AppState, v: ViewFilter, r: Reservation) {
+  const cols = columns(s, v), idxs = r.roomIds.map(id => cols.findIndex(c => c.room.id === id)).filter(i => i >= 0);
+  if (!idxs.length) return { left: null, right: null, first: undefined, last: undefined, span: r.roomIds.length };
+  const lo = Math.min(...idxs), hi = Math.max(...idxs);
+  return { left: cols[lo - 1]?.room ?? null, right: cols[hi + 1]?.room ?? null, first: cols[lo]?.room, last: cols[hi]?.room, span: hi - lo + 1 };
+}
+/** Same guest record (not just the same name), same dates, rooms side by side: the two stays can be joined into one. */
+export function mergeCandidate(s: AppState, v: ViewFilter, r: Reservation) {
+  const cols = columns(s, v), idxOf = (id: string) => cols.findIndex(c => c.room.id === id);
+  return s.reservations.find(o => o.id !== r.id && o.guestId === r.guestId && o.checkIn === r.checkIn && o.checkOut === r.checkOut && isActiveRes(o) && isActiveRes(r)
+    && contiguous([...r.roomIds, ...o.roomIds].map(idxOf))) ?? null;
+}
+/** Rooms drawn next to a stay on the same nights join it; anything else becomes a separate booking for the same guest. */
+export function addOutcome(s: AppState, v: ViewFilter, r: Reservation, rooms: Room[], inD: string, outD: string): { kind: 'none' | 'merge' | 'new'; ids: string[] } {
+  const cols = columns(s, v), idxOf = (id: string) => cols.findIndex(c => c.room.id === id);
+  const extra = rooms.map(x => x.id).filter(id => !r.roomIds.includes(id));
+  if (inD === r.checkIn && outD === r.checkOut) {
+    if (!extra.length) return { kind: 'none', ids: [] };
+    if (contiguous([...r.roomIds, ...extra].map(idxOf))) return { kind: 'merge', ids: extra };
+  }
+  return { kind: 'new', ids: rooms.map(x => x.id) };
+}
+/** Room ids in calendar order. */
+export const sortByColumns = (s: AppState, v: ViewFilter, ids: string[]) => { const cols = columns(s, v), idxOf = (id: string) => cols.findIndex(c => c.room.id === id); return [...new Set(ids)].sort((a, b) => idxOf(a) - idxOf(b)); };

@@ -4,12 +4,14 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { useData, useStore } from '@/lib/client/store';
 import { fmtD, fmtDL, money, todayIso } from '@/domain/dates';
 import { METHOD, PAY_L, SRC, STATUS } from '@/domain/labels';
-import { guestById, guestName, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
+import { guestById, guestName, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
+import { growRoom, shrinkRoom } from '@/lib/client/actions';
 import type { Method, Status } from '@/domain/types';
 import { IconClose } from './Icons';
 
 export default function Drawer() {
   const data = useData();
+  const view = useStore(s => s.view);
   const id = useStore(s => s.drawerId), close = useStore(s => s.closeDrawer), patch = useStore(s => s.patchReservation);
   const addPayment = useStore(s => s.addPayment), openModal = useStore(s => s.openModal), del = useStore(s => s.deleteReservation), toast = useStore(s => s.toast);
   const r = id ? data.reservations.find(x => x.id === id) : undefined;
@@ -51,7 +53,13 @@ export default function Drawer() {
       <div className="bd">
         <div className="kv">
           <div style={{ gridColumn: '1 / -1' }}><label>{r.roomIds.length > 1 ? 'Camere' : 'Cameră'}</label>
-            <div className="roomrow"><b>{roomLabel(data, r)}</b> <span style={{ color: 'var(--ink-3)' }}>· {r.roomIds.length > 1 ? `${r.roomIds.length} camere` : rm?.type}</span></div></div>
+            <div className="roomrow">{(() => { const nb = neighbours(data, view, r); return <>
+              {nb.left && <button className="btn sm" title={`Adaugă ${nb.left.name} din stânga`} onClick={() => growRoom(r.id, 'left')}>+ {nb.left.name}</button>}
+              {nb.span > 1 && nb.first && <button className="btn sm ghost" title={`Scoate ${nb.first.name}`} onClick={() => shrinkRoom(r.id, 'left')}>−</button>}
+              <b>{roomLabel(data, r)}</b> <span style={{ color: 'var(--ink-3)' }}>· {nb.span > 1 ? `${nb.span} camere` : rm?.type}</span>
+              {nb.span > 1 && nb.last && <button className="btn sm ghost" title={`Scoate ${nb.last.name}`} onClick={() => shrinkRoom(r.id, 'right')}>−</button>}
+              {nb.right && <button className="btn sm" title={`Adaugă ${nb.right.name} din dreapta`} onClick={() => growRoom(r.id, 'right')}>+ {nb.right.name}</button>}
+            </>; })()}</div></div>
           <div><label>Persoane</label><b>{r.pax}</b></div>
           <div><label>Check-in</label><b>{fmtDL(r.checkIn)}</b></div>
           <div><label>Check-out</label><b>{fmtDL(r.checkOut)}</b></div>

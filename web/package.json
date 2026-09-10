@@ -12,7 +12,8 @@
     "start": "next start",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "db:reset": "node scripts/db-reset.mjs"
+    "db:reset": "node scripts/db-reset.mjs",
+    "db:sql": "node scripts/db-sql.mjs"
   },
   "dependencies": {
     "@electric-sql/pglite": "0.5.8",

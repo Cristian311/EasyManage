@@ -1,5 +1,5 @@
 /** Calls the app's API. On an error the server's message (already in Romanian) is thrown as is. */
-export async function api<T>(url: string, method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET', body?: unknown): Promise<T> {
+export async function api<T>(url: string, method: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE' = 'GET', body?: unknown): Promise<T> {
   let res: Response;
   try {
     res = await fetch(url, {

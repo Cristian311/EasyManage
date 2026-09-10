@@ -27,6 +27,7 @@ Oprești serverul cu `Ctrl + C` în terminal.
 | Varianta rapidă, ca în producție | `npm run build` apoi `npm start` |
 | Rulezi testele | `npm test` |
 | Ștergi baza de date locală și reîncepi cu datele demo | oprești serverul, apoi `npm run db:reset` |
+| Te uiți în baza de date | oprești serverul, apoi `npm run db:sql -- "SELECT name, price FROM rooms"` |
 
 Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0` și deschide pe telefon
 `http://IP-ul-calculatorului:3000` (IP-ul îl vezi cu `ipconfig`).
@@ -34,7 +35,9 @@ Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0`
 ## Baza de date
 
 - **Pe calculatorul tău:** PostgreSQL adevărat prin PGlite, rulează în interiorul aplicației, fără nimic de instalat.
-  Datele stau în `web/.data/pglite` (folderul nu intră în git).
+  Datele stau în `web/.data/pglite` (folderul nu intră în git). Nu există un server la care să te conectezi cu
+  phpMyAdmin (acela e pentru MySQL); te uiți în date cu `npm run db:sql` sau, când vei avea un PostgreSQL adevărat,
+  cu pgAdmin sau DBeaver.
 - **Pe un server:** copiezi `.env.example` ca `.env.local` și pui `DATABASE_URL=postgres://...` (Neon, Supabase sau un
   PostgreSQL propriu). Același cod, aceleași tabele.
 - **Schema** e în [db/migrations](db/migrations). O modificare nouă înseamnă un fișier nou (`002_...sql`); se aplică singur
@@ -58,8 +61,20 @@ API: `GET /api/state`, `POST /api/reservations`, `PATCH|DELETE /api/reservations
 
 ## Ce e mutat și ce urmează
 
-Gata: calendarul (mutare, prelungire, rezervare nouă prin tragere, zoom, vilă și etaj, ecran complet, telefon),
-sertarul cu plăți și factură, fereastra de rezervare, paginile Azi, Rezervări și Oaspeți.
+Gata, la fel ca în demo: calendarul (mutare, prelungire, rezervare nouă prin tragere, extindere la click, meniu la click
+dreapta, adăugare de camere desenând, unirea automată a rezervărilor aceluiași oaspete, zoom, ecran complet, telefon),
+sertarul cu plăți și factură, fereastra de rezervare, paginile Azi, Rezervări, Oaspeți, Camere (proprietăți, etaje,
+camere), Tarife (grilă, grupuri, editor pe un preț) și Financiar (grafice, tabele, cheltuieli, lei/€). Tabelele se
+sortează din cap.
 
-Urmează, în ordine: Tarife, Financiar, Camere și etaje, extinderea la click și meniul de pe bloc, adăugarea de camere
-la o rezervare, apoi autentificare (conturi pentru recepție), facturi și e-Factura.
+Nu e mutat: împărțirea unei camere în unități (rar folosită). Urmează: autentificare (conturi pentru recepție),
+facturi și e-Factura, căutarea „am loc liber?” cu voce.
+
+API în plus: `PUT /api/rates`, `POST|PATCH|DELETE` pe `/api/rooms`, `/api/floors`, `/api/properties`, `/api/expenses`,
+`PUT /api/rooms/order`, `POST /api/reservations/:id/merge`.
+
+## Viteză
+
+`npm run dev` compilează fiecare pagină la prima deschidere, deci prima încărcare durează câteva secunde, iar prima
+pornire mai creează și baza de date. După aceea `/api/state` răspunde în ~0,1 s. Pentru viteza reală rulează
+`npm run build` și apoi `npm start`.

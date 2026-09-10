@@ -7,6 +7,7 @@ import { SRC, STATUS } from '@/domain/labels';
 import { conflictAny, guestById, guestName, paid, rateFor, resGuest, roomById, roomLabel, stayPrice, validateReservation } from '@/domain/rules';
 import type { Guest, Source, Status } from '@/domain/types';
 import { IconClose } from './Icons';
+import { offerMerge } from '@/lib/client/actions';
 
 export default function ResModal() {
   const modal = useStore(s => s.modal);
@@ -20,7 +21,7 @@ function Form() {
   const edit = modal.editId ? data.reservations.find(x => x.id === modal.editId) ?? null : null;
   const firstRoom = data.rooms.find(r => r.active && !data.rooms.some(u => u.parentId === r.id));
 
-  const [guest, setGuest] = useState<Guest | null>(edit ? guestById(data, edit.guestId) ?? null : null);
+  const [guest, setGuest] = useState<Guest | null>(edit ? guestById(data, edit.guestId) ?? null : modal.pre?.guestId ? guestById(data, modal.pre.guestId) ?? null : null);
   const [gq, setGq] = useState(''), [ddOpen, setDdOpen] = useState(false);
   const [rooms, setRooms] = useState<string[]>(edit ? edit.roomIds : modal.pre?.roomIds?.length ? modal.pre.roomIds : firstRoom ? [firstRoom.id] : []);
   const [checkIn, setIn] = useState(edit?.checkIn ?? modal.pre?.checkIn ?? todayIso());
@@ -30,7 +31,7 @@ function Form() {
   const [rate, setRate] = useState(''), [total, setTotal] = useState(edit ? String(edit.total) : '');
   const [rateManual, setRateManual] = useState(false), [totalManual, setTotalManual] = useState(!!edit);
   const [advance, setAdvance] = useState('0');
-  const [source, setSource] = useState<Source>(edit?.source ?? 'direct'), [status, setStatus] = useState<Status>(edit?.status ?? 'confirmed'), [notes, setNotes] = useState(edit?.notes ?? '');
+  const [source, setSource] = useState<Source>(edit?.source ?? (modal.pre?.source as Source) ?? 'direct'), [status, setStatus] = useState<Status>(edit?.status ?? 'confirmed'), [notes, setNotes] = useState(edit?.notes ?? '');
   const [more, setMore] = useState(!!edit && (!!edit.notes || edit.source !== 'direct' || edit.status !== 'confirmed'));
   const [error, setError] = useState(''), [saving, setSaving] = useState(false);
   const guestInput = useRef<HTMLInputElement>(null);
@@ -68,9 +69,10 @@ function Form() {
       setSaving(false); if (e) { setError(e); return; }
       toast('Rezervare actualizată', 'ok'); close(); openDrawer(edit.id);
     } else {
-      const e = await create({ ...fields, guestId: guest?.id, guestName: guest ? undefined : gq.trim(), advance: Number(advance) || 0 });
+      const { error: e, id } = await create({ ...fields, guestId: guest?.id, guestName: guest ? undefined : gq.trim(), advance: Number(advance) || 0 });
       setSaving(false); if (e) { setError(e); return; }
       toast(`Rezervare creată: ${guest ? guestName(guest) : gq.trim()}, ${rooms.map(id => roomById(data, id)?.name).join(' + ')}`, 'ok'); close();
+      if (id) offerMerge(id);
     }
   };
   useEffect(() => {

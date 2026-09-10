@@ -6,6 +6,7 @@ import { SRC, STATUS } from '@/domain/labels';
 import { nights, remaining, resGuest, roomLabel } from '@/domain/rules';
 import { useGoToReservation } from '@/components/useGoToReservation';
 import { IconPlus, IconSearch } from '@/components/Icons';
+import Table from '@/components/Table';
 
 export default function ReservationsPage() {
   const data = useData(), openModal = useStore(s => s.openModal), goTo = useGoToReservation();
@@ -24,21 +25,18 @@ export default function ReservationsPage() {
         <button className="btn primary" onClick={() => openModal()}><IconPlus />Rezervare nouă</button></div>
       <div className="scroll">
         <div className="card tbl-wrap">
-          <table className="t">
-            <thead><tr><th>Oaspete</th><th>Cameră</th><th>Check-in</th><th>Check-out</th><th>Nopți</th><th>Sursă</th><th>Status</th><th className="r">Total</th><th className="r">Rest</th><th>Factură</th></tr></thead>
-            <tbody>
-              {shown.map(r => (
-                <tr key={r.id} onClick={() => goTo(r)}>
-                  <td data-l="Oaspete"><b>{resGuest(data, r)}</b></td><td data-l="Cameră">{roomLabel(data, r)}</td><td data-l="Check-in">{fmtD(r.checkIn)}</td><td data-l="Check-out">{fmtD(r.checkOut)}</td>
-                  <td data-l="Nopți" className="r">{nights(r)}</td><td data-l="Sursă">{SRC[r.source]}</td><td data-l="Status"><span className={`pill ${r.status}`}><i />{STATUS[r.status]}</span></td>
-                  <td data-l="Total" className="r">{money(r.total)}</td>
-                  <td data-l="Rest" className="r" style={{ color: remaining(r) ? 'var(--bad)' : 'var(--ok)' }}>{remaining(r) ? money(remaining(r)) : '✓'}</td>
-                  <td data-l="Factură">{r.invoiceNo || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {!list.length && <div className="empty">Nicio rezervare</div>}
+          <Table rows={shown} keyOf={r => r.id} onRow={goTo} empty="Nicio rezervare" cols={[
+            { h: 'Oaspete', cell: r => <b>{resGuest(data, r)}</b>, v: r => resGuest(data, r) },
+            { h: 'Cameră', cell: r => roomLabel(data, r), v: r => roomLabel(data, r) },
+            { h: 'Check-in', cell: r => fmtD(r.checkIn), v: r => r.checkIn },
+            { h: 'Check-out', cell: r => fmtD(r.checkOut), v: r => r.checkOut },
+            { h: 'Nopți', r: true, cell: r => nights(r), v: r => nights(r) },
+            { h: 'Sursă', cell: r => SRC[r.source], v: r => SRC[r.source] },
+            { h: 'Status', cell: r => <span className={`pill ${r.status}`}><i />{STATUS[r.status]}</span>, v: r => STATUS[r.status] },
+            { h: 'Total', r: true, cell: r => money(r.total), v: r => r.total },
+            { h: 'Rest', r: true, cell: r => <span style={{ color: remaining(r) ? 'var(--bad)' : 'var(--ok)' }}>{remaining(r) ? money(remaining(r)) : '✓'}</span>, v: r => remaining(r) },
+            { h: 'Factură', cell: r => r.invoiceNo || '—', v: r => r.invoiceNo },
+          ]} />
           {list.length > shown.length && <div className="empty">Se văd cele mai noi {shown.length} din {list.length}. Caută după nume sau cameră pentru restul.</div>}
         </div>
       </div>
