@@ -500,7 +500,9 @@ table.t .r{text-align:right;font-variant-numeric:tabular-nums}
 .res .qa{font-size:max(9px,calc(10.5px*var(--z)));font-weight:800;padding:2px 9px;border-radius:99px;color:#fff;background:var(--ok);margin-right:auto;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.2);cursor:pointer;line-height:1.5}
 .res .qa.leave{background:var(--accent)}
 .res .qa:hover{filter:brightness(1.1)}
-.res.short .ft:has(.qa) .src{display:none}
+.res .ft:has(.qa) .src{display:none}
+.res .ft:has(.qa){justify-content:space-between}
+.res .ft .qa{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .res .al{position:absolute;top:3px;right:3px;width:max(11px,calc(16px*var(--z)));height:max(11px,calc(16px*var(--z)));border-radius:50%;background:var(--bad);color:#fff;font-size:max(8px,calc(10.5px*var(--z)));font-weight:900;display:grid;place-items:center;z-index:3;box-shadow:0 0 0 2px var(--surface)}
 .res .al.warn{background:var(--src-due);color:#3A2A00}
 .res.has-alert{outline:2px solid var(--bad);outline-offset:-1px}
