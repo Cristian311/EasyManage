@@ -1472,15 +1472,17 @@ function mergeRes(a, b) {
 }
 function offerMerge(r) {
   const o = r && mergeCandidate(r); if (!o) return;
-  actionToast(`${resGuest(r)} are două rezervări alăturate pe aceleași zile: ${roomLabel(o)} și ${roomLabel(r)}.`, 'Combină într-una', () => mergeRes(o, r), '', 9000);
+  mergeRes(o, r);
 }
 
 /* Hover peek: the block grows to the right and downwards over its neighbours; it flips only at the edge of the visible grid */
 let peekT = null;
 const EASE = 'cubic-bezier(.2,.8,.2,1)';
+const nearBottom = (el, e) => e.clientY > el.getBoundingClientRect().bottom - 18;
 body.addEventListener('pointerover', e => {
   const el = e.target.closest('.res'); if (!el || drag || addMode || e.pointerType === 'touch') return;
-  clearTimeout(peekT); peekT = setTimeout(() => { if (drag || addMode || (el.classList.contains('peek') && !el.classList.contains('unpeek'))) return;
+  if (!el.classList.contains('peek') && nearBottom(el, e)) { clearTimeout(peekT); peekT = null; return; }
+  clearTimeout(peekT); peekT = setTimeout(() => { peekT = null; if (drag || addMode || (el.classList.contains('peek') && !el.classList.contains('unpeek'))) return;
     el.classList.remove('unpeek');
     const w0 = parseFloat(el.dataset.w0) || el.offsetWidth, h0 = parseFloat(el.style.height) || el.offsetHeight;
     el.dataset.h0 = h0; el.style.transition = 'none';
@@ -1497,6 +1499,13 @@ body.addEventListener('pointerover', e => {
     el.style.marginLeft = er.left + w1 > cr.right - 12 ? -dw + 'px' : '';   // grow right, unless it would run off the visible grid
     el.style.marginTop = er.top + h1 > cr.bottom - 12 ? -dh + 'px' : '';    // grow down, unless there is no room below
   }, 220);
+});
+// moving inside a block: cancel the peek near the bottom edge, start it again once back in the middle
+body.addEventListener('pointermove', e => {
+  if (drag || addMode || e.pointerType === 'touch') return;
+  const el = e.target.closest('.res'); if (!el || el.classList.contains('peek')) return;
+  if (nearBottom(el, e)) { clearTimeout(peekT); peekT = null; }
+  else if (!peekT) el.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: e.pointerType, clientX: e.clientX, clientY: e.clientY }));
 });
 body.addEventListener('pointerout', e => {
   const el = e.target.closest('.res'); if (!el) return;
