@@ -29,10 +29,13 @@ export default function PropBar() {
       {floors.length > 0 && <>
         <span className="pb-l">Etaj</span>
         <div className="seg"><button className={`all ${view.floor === 'all' ? 'on' : ''}`} onClick={() => pick(view.prop, 'all')}>Toate</button></div>
-        {groups.map((g, i) => <Fragment key={g.p?.id ?? i}>
-          {g.p && <span className="pb-g">{shortProp(g.p)}</span>}
-          <div className="seg">{g.fl.map(f => <button key={f.id} className={view.floor === f.id ? 'on' : ''} onClick={() => pick(view.prop, f.id)}>{f.name}</button>)}</div>
-        </Fragment>)}
+        {/* with several properties each one takes its own line, so its floors stay under its name */}
+        {groups.map((g, i) => {
+          const seg = <div className="seg">{g.fl.map(f => <button key={f.id} className={view.floor === f.id ? 'on' : ''} onClick={() => pick(view.prop, f.id)}>{f.name}</button>)}</div>;
+          return g.p
+            ? <div className="pb-fg" key={g.p.id}><span className="pb-g">{shortProp(g.p)}</span>{seg}</div>
+            : <Fragment key={i}>{seg}</Fragment>;
+        })}
       </>}
       <Link className="btn sm ghost" href="/camere">Etaje și proprietăți…</Link>
     </div>
