@@ -53,7 +53,7 @@ export default function Table<T>({ cols, rows, keyOf, onRow, rowClass, empty, fo
         ))}</tr></thead>
         <tbody>
           {items.map(x => 'g' in x ? (
-            <tr className="grp" key={'g:' + x.g}><td colSpan={cols.length} data-l="">{groupHead ? groupHead(x.g, x.n) : x.g}</td></tr>
+            <tr className="grp" key={'g:' + x.g}><td colSpan={cols.length} data-l=""><div className="grp-h">{groupHead ? groupHead(x.g, x.n) : x.g}</div></td></tr>
           ) : (
             <tr key={keyOf(x.r)} onClick={onRow ? () => onRow(x.r) : undefined} className={rowClass?.(x.r)} style={onRow ? undefined : { cursor: 'default' }}>
               {cols.map((c, i) => <td key={i} data-l={c.h} className={c.r ? 'r' : ''} style={c.style}>{c.cell(x.r)}</td>)}

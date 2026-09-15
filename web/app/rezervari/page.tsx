@@ -98,8 +98,12 @@ export default function ReservationsPage() {
         <div className="card tbl-wrap">
           <Table rows={shown} keyOf={r => r.id} onRow={goTo} cols={cols}
             empty={filtered || q ? 'Nicio rezervare pentru filtrele alese' : seg === 'next' ? 'Nicio rezervare care urmează' : 'Nicio rezervare'}
-            group={seg === 'next' ? r => r.checkIn : seg === 'in' ? r => r.checkOut : undefined}
-            groupHead={(k, n) => <>{seg === 'in' ? `Pleacă ${dayHeading(k, T).toLowerCase()}` : dayHeading(k, T)}<span className="cnt">{n}</span></>} />
+            // stays whose day has already passed (never checked in, or overstaying) go together on top, not under old dates
+            group={seg === 'next' ? r => (r.checkIn < T ? 'late' : r.checkIn) : seg === 'in' ? r => (r.checkOut < T ? 'late' : r.checkOut) : undefined}
+            groupHead={(k, n) => <>
+              {k === 'late' ? <span className="late">{seg === 'in' ? 'Trebuiau să plece' : 'Trebuiau să sosească'}</span>
+                : seg === 'in' ? `Pleacă ${dayHeading(k, T).toLowerCase()}` : dayHeading(k, T)}
+              <span className="cnt">{n}</span></>} />
           {list.length > shown.length && <div className="empty">Se văd primele {shown.length} din {list.length}. Caută sau filtrează pentru restul.</div>}
         </div>
       </div>

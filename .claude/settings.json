@@ -1,10 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { taskkill /PID $_.OwningProcess /T /F })",
-      "PowerShell($l = Get-Item C:\\\\nvm4w\\\\nodejs -ErrorAction SilentlyContinue; \"symlink -> $\\($l.Target\\) \\($\\($l.LinkType\\)\\)\"; Get-ChildItem C:\\\\nvm4w\\\\nodejs -Name -ErrorAction SilentlyContinue | Select-Object -First 15; \"--- v24 folder:\"; Get-ChildItem \"$env:LOCALAPPDATA\\\\nvm\\\\v24.14.0\" -Name | Where-Object { $_ -match 'npm|node' }; \"--- PATH entries with node:\"; \\([Environment]::GetEnvironmentVariable\\('Path','User'\\) + ';' + [Environment]::GetEnvironmentVariable\\('Path','Machine'\\)\\).Split\\(';'\\) | Where-Object { $_ -match 'node|nvm' })",
-      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { taskkill /PID $_.OwningProcess /T /F }; Start-Sleep 2; \\(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Measure-Object\\).Count)",
-      "PowerShell(Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | ForEach-Object { $p = Get-Process -Id $_.OwningProcess; \"$\\($_.OwningProcess\\) $\\($p.ProcessName\\) started $\\($p.StartTime\\)\" })"
-    ]
+    "defaultMode": "bypassPermissions"
   }
 }

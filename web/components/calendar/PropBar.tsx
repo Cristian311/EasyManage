@@ -37,7 +37,7 @@ export default function PropBar() {
             : <Fragment key={i}>{seg}</Fragment>;
         })}
       </>}
-      <Link className="btn sm ghost" href="/camere">Etaje și proprietăți…</Link>
+      <Link className="btn sm ghost pb-more" href="/camere">Etaje și proprietăți…</Link>
     </div>
   );
 }
