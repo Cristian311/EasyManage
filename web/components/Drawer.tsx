@@ -1,8 +1,10 @@
 'use client';
 // Everything about one reservation, on the right: who, when, money, payments, invoice, the guest's history.
 import { useEffect, useState, type CSSProperties } from 'react';
+import Link from 'next/link';
 import { useData, useStore } from '@/lib/client/store';
 import { fmtD, fmtDL, money, todayIso } from '@/domain/dates';
+import { invoiceNo } from '@/domain/invoice';
 import { METHOD, PAY_L, SRC, STATUS } from '@/domain/labels';
 import { guestById, guestName, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
 import { growRoom, shrinkRoom } from '@/lib/client/actions';
@@ -14,6 +16,7 @@ export default function Drawer() {
   const view = useStore(s => s.view);
   const id = useStore(s => s.drawerId), close = useStore(s => s.closeDrawer), patch = useStore(s => s.patchReservation);
   const addPayment = useStore(s => s.addPayment), openModal = useStore(s => s.openModal), del = useStore(s => s.deleteReservation), toast = useStore(s => s.toast);
+  const openInvModal = useStore(s => s.openInvModal);
   const r = id ? data.reservations.find(x => x.id === id) : undefined;
   const [amt, setAmt] = useState(''), [method, setMethod] = useState<Method>('cash'), [inv, setInv] = useState('');
   const rem = r ? remaining(r) : 0;
@@ -25,6 +28,7 @@ export default function Drawer() {
 
   if (!r) return <aside className="drawer" aria-hidden="true" />;
   const g = guestById(data, r.guestId), rm = roomById(data, r.roomIds[0]), n = nights(r), p = paid(r), ps = payStatus(r), gn = resGuest(data, r);
+  const invoice = data.invoices.find(i => i.reservationId === r.id && i.status === 'issued');
 
   const setStatus = (s: Status) => {
     if (s === 'checked_out' && rem > 0 && !confirm(`Rest de plată ${money(rem)}. Faci check-out oricum?`)) return;
@@ -91,10 +95,26 @@ export default function Drawer() {
         </div>
         {r.notes && <div><div className="sec-t">Observații</div><div className="notes" style={{ marginTop: 8 }}>{r.notes}</div></div>}
         <div><div className="sec-t">Factură</div>
-          <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
-            <input placeholder="Număr factură (ex: VS-2026-0142)" value={inv} onChange={e => setInv(e.target.value)} style={{ ...field, flex: 1 }} />
-            <button className="btn sm" onClick={saveInvoice}>{r.invoiceNo ? 'Actualizează' : 'Marchează facturat'}</button>
-          </div>
+          {invoice ? (
+            <div className="pitem" style={{ marginTop: 8 }}>
+              <div><div><b>{invoiceNo(invoice)}</b> · {money(invoice.total)}</div><div className="pm">{fmtD(invoice.issuedOn)} · {invoice.customer.name}</div></div>
+              <Link className="btn sm" href={`/facturi/${invoice.id}`} onClick={close}>Deschide</Link>
+            </div>
+          ) : (
+            <>
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                {r.status !== 'cancelled' && <button className="btn primary sm" onClick={() => openInvModal(r.id)}>Emite factură</button>}
+                {r.invoiceNo && <span style={{ fontSize: 12.5, color: 'var(--ink-2)' }}>Număr notat: <b>{r.invoiceNo}</b></span>}
+              </div>
+              <details className="more" style={{ marginTop: 10 }}>
+                <summary>Factură emisă în alt program</summary>
+                <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input placeholder="Numărul facturii" value={inv} onChange={e => setInv(e.target.value)} style={{ ...field, flex: 1 }} />
+                  <button className="btn sm" onClick={saveInvoice}>{r.invoiceNo ? 'Actualizează' : 'Notează'}</button>
+                </div>
+              </details>
+            </>
+          )}
         </div>
         {g && <div><div className="sec-t">Oaspete</div>
           <div className="hist">
@@ -110,6 +130,7 @@ export default function Drawer() {
         {r.status === 'checked_in' && <button className="btn primary" onClick={() => setStatus('checked_out')}>Check-out</button>}
         {r.status === 'pending' && <button className="btn" onClick={() => setStatus('confirmed')}>Confirmă</button>}
         <button className="btn" onClick={() => openModal(null, r.id)}>Editează</button>
+        {r.status !== 'cancelled' && <Link className="btn" href={`/rezervari/${r.id}/confirmare`} onClick={close}>Confirmare</Link>}
         {r.status !== 'cancelled' && r.status !== 'checked_out' && <button className="btn danger" onClick={() => setStatus('cancelled')}>Anulează</button>}
         {r.status === 'cancelled' && <button className="btn danger" onClick={() => { if (confirm('Ștergi definitiv această rezervare?')) del(r.id); }}>Șterge definitiv</button>}
       </div>

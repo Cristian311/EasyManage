@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { useStore } from '@/lib/client/store';
 import { todayIso } from '@/domain/dates';
 import { isActiveRes, propById } from '@/domain/rules';
-import { IconCalendar, IconCollapse, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
+import { IconCalendar, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
 
 const NAV = [
   { href: '/azi', label: 'Azi', Icon: IconToday, badge: true },
@@ -16,13 +16,13 @@ const NAV = [
   { href: '/camere', label: 'Camere', Icon: IconRooms },
   { href: '/tarife', label: 'Tarife', Icon: IconRates },
   { href: '/financiar', label: 'Financiar', Icon: IconFinance },
-  { href: '/facturi', label: 'Facturi', Icon: IconInvoice, soon: true },
-  { href: '/setari', label: 'Setări', Icon: IconSettings, soon: true },
+  { href: '/facturi', label: 'Facturi', Icon: IconInvoice },
+  { href: '/setari', label: 'Setări', Icon: IconSettings },
 ] as const;
 
 export default function Sidebar() {
   const path = usePathname();
-  const data = useStore(s => s.data), view = useStore(s => s.view), collapsed = useStore(s => s.collapsed), setCollapsed = useStore(s => s.setCollapsed);
+  const data = useStore(s => s.data), view = useStore(s => s.view), setMenuOpen = useStore(s => s.setMenuOpen);
   const badge = useMemo(() => {
     if (!data) return 0; const t = todayIso();
     return data.reservations.filter(r => isActiveRes(r) && r.status !== 'checked_out' && (r.checkIn === t || r.checkOut === t)).length;
@@ -42,7 +42,7 @@ export default function Sidebar() {
       </div>
       <nav className="nav">
         {NAV.map((n, i) => 'sec' in n ? <div className="sec" key={i}>{n.sec}</div> : (
-          <Link key={n.href} href={n.href} className={`nav-item ${path.startsWith(n.href) ? 'active' : ''} ${'soon' in n ? 'soonwrap' : ''}`}>
+          <Link key={n.href} href={n.href} onClick={() => setMenuOpen(false)} className={`nav-item ${path.startsWith(n.href) ? 'active' : ''} ${'soon' in n ? 'soonwrap' : ''}`}>
             <n.Icon /><span>{n.label}</span>
             {'badge' in n && badge > 0 && <span className="badge">{badge}</span>}
             {'soon' in n && <span className="soon">curând</span>}
@@ -51,7 +51,6 @@ export default function Sidebar() {
       </nav>
       <div className="side-foot">
         <button className="nav-item" onClick={toggleTheme}><IconMoon /><span>Temă</span></button>
-        <button className="nav-item" onClick={() => setCollapsed(!collapsed)}><IconCollapse /><span>Restrânge</span></button>
         <div className="user"><div className="av">AR</div><div><div className="u1">Ana Rusu</div><div className="u2">Recepție</div></div></div>
       </div>
     </aside>

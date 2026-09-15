@@ -65,6 +65,34 @@ export interface Expense {
 /** Special prices: rates[roomId][YYYY-MM-DD] = lei. Nights without an entry use the room's base price. */
 export type Rates = Record<string, Record<string, number>>;
 
+/** The business that issues invoices, as printed on them. */
+export interface Company { name: string; cui: string; regCom: string; address: string; iban: string; bank: string; phone: string; email: string }
+export interface Settings extends Company {
+  vatPayer: boolean; vatRate: number; invoiceSeries: string; invoiceNext: number;
+  checkInTime: string; checkOutTime: string; confirmText: string;   // on the reservation confirmation
+}
+
+export interface InvoiceLine { desc: string; qty: number; unit: string; price: number; vat: number }   // price per unit, VAT included
+export interface InvoiceCustomer { name: string; cui: string; regCom: string; address: string }
+export type InvoiceStatus = 'issued' | 'cancelled';
+export interface Invoice {
+  id: string;
+  series: string;
+  number: number;
+  reservationId: string | null;
+  issuedOn: string;
+  dueOn: string | null;
+  status: InvoiceStatus;
+  supplier: Company & { vatPayer: boolean };   // copied at issue time
+  customer: InvoiceCustomer;
+  lines: InvoiceLine[];
+  subtotal: number;          // without VAT
+  vat: number;
+  total: number;
+  notes: string;
+  createdAt: string;
+}
+
 export interface AppState {
   properties: Property[];
   floors: Floor[];
@@ -73,6 +101,8 @@ export interface AppState {
   reservations: Reservation[];
   rates: Rates;
   expenses: Expense[];
+  settings: Settings;
+  invoices: Invoice[];
 }
 
 /** What the calendar is filtered on: a property and a floor, or 'all'. */

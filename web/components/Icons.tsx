@@ -13,11 +13,12 @@ export const IconFinance = () => <S><path d="M3 21h18" /><path d="M6 17V11M11 17
 export const IconInvoice = () => <S><path d="M6 2h9l5 5v15H6z" /><path d="M14 2v6h6M9 13h6M9 17h6" /></S>;
 export const IconSettings = () => <S><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z" /></S>;
 export const IconMoon = () => <S><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></S>;
-export const IconCollapse = () => <S><path d="M15 6l-6 6 6 6" /></S>;
 export const IconPlus = () => <S><path d="M12 5v14M5 12h14" /></S>;
 export const IconPrev = () => <S><path d="M15 5l-7 7 7 7" /></S>;
 export const IconNext = () => <S><path d="M9 5l7 7-7 7" /></S>;
 export const IconClose = () => <S><path d="M6 6l12 12M18 6L6 18" /></S>;
 export const IconSearch = () => <S><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></S>;
 export const IconJump = () => <S><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none" /></S>;
+export const IconMenu = () => <S><path d="M4 6h16M4 12h16M4 18h16" /></S>;
+export const IconPrint = () => <S><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M7 14h10v7H7z" /></S>;
 export const IconFull = () => <S><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></S>;

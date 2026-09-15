@@ -2,8 +2,9 @@
 // Everything the browser keeps in memory: the data from the server, what the calendar shows, open windows, toasts.
 // Changes show at once (optimistic) and go back if the server refuses them.
 import { create } from 'zustand';
-import type { AppState, Expense, Guest, Method, Rates, Reservation } from '@/domain/types';
+import type { AppState, Expense, Guest, Invoice, InvoiceCustomer, InvoiceLine, Method, Rates, Reservation, Settings } from '@/domain/types';
 import { addDays, money, todayIso } from '@/domain/dates';
+import { invoiceNo } from '@/domain/invoice';
 import { api } from './api';
 
 export interface View { prop: string; floor: string; start: string; extra: number; zoom: number; q: string; jump: number }
@@ -20,6 +21,7 @@ export interface NewReservation {
 }
 export interface RoomFields { name: string; type: string; capacity: number; price: number; color: string; desc: string; active: boolean; propertyId: string; floorId: string | null }
 export interface ExpenseFields { amount: number; date: string; category: string; desc: string; propertyId: string | null; recurring: boolean; until?: string }
+export interface NewInvoice { reservationId: string | null; issuedOn: string; dueOn: string | null; customer: InvoiceCustomer; lines: InvoiceLine[]; notes: string }
 
 interface Store {
   data: AppState | null;
@@ -29,10 +31,11 @@ interface Store {
   modal: ModalState | null;
   roomModal: { editId: string | null } | null;
   expModal: { editId: string | null } | null;
+  invModal: { reservationId: string | null } | null;
   menu: MenuState | null;
   toasts: Toast[];
   focus: boolean;
-  collapsed: boolean;
+  menuOpen: boolean;           // the menu held open by the button, on pages where it is only a rail (the calendar)
   addMode: string | null;      // reservation that is getting extra rooms drawn onto it
   flashId: string | null;
   fin: Fin;
@@ -49,12 +52,14 @@ interface Store {
   closeRoomModal(): void;
   openExpModal(editId?: string | null): void;
   closeExpModal(): void;
+  openInvModal(reservationId?: string | null): void;
+  closeInvModal(): void;
   openMenu(m: MenuState): void;
   closeMenu(): void;
   toast(msg: string, kind?: Toast['kind'], action?: Toast['action'], ms?: number): number;
   dismiss(id: number): void;
   setFocus(on: boolean): void;
-  setCollapsed(on: boolean): void;
+  setMenuOpen(on: boolean): void;
   setAddMode(id: string | null): void;
   setFin(p: Partial<Fin>): void;
   createReservation(x: NewReservation): Promise<{ error: string | null; id?: string }>;
@@ -66,6 +71,9 @@ interface Store {
   admin(method: 'POST' | 'PATCH' | 'DELETE' | 'PUT', url: string, body?: unknown, okMsg?: string): Promise<string | null>;
   saveExpense(id: string | null, x: ExpenseFields): Promise<string | null>;
   deleteExpense(id: string, undoable?: boolean): Promise<void>;
+  saveSettings(x: Settings): Promise<string | null>;
+  createInvoice(x: NewInvoice): Promise<{ error: string | null; invoice?: Invoice }>;
+  cancelInvoice(id: string): Promise<void>;
   resetDemo(): Promise<void>;
 }
 
@@ -84,10 +92,11 @@ export const useStore = create<Store>((set, get) => {
     modal: null,
     roomModal: null,
     expModal: null,
+    invModal: null,
     menu: null,
     toasts: [],
     focus: false,
-    collapsed: false,
+    menuOpen: false,
     addMode: null,
     flashId: null,
     fin: { month: todayIso().slice(0, 7), prop: 'all', cur: 'RON', rate: 5.09 },
@@ -115,6 +124,8 @@ export const useStore = create<Store>((set, get) => {
     closeRoomModal() { set({ roomModal: null }); },
     openExpModal(editId = null) { set({ expModal: { editId } }); },
     closeExpModal() { set({ expModal: null }); },
+    openInvModal(reservationId = null) { set({ invModal: { reservationId } }); },
+    closeInvModal() { set({ invModal: null }); },
     openMenu(m) { set({ menu: m }); },
     closeMenu() { set({ menu: null }); },
     toast(msg, kind = '', action, ms = action ? 6000 : 2800) {
@@ -124,7 +135,7 @@ export const useStore = create<Store>((set, get) => {
     },
     dismiss(id) { set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })); },
     setFocus(on) { set({ focus: on }); },
-    setCollapsed(on) { set({ collapsed: on }); },
+    setMenuOpen(on) { set({ menuOpen: on }); },
     setAddMode(id) { set({ addMode: id, drawerId: id ? null : get().drawerId }); },
     setFin(p) { const fin = { ...get().fin, ...p }; set({ fin }); try { localStorage.setItem(FIN_KEY, JSON.stringify({ cur: fin.cur, rate: fin.rate })); } catch {} },
 
@@ -215,6 +226,32 @@ export const useStore = create<Store>((set, get) => {
         await api(`/api/expenses/${id}`, 'DELETE');
         set(s => s.data ? { data: { ...s.data, expenses: s.data.expenses.filter(e => e.id !== id) } } : {});
         if (undoable) get().toast(`Cheltuială ștearsă: ${x.desc || x.category}`, '', { label: 'Anulează', run: () => { get().saveExpense(null, { amount: x.amount, date: x.date, category: x.category, desc: x.desc, propertyId: x.propertyId, recurring: x.recurring, until: x.until }); } });
+      } catch (e) { get().toast((e as Error).message, 'bad'); }
+    },
+
+    async saveSettings(x) {
+      try {
+        const { settings } = await api<{ settings: Settings }>('/api/settings', 'PUT', x);
+        set(s => s.data ? { data: { ...s.data, settings } } : {}); get().toast('Setările au fost salvate', 'ok'); return null;
+      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
+    },
+
+    async createInvoice(x) {
+      try {
+        const { invoice, reservation } = await api<{ invoice: Invoice; reservation: Reservation | null }>('/api/invoices', 'POST', x);
+        set(s => s.data ? { data: { ...s.data, invoices: [...s.data.invoices, invoice], settings: { ...s.data.settings, invoiceNext: invoice.number + 1 } } } : {});
+        if (reservation) replace(reservation);
+        get().toast(`Factura ${invoiceNo(invoice)} a fost emisă`, 'ok');
+        return { error: null, invoice };
+      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return { error: m }; }
+    },
+
+    async cancelInvoice(id) {
+      try {
+        const { invoice, reservation } = await api<{ invoice: Invoice; reservation: Reservation | null }>(`/api/invoices/${id}`, 'PATCH', { status: 'cancelled' });
+        set(s => s.data ? { data: { ...s.data, invoices: s.data.invoices.map(i => (i.id === id ? invoice : i)) } } : {});
+        if (reservation) replace(reservation);
+        get().toast(`Factura ${invoiceNo(invoice)} a fost anulată`);
       } catch (e) { get().toast((e as Error).message, 'bad'); }
     },
 

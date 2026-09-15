@@ -7,6 +7,7 @@ import { METHOD, SRC, STATUS } from '@/domain/labels';
 import { validateReservation } from '@/domain/rules';
 import { DomainError, isRoomTaken } from './errors';
 import { newId } from './ids';
+import { loadInvoices, loadSettings } from './repo-invoices';
 
 const RES_COLS = `r.id, r.guest_id AS "guestId", r.check_in::text AS "checkIn", r.check_out::text AS "checkOut", r.pax,
   r.total::float8 AS total, r.source, r.status, r.notes, r.invoice_no AS "invoiceNo", r.invoice_date::text AS "invoiceDate", r.created_at::text AS "createdAt"`;
@@ -15,7 +16,7 @@ type PayRow = Payment & { reservationId: string };
 const PAY_COLS = `id, reservation_id AS "reservationId", amount::float8 AS amount, method, paid_on::text AS date, note`;
 
 export async function loadState(db: Db): Promise<AppState> {
-  const [properties, floors, rooms, guests, res, rr, pays, rates, expenses] = await Promise.all([
+  const [properties, floors, rooms, guests, res, rr, pays, rates, expenses, settings, invoices] = await Promise.all([
     db.query<Property>('SELECT id, name, city FROM properties ORDER BY sort, created_at, id'),
     db.query<Floor>('SELECT id, property_id AS "propertyId", name FROM floors ORDER BY sort, id'),
     db.query<Room>(`SELECT id, property_id AS "propertyId", floor_id AS "floorId", parent_id AS "parentId", name, type, capacity, price, color,
@@ -27,6 +28,8 @@ export async function loadState(db: Db): Promise<AppState> {
     db.query<{ roomId: string; night: string; price: number }>('SELECT room_id AS "roomId", night::text AS night, price FROM rates'),
     db.query<Expense>(`SELECT id, property_id AS "propertyId", category, description AS "desc", amount::float8 AS amount, spent_on::text AS date,
       recurring, COALESCE(until::text, '') AS until FROM expenses ORDER BY spent_on, id`),
+    loadSettings(db.query),
+    loadInvoices(db.query),
   ]);
   const byId = new Map<string, Reservation>();
   const reservations = res.map(r => { const x: Reservation = { ...r, roomIds: [], payments: [] }; byId.set(r.id, x); return x; });
@@ -34,10 +37,10 @@ export async function loadState(db: Db): Promise<AppState> {
   pays.forEach(({ reservationId, ...p }) => byId.get(reservationId)?.payments.push(p));
   const rateMap: AppState['rates'] = {};
   rates.forEach(x => { (rateMap[x.roomId] ??= {})[x.night] = x.price; });
-  return { properties, floors, rooms, guests, reservations, rates: rateMap, expenses };
+  return { properties, floors, rooms, guests, reservations, rates: rateMap, expenses, settings, invoices };
 }
 
-async function getReservation(q: Q, id: string): Promise<Reservation | null> {
+export async function getReservation(q: Q, id: string): Promise<Reservation | null> {
   const [r] = await q<ResRow>(`SELECT ${RES_COLS} FROM reservations r WHERE r.id = $1`, [id]);
   if (!r) return null;
   const rooms = await q<{ roomId: string }>('SELECT room_id AS "roomId" FROM reservation_rooms WHERE reservation_id = $1 ORDER BY position', [id]);

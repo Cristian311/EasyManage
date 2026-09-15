@@ -8,6 +8,7 @@ const res = (id: string, roomIds: string[], checkIn: string, checkOut: string, o
 });
 const state = (reservations: Reservation[], rates: AppState['rates'] = {}): AppState => ({
   properties: [{ id: 'p', name: 'Vila', city: '' }], floors: [], rooms: [room('A'), room('B', 300)], guests: [], reservations, rates, expenses: [],
+  settings: { name: '', cui: '', regCom: '', address: '', iban: '', bank: '', phone: '', email: '', vatPayer: false, vatRate: 11, invoiceSeries: 'VS', invoiceNext: 1, checkInTime: '14:00', checkOutTime: '11:00', confirmText: '' }, invoices: [],
 });
 
 describe('conflict', () => {

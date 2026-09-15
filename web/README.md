@@ -5,7 +5,7 @@ Versiunea nouă a demo-ului [velora-stay-demo.html](../velora-stay-demo.html): a
 
 ## Pornire, prima dată
 
-Ai nevoie de Node.js 20 sau mai nou. Pe calculatorul tău e deja instalat Node 24 prin nvm.
+Ai nevoie de Node.js 20 sau mai nou (testele cer 22.12 sau mai nou). Pe calculatorul tău e instalat Node 24.14.0 prin nvm.
 
 ```powershell
 nvm use 24.14.0        # o singură dată; dacă cere drepturi, deschide terminalul „ca administrator”
@@ -68,10 +68,31 @@ camere), Tarife (grilă, grupuri, editor pe un preț) și Financiar (grafice, ta
 sortează din cap.
 
 Nu e mutat: împărțirea unei camere în unități (rar folosită). Urmează: autentificare (conturi pentru recepție),
-facturi și e-Factura, căutarea „am loc liber?” cu voce.
+e-Factura, căutarea „am loc liber?” cu voce.
 
 API în plus: `PUT /api/rates`, `POST|PATCH|DELETE` pe `/api/rooms`, `/api/floors`, `/api/properties`, `/api/expenses`,
 `PUT /api/rooms/order`, `POST /api/reservations/:id/merge`.
+
+## Facturi
+
+- **Setări → Firma**: nume, CUI, Reg. Com., adresă, IBAN; plătitor de TVA sau nu, cota la cazare (11%), seria și următorul
+  număr. Fără nume și CUI nu se poate emite nimic.
+- **Din sertarul rezervării → Emite factură**: clientul e completat cu numele oaspetelui (poți pune firma și CUI-ul),
+  rândul de cazare e calculat din rezervare (nopți × preț, cu TVA inclus ca la camere); poți adăuga rânduri (mic dejun,
+  parcare). Rezervarea primește numărul facturii.
+- **Facturi**: registrul, cu căutare după număr, client sau CUI, și o factură nouă fără rezervare.
+- **Pagina facturii**: „Tipărește / PDF” deschide dialogul de tipărire al browserului (alege „Salvează ca PDF”).
+  O factură greșită se **anulează**, nu se șterge: rămâne în registru ca anulată și rezervarea se poate factura din nou.
+- API: `GET|PUT /api/settings`, `POST /api/invoices`, `PATCH /api/invoices/:id` cu `{ "status": "cancelled" }`.
+- e-Factura (SPV ANAF) nu e încă: are nevoie de un server cu certificat digital; coloana `invoices.efactura_id` e pregătită.
+
+## Confirmarea rezervării
+
+Din sertarul rezervării → **Confirmare**: o pagină de tipărit / salvat ca PDF cu oaspetele, camerele, datele, orele de
+check-in și check-out, total, avans și rest, IBAN-ul și mențiunile din Setări (avans, anulare). Sus ai **WhatsApp**
+(deschide conversația cu textul gata scris, pe telefon sau în WhatsApp Web), **Email** (deschide programul de email) și
+**Copiază textul**. Nu trece prin niciun server: totul se întâmplă în browser. Orele și mențiunile se pun în
+**Setări → Confirmare rezervare**.
 
 ## Viteză
 
