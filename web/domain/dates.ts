@@ -16,6 +16,11 @@ export const DOWS = ['Dum', 'Lun', 'Mar', 'Mie', 'Joi', 'Vin', 'Sâm'];
 
 export const fmtD = (s: string) => { const d = fromIso(s); return `${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 export const fmtDL = (s: string) => { const d = fromIso(s); return `${DOWS[d.getDay()]}, ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`; };
+/** The heading over a day's rows: "Azi", "Mâine", "Ieri", otherwise the full date. */
+export const dayHeading = (s: string, today = todayIso()) => {
+  const n = diffDays(today, s);
+  return n === 0 ? 'Azi' : n === 1 ? 'Mâine' : n === -1 ? 'Ieri' : fmtDL(s);
+};
 export const money = (n: number) => (Math.round(n) === n ? n : Number(n.toFixed(2))).toLocaleString('ro-RO') + ' RON';
 export const lei = (n: number) => Math.round(n).toLocaleString('ro-RO');
 

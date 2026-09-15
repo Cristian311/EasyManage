@@ -12,6 +12,8 @@ export interface Col<T> {
 interface Props<T> {
   cols: Col<T>[]; rows: T[]; keyOf: (r: T) => string;
   onRow?: (r: T) => void; rowClass?: (r: T) => string; empty?: string; foot?: ReactNode; initial?: { col: number; dir: 1 | -1 };
+  group?: (r: T) => string;                               // rows that share a key sit under one heading
+  groupHead?: (key: string, count: number) => ReactNode;  // headings only make sense in the order given, so sorting drops them
 }
 
 const cmp = (x: string | number | null, y: string | number | null) => {
@@ -21,13 +23,22 @@ const cmp = (x: string | number | null, y: string | number | null) => {
   return x.localeCompare(y, 'ro');
 };
 
-export default function Table<T>({ cols, rows, keyOf, onRow, rowClass, empty, foot, initial }: Props<T>) {
+export default function Table<T>({ cols, rows, keyOf, onRow, rowClass, empty, foot, initial, group, groupHead }: Props<T>) {
   const [sort, setSort] = useState<{ col: number; dir: 1 | -1 } | null>(initial ?? null);
   const sorted = useMemo(() => {
     if (!sort || !cols[sort.col]?.v) return rows;
     const v = cols[sort.col].v!;
     return rows.map((r, i) => ({ r, i, k: v(r) })).sort((a, b) => sort.dir * cmp(a.k, b.k) || a.i - b.i).map(x => x.r);
   }, [rows, sort, cols]);
+  // headings sit between the rows they introduce, so they only hold while the rows keep the order the page gave them
+  const items: ({ g: string; n: number } | { r: T })[] = [];
+  if (group && !sort) {
+    const n = new Map<string, number>();
+    sorted.forEach(r => { const k = group(r); n.set(k, (n.get(k) ?? 0) + 1); });
+    let last: string | null = null;
+    sorted.forEach(r => { const k = group(r); if (k !== last) { last = k; items.push({ g: k, n: n.get(k)! }); } items.push({ r }); });
+  } else sorted.forEach(r => items.push({ r }));
+
   const click = (i: number) => {
     const c = cols[i]; if (!c.v) return;
     if (sort && sort.col === i) { setSort({ col: i, dir: sort.dir === 1 ? -1 : 1 }); return; }
@@ -41,9 +52,11 @@ export default function Table<T>({ cols, rows, keyOf, onRow, rowClass, empty, fo
           <th key={i} className={`${c.r ? 'r' : ''} ${sort?.col === i ? (sort.dir === 1 ? 's-asc' : 's-desc') : ''}`} onClick={() => click(i)} style={c.v ? undefined : { cursor: 'default' }}>{c.h}</th>
         ))}</tr></thead>
         <tbody>
-          {sorted.map(r => (
-            <tr key={keyOf(r)} onClick={onRow ? () => onRow(r) : undefined} className={rowClass?.(r)} style={onRow ? undefined : { cursor: 'default' }}>
-              {cols.map((c, i) => <td key={i} data-l={c.h} className={c.r ? 'r' : ''} style={c.style}>{c.cell(r)}</td>)}
+          {items.map(x => 'g' in x ? (
+            <tr className="grp" key={'g:' + x.g}><td colSpan={cols.length} data-l="">{groupHead ? groupHead(x.g, x.n) : x.g}</td></tr>
+          ) : (
+            <tr key={keyOf(x.r)} onClick={onRow ? () => onRow(x.r) : undefined} className={rowClass?.(x.r)} style={onRow ? undefined : { cursor: 'default' }}>
+              {cols.map((c, i) => <td key={i} data-l={c.h} className={c.r ? 'r' : ''} style={c.style}>{c.cell(x.r)}</td>)}
             </tr>
           ))}
         </tbody>
