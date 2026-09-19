@@ -14,28 +14,43 @@ stau separat, în [IDEI-NOI.md](IDEI-NOI.md).
 **Scurt, dacă ai timp doar de trei lucruri:** fazele 1, 2 și 4. Primele două fac din program ceva ce familia
 folosește pe bune. Fazele 5 și 8 sunt cele pentru care o pensiune plătește lunar.
 
+**Unde suntem:** faza 1a e gata (conturi și roluri). Urmează faza 2, publicarea pe un server cu copii de siguranță.
+
 ---
 
-## Faza 1 — Conturi și separarea pe clienți
+## Faza 1a — Conturi și roluri ✅ gata
 
-Se fac împreună, cât baza de date e încă goală. Mai târziu costă de zece ori mai mult.
+Înainte, cine nimerea adresa vedea toate rezervările și datele oaspeților.
 
-Acum nu există autentificare: cine nimerește adresa vede toate rezervările și datele oaspeților.
+**Ce vede utilizatorul.** La prima pornire, o pagină de bun venit unde se face contul proprietarului. Apoi o
+pagină de intrare cu email și parolă. Proprietarul vede tot; recepția intră cu contul ei și nu vede Financiar
+și Setări. În Setări, proprietarul face conturi noi, schimbă rolul, oprește un cont, pune o parolă nouă sau
+șterge contul. În colțul din stânga jos scrie cine ești, și de acolo se iese din cont.
 
-**Ce vede utilizatorul.** O pagină de intrare cu email și parolă. Tata intră ca **proprietar** și vede tot.
-Recepția intră cu contul ei și nu vede Financiar și Setări. În Setări apare o listă de utilizatori, unde
-proprietarul poate invita pe cineva și îi poate lua accesul.
+**Cum e făcut.** Tabelele `users` și `sessions` (migrarea `002_conturi.sql`). Parolele sunt trecute prin scrypt,
+cu sare nouă la fiecare parolă; în `sessions` stă amprenta cookie-ului, nu cookie-ul. Verificarea stă într-un
+singur loc, `handle()` din `lib/http.ts`, prin care trec toate rutele: o rută nouă e închisă până când cineva
+scrie anume `handleOpen`. Financiarul, conturile și resetarea datelor demo cer `handleOwner`; cheltuielile nici
+măcar nu pleacă spre browserul recepției.
 
-**Baza de date.** Tabele noi: `organizations`, `users`, `memberships` (rol: `owner` / `reception`), `sessions`.
-Coloana `org_id` se adaugă pe `properties`, `guests`, `reservations` și `expenses`; restul tabelelor se leagă prin
-ele. Toate funcțiile din `lib/repo.ts` și `lib/repo-admin.ts` primesc un `ctx { orgId, userId, role }` și
-filtrează după el; un `middleware.ts` păzește paginile și `/api`.
+**S-a ales altfel decât era scris aici.** Sesiuni scrise de mână, nu `better-auth`: biblioteca ar fi adus cu ea
+un ORM și propriul fel de a ține schema, iar aici toată schema e SQL simplu, pe care îl poți deschide în
+phpMyAdmin. Parolele merg prin `scrypt` din Node, deci partea delicată tot nu e scrisă de noi.
 
-**Decizie.** Bibliotecă gata făcută (`better-auth` merge cu MySQL și știe și organizații) sau sesiuni scrise de
-mână. Recomand biblioteca: parolele, cookie-urile și invitațiile sunt locuri unde nu merită să greșim.
+**Verificat cu** 21 de teste pe parole, conturi și sesiuni, 10 pe verificarea din `handle`, plus un test care
+trece prin server: fără cont 401, recepția 403 pe cheltuieli și pe conturi, contul oprit nu mai intră, parola
+nouă taie sesiunile deschise, ultimul proprietar nu poate fi șters.
 
-**Verificare.** Teste care cer ca o cerere fără cont să primească 401 și ca un cont de la altă organizație să nu
-vadă rezervările primei. Un test care confirmă că recepția primește 403 pe `/api/expenses`.
+## Faza 1b — Separarea pe clienți (mai multe pensiuni în același program)
+
+Nu e făcută, și nu e nevoie de ea până când programul nu are al doilea client (faza 10). Partea scumpă —
+ca fiecare cerere să știe cine o face — e deja gata: `handle()` dă contul fiecărei rute.
+
+**Ce e de făcut.** Tabelul `organizations` și coloana `org_id` pe `properties`, `guests`, `reservations`,
+`expenses` și `users`; restul tabelelor se leagă prin ele. Funcțiile din `lib/repo.ts` și `lib/repo-admin.ts`
+primesc organizația din contul care a cerut și filtrează după ea.
+
+**Verificare.** Un test cu două organizații, care cere ca prima să nu vadă nici măcar un id din a doua.
 
 ---
 

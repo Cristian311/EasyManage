@@ -21,9 +21,29 @@ npm run dev            # pornește serverul
 Deschide http://localhost:3000. La prima pornire aplicația își creează singură baza de date `velora` și încarcă
 datele demo (Vila Duduleanu, Vila Mateo, august plin). Durează câteva secunde, apoi e instant.
 
+Prima dată îți cere să-ți faci **contul de proprietar**: nume, email și o parolă de cel puțin 8 caractere.
+Ține minte parola — nu e păstrată nicăieri, nici măcar în baza de date, deci nimeni nu ți-o poate spune.
+
 Oprești serverul cu `Ctrl + C` în terminal.
 
 Dacă vezi „Nu mă pot conecta la MySQL”, înseamnă că ai uitat de pasul 1.
+
+## Conturi
+
+| Rol | Ce vede |
+|---|---|
+| **Proprietar** | tot: calendar, rezervări, oaspeți, camere, tarife, **Financiar** și **Setări** |
+| **Recepție** | calendar, rezervări, oaspeți, camere, tarife — fără Financiar și fără Setări |
+
+Conturile se fac din **Setări → Cont nou**, de către proprietar. Tot de acolo îi schimbi cuiva rolul, îi pui o
+parolă nouă (dacă a uitat-o), îi oprești contul sau îl ștergi. Trebuie să rămână mereu cel puțin un proprietar.
+
+Din cont se iese apăsând pe numele tău, în colțul din stânga jos.
+
+Recepția nu primește cheltuielile nici măcar în datele trimise către browser, iar rutele `/api/expenses`,
+`/api/users` și resetarea datelor demo îi răspund cu 403. Dacă ai uitat parola de proprietar și ești singurul
+proprietar, ștergi contul din baza de date (`npm run db:sql -- "DELETE FROM users"`) și îl faci din nou la
+următoarea deschidere; rezervările rămân neatinse.
 
 ## Zilnic
 
@@ -58,13 +78,19 @@ Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0`
 app/            paginile (calendar, azi, rezervari, oaspeti, ...) și API-ul (app/api)
 components/     bucățile de interfață: calendarul, sertarul, fereastra de rezervare
 domain/         regulile, fără interfață și fără bază de date: suprapuneri, prețuri, alerte (cu teste)
-lib/            baza de date, migrările, datele demo, citirea și salvarea rezervărilor (cu teste)
+lib/            baza de date, migrările, conturile, citirea și salvarea rezervărilor (cu teste)
 db/migrations/  schema MySQL
+middleware.ts   trimite la pagina de intrare pe cine nu are cookie de sesiune
 public/demo.html  demo-ul vechi, pentru paginile care nu sunt mutate încă
 ```
 
 API: `GET /api/state`, `POST /api/reservations`, `PATCH|DELETE /api/reservations/:id`,
-`POST /api/reservations/:id/payments`, `POST /api/demo/reset`.
+`POST /api/reservations/:id/payments`, `POST /api/demo/reset`,
+`POST /api/auth/login|logout|setup`, `GET /api/auth/me`, `GET|POST /api/users`, `PATCH|DELETE /api/users/:id`.
+
+**Cine are voie** se verifică într-un singur loc, `handle()` din [lib/http.ts](lib/http.ts), prin care trec toate
+rutele. O rută nouă e închisă din start: ca să fie deschisă, trebuie scris anume `handleOpen`. `handleOwner`
+lasă numai proprietarul.
 
 Interogările din cod sunt scrise cu `$1, $2, ...`; [lib/db.ts](lib/db.ts) le traduce în `?` pentru MySQL, ca
 același parametru să poată fi folosit de două ori sau în altă ordine.
@@ -77,8 +103,10 @@ sertarul cu plăți și factură, fereastra de rezervare, paginile Azi, Rezervă
 camere), Tarife (grilă, grupuri, editor pe un preț) și Financiar (grafice, tabele, cheltuieli, lei/€). Tabelele se
 sortează din cap.
 
+Plus conturile: pagina de intrare, rolurile proprietar/recepție și gestiunea conturilor din Setări.
+
 Nu e mutat: împărțirea unei camere în unități (rar folosită). Ce urmează e scris în [PLAN.md](../PLAN.md):
-conturi, publicare pe server, facturi, sincronizare cu Booking.
+publicarea pe server cu copii de siguranță, facturile, sincronizarea cu Booking.
 
 API în plus: `PUT /api/rates`, `POST|PATCH|DELETE` pe `/api/rooms`, `/api/floors`, `/api/properties`, `/api/expenses`,
 `PUT /api/rooms/order`, `POST /api/reservations/:id/merge`.

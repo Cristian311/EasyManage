@@ -1,11 +1,11 @@
 // Administrare: proprietăți, etaje, camere, prețuri, cheltuieli și unirea a două sejururi.
 // Rulează pe un MySQL adevărat (cel din XAMPP), ca să prindă și ce spune schema, nu doar aplicația.
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+// Baza se golește și se umple din nou înainte de fiecare test, deci ordinea testelor nu contează.
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { AppState } from '@/domain/types';
 import { tinyState } from '@/domain/fixtures';
 import { type Db } from './db';
-import { freshDb } from './testdb';
-import { insertState } from './seed';
+import { freshDb, resetTo } from './testdb';
 import { createReservation, loadState } from './repo';
 import { DomainError } from './errors';
 import {
@@ -13,19 +13,13 @@ import {
   mergeReservations, orderRooms, setRates, updateExpense, updateFloor, updateProperty, updateRoom,
 } from './repo-admin';
 
-/** O bază nouă, cu cele două vile de probă. Folosită acolo unde testul se uită la ordine sau la numărători. */
-async function fresh(): Promise<Db> {
-  const d = await freshDb();
-  await d.tx(q => insertState(q, tinyState()));
-  return d;
-}
-
 let db: Db;
-beforeAll(async () => { db = await fresh(); });
+beforeAll(async () => { db = await freshDb(); }, 120_000);
+beforeEach(() => resetTo(db, tinyState()));
 afterAll(() => db.close());
 
 const status = async (p: Promise<unknown>) => { try { await p; return 200; } catch (e) { return e instanceof DomainError ? e.status : 500; } };
-const rooms = (s: AppState, prop?: string) => s.rooms.filter(r => !prop || r.propertyId === prop);
+const tops = (s: AppState) => s.rooms.filter(r => !r.parentId).map(r => r.id);
 
 describe('proprietăți', () => {
   it('creează una nouă, cu numele curățat de spații', async () => {
@@ -33,28 +27,29 @@ describe('proprietăți', () => {
     expect(s.properties.map(p => p.name)).toContain('Vila Trei');
     expect(s.properties.at(-1)).toMatchObject({ name: 'Vila Trei', city: 'Sinaia' });
   });
-  it('cere un nume', async () => {
+  it('cere un nume și un corp care are sens', async () => {
     await expect(createProperty(db, { name: '   ' })).rejects.toThrow(/numele proprietății/);
     expect(await status(createProperty(db, 'nu e obiect'))).toBe(400);
+    expect(await status(createProperty(db, ['nici așa']))).toBe(400);
   });
   it('redenumește, iar un nume gol lasă numele vechi', async () => {
-    const id = (await loadState(db)).properties.find(p => p.name === 'Vila Trei')!.id;
-    expect((await updateProperty(db, id, { name: 'Vila Patru' })).properties.find(p => p.id === id)?.name).toBe('Vila Patru');
-    expect((await updateProperty(db, id, { name: '' })).properties.find(p => p.id === id)?.name).toBe('Vila Patru');
+    expect((await updateProperty(db, 'p1', { name: 'Vila Patru' })).properties.find(p => p.id === 'p1')?.name).toBe('Vila Patru');
+    expect((await updateProperty(db, 'p1', { name: '' })).properties.find(p => p.id === 'p1')?.name).toBe('Vila Patru');
     expect(await status(updateProperty(db, 'nu_exista', { name: 'X' }))).toBe(404);
   });
   it('nu șterge o proprietate care mai are camere', async () => {
     await expect(deleteProperty(db, 'p1')).rejects.toThrow(/Mută sau șterge/);
   });
   it('șterge una goală', async () => {
-    const id = (await loadState(db)).properties.find(p => p.name === 'Vila Patru')!.id;
+    const s = await createProperty(db, { name: 'Vila Trei' });
+    const id = s.properties.find(p => p.name === 'Vila Trei')!.id;
     expect((await deleteProperty(db, id)).properties.map(p => p.id)).toEqual(['p1', 'p2']);
   });
   it('nu rămâne fără nicio proprietate', async () => {
-    const d = await freshDb();
-    await d.query('INSERT INTO properties (id, name) VALUES ($1, $2)', ['solo', 'Unica']);
-    await expect(deleteProperty(d, 'solo')).rejects.toThrow(/cel puțin o proprietate/);
-    await d.close();
+    await deleteRoom(db, 'r4');
+    await deleteRoom(db, 'rx');
+    expect((await deleteProperty(db, 'p2')).properties.map(p => p.id)).toEqual(['p1']);
+    await expect(deleteProperty(db, 'p1')).rejects.toThrow(/cel puțin o proprietate/);
   });
 });
 
@@ -69,27 +64,21 @@ describe('etaje', () => {
     await expect(createFloor(db, { name: 'X', propertyId: 'nu_exista' })).rejects.toThrow(/Proprietatea nu există/);
   });
   it('mută etajul cu o poziție, dar numai în cadrul proprietății lui', async () => {
-    const d = await fresh();
-    const order = async () => (await loadState(d)).floors.map(f => f.id);
+    const order = async () => (await loadState(db)).floors.map(f => f.id);
     expect(await order()).toEqual(['f1', 'f2', 'f3']);
-    await updateFloor(d, 'f2', { move: -1 });
+    await updateFloor(db, 'f2', { move: -1 });
     expect(await order()).toEqual(['f2', 'f1', 'f3']);
-    await updateFloor(d, 'f1', { move: 1 });     // f3 e la altă vilă: nu se schimbă nimic
+    await updateFloor(db, 'f1', { move: 1 });     // f3 e la altă vilă: nu se schimbă nimic
     expect(await order()).toEqual(['f2', 'f1', 'f3']);
-    await d.close();
   });
   it('redenumește, iar 404 dacă nu există', async () => {
-    const d = await fresh();
-    expect((await updateFloor(d, 'f1', { name: 'Demisol' })).floors.find(f => f.id === 'f1')?.name).toBe('Demisol');
-    expect(await status(updateFloor(d, 'nu_exista', { name: 'X' }))).toBe(404);
-    await d.close();
+    expect((await updateFloor(db, 'f1', { name: 'Demisol' })).floors.find(f => f.id === 'f1')?.name).toBe('Demisol');
+    expect(await status(updateFloor(db, 'nu_exista', { name: 'X' }))).toBe(404);
   });
   it('la ștergerea etajului, camerele rămân la proprietate, fără etaj', async () => {
-    const d = await fresh();
-    const s = await deleteFloor(d, 'f1');
+    const s = await deleteFloor(db, 'f1');
     expect(s.floors.map(f => f.id)).toEqual(['f2', 'f3']);
     expect(s.rooms.filter(r => r.id === 'r1' || r.id === 'r2').map(r => [r.propertyId, r.floorId])).toEqual([['p1', null], ['p1', null]]);
-    await d.close();
   });
 });
 
@@ -114,42 +103,30 @@ describe('camere', () => {
     for (const price of [-1, 2e6]) await expect(createRoom(db, { name: 'X', propertyId: 'p1', price })).rejects.toThrow(/Prețul/);
   });
   it('modificarea păstrează ce nu a fost trimis', async () => {
-    const d = await fresh();
-    const s = await updateRoom(d, 'r1', { price: 260 });
+    const s = await updateRoom(db, 'r1', { price: 260 });
     expect(s.rooms.find(r => r.id === 'r1')).toMatchObject({ name: '101', propertyId: 'p1', floorId: 'f1', capacity: 2, price: 260, active: true });
-    expect(await status(updateRoom(d, 'nu_exista', { price: 1 }))).toBe(404);
-    await d.close();
+    expect(await status(updateRoom(db, 'nu_exista', { price: 1 }))).toBe(404);
   });
   it('când camera împărțită se mută, unitățile ei o urmează', async () => {
-    const d = await fresh();
-    const s = await updateRoom(d, 'rs', { propertyId: 'p2', floorId: '' });
+    const s = await updateRoom(db, 'rs', { propertyId: 'p2', floorId: '' });
     expect(s.rooms.filter(r => ['rs', 'ru1', 'ru2'].includes(r.id)).map(r => [r.id, r.propertyId, r.floorId]))
       .toEqual([['rs', 'p2', null], ['ru1', 'p2', null], ['ru2', 'p2', null]]);
-    await d.close();
   });
   it('nu șterge o cameră cu rezervări, dar șterge una liberă împreună cu unitățile ei', async () => {
-    const d = await fresh();
-    await expect(deleteRoom(d, 'r1')).rejects.toThrow(/Dezactiveaz-o/);
-    const s = await deleteRoom(d, 'rs');
+    await expect(deleteRoom(db, 'r1')).rejects.toThrow(/Dezactiveaz-o/);
+    const s = await deleteRoom(db, 'rs');
     expect(s.rooms.map(r => r.id)).not.toContain('rs');
     expect(s.rooms.map(r => r.id)).not.toContain('ru1');
     expect(s.rooms.map(r => r.id)).not.toContain('ru2');
-    await d.close();
   });
   it('nu șterge camera împărțită dacă are rezervări pe una dintre unități', async () => {
-    const d = await fresh();
-    await createReservation(d, { guestId: 'g1', roomIds: ['ru1'], checkIn: '2026-12-01', checkOut: '2026-12-03', pax: 2, total: 400 });
-    await expect(deleteRoom(d, 'rs')).rejects.toThrow(/Dezactiveaz-o/);
-    await d.close();
+    await createReservation(db, { guestId: 'g1', roomIds: ['ru1'], checkIn: '2026-12-01', checkOut: '2026-12-03', pax: 2, total: 400 });
+    await expect(deleteRoom(db, 'rs')).rejects.toThrow(/Dezactiveaz-o/);
   });
   it('orderRooms rearanjează camerele; cele netrimise rămân la coadă', async () => {
-    const d = await fresh();
-    const tops = (s: AppState) => s.rooms.filter(r => !r.parentId).map(r => r.id);
-    expect(tops(await loadState(d))).toEqual(['r1', 'r2', 'r3', 'rs', 'r4', 'rx']);
-    const s = await orderRooms(d, { ids: ['r4', 'r3', 'nu_exista'] });
-    expect(tops(s)).toEqual(['r4', 'r3', 'r1', 'r2', 'rs', 'rx']);
-    expect(await status(orderRooms(d, { ids: 'nu e listă' }))).toBe(400);
-    await d.close();
+    expect(tops(await loadState(db))).toEqual(['r1', 'r2', 'r3', 'rs', 'r4', 'rx']);
+    expect(tops(await orderRooms(db, { ids: ['r4', 'r3', 'nu_exista'] }))).toEqual(['r4', 'r3', 'r1', 'r2', 'rs', 'rx']);
+    expect(await status(orderRooms(db, { ids: 'nu e listă' }))).toBe(400);
   });
 });
 
@@ -168,6 +145,7 @@ describe('prețuri pe noapte', () => {
     expect(rates.r3).toEqual({});
   });
   it('price null șterge prețurile speciale din interval', async () => {
+    await setRates(db, { roomIds: ['r1'], from: '2026-10-10', to: '2026-10-12', price: 500 });
     const { rates } = await setRates(db, { roomIds: ['r1'], from: '2026-10-10', to: '2026-10-11', price: null });
     expect(Object.keys(rates.r1)).toEqual(['2026-10-12']);
   });
@@ -216,69 +194,59 @@ describe('cheltuieli', () => {
 
 describe('unirea a două sejururi', () => {
   const guestId = 'g2', dates = { checkIn: '2026-11-01', checkOut: '2026-11-03' };
-  const two = async (d: Db) => {
-    const a = await createReservation(d, { guestId, roomIds: ['r2'], pax: 2, total: 440, notes: 'Liniște', ...dates });
-    const b = await createReservation(d, { guestId, roomIds: ['r3'], pax: 1, total: 500, notes: 'Pat suplimentar', advance: 100, ...dates });
+  const two = async () => {
+    const a = await createReservation(db, { guestId, roomIds: ['r2'], pax: 2, total: 440, notes: 'Liniște', ...dates });
+    const b = await createReservation(db, { guestId, roomIds: ['r3'], pax: 1, total: 500, notes: 'Pat suplimentar', advance: 100, ...dates });
     return [a.reservation, b.reservation] as const;
   };
 
   it('adună camerele, banii, persoanele, notițele și plățile', async () => {
-    const d = await fresh();
-    const [a, b] = await two(d);
-    const m = await mergeReservations(d, a.id, { otherId: b.id, roomIds: ['r3', 'r2'] });
+    const [a, b] = await two();
+    const m = await mergeReservations(db, a.id, { otherId: b.id, roomIds: ['r3', 'r2'] });
     expect(m.removedId).toBe(b.id);
     expect(m.reservation).toMatchObject({ id: a.id, total: 940, pax: 3, roomIds: ['r3', 'r2'], notes: 'Liniște\nPat suplimentar' });
     expect(m.reservation.payments.map(p => p.amount)).toEqual([100]);
-    expect((await loadState(d)).reservations.find(r => r.id === b.id)).toBeUndefined();
-    await d.close();
+    expect((await loadState(db)).reservations.find(r => r.id === b.id)).toBeUndefined();
   });
   it('fără o ordine anume, camerele rămân în ordinea în care erau', async () => {
-    const d = await fresh();
-    const [a, b] = await two(d);
-    expect((await mergeReservations(d, a.id, { otherId: b.id })).reservation.roomIds).toEqual(['r2', 'r3']);
-    await d.close();
+    const [a, b] = await two();
+    expect((await mergeReservations(db, a.id, { otherId: b.id })).reservation.roomIds).toEqual(['r2', 'r3']);
   });
   it('dacă unul dintre oaspeți e deja cazat, rezervarea unită rămâne cazată', async () => {
-    const d = await fresh();
-    const [a, b] = await two(d);
-    await d.query(`UPDATE reservations SET status = 'checked_in' WHERE id = $1`, [b.id]);
-    expect((await mergeReservations(d, a.id, { otherId: b.id })).reservation.status).toBe('checked_in');
-    await d.close();
+    const [a, b] = await two();
+    await db.query('UPDATE reservations SET status = $2 WHERE id = $1', [b.id, 'checked_in']);
+    expect((await mergeReservations(db, a.id, { otherId: b.id })).reservation.status).toBe('checked_in');
   });
   it('după unire, camerele rămân ocupate pentru altcineva', async () => {
-    const d = await fresh();
-    const [a, b] = await two(d);
-    await mergeReservations(d, a.id, { otherId: b.id });
-    expect(await status(createReservation(d, { guestId: 'g1', roomIds: ['r3'], pax: 2, total: 100, ...dates }))).toBe(409);
-    await d.close();
+    const [a, b] = await two();
+    await mergeReservations(db, a.id, { otherId: b.id });
+    expect(await status(createReservation(db, { guestId: 'g1', roomIds: ['r3'], pax: 2, total: 100, ...dates }))).toBe(409);
   });
   it('refuză alt oaspete, alte nopți, o rezervare anulată sau una care nu există', async () => {
-    const d = await fresh();
-    const [a, b] = await two(d);
-    const other = await createReservation(d, { guestId: 'g1', roomIds: ['r4'], pax: 2, total: 360, ...dates });
-    await expect(mergeReservations(d, a.id, { otherId: other.reservation.id })).rejects.toThrow(/aceluiași oaspete/);
+    const [a, b] = await two();
+    const other = await createReservation(db, { guestId: 'g1', roomIds: ['r4'], pax: 2, total: 360, ...dates });
+    await expect(mergeReservations(db, a.id, { otherId: other.reservation.id })).rejects.toThrow(/aceluiași oaspete/);
 
-    const later = await createReservation(d, { guestId, roomIds: ['r4'], pax: 2, total: 360, checkIn: '2026-11-05', checkOut: '2026-11-07' });
-    await expect(mergeReservations(d, a.id, { otherId: later.reservation.id })).rejects.toThrow(/aceleași nopți/);
+    const later = await createReservation(db, { guestId, roomIds: ['r4'], pax: 2, total: 360, checkIn: '2026-11-05', checkOut: '2026-11-07' });
+    await expect(mergeReservations(db, a.id, { otherId: later.reservation.id })).rejects.toThrow(/aceleași nopți/);
 
-    await d.query(`UPDATE reservations SET status = 'cancelled' WHERE id = $1`, [b.id]);
-    await expect(mergeReservations(d, a.id, { otherId: b.id })).rejects.toThrow(/anulată nu se poate uni/);
+    await db.query('UPDATE reservations SET status = $2 WHERE id = $1', [b.id, 'cancelled']);
+    await expect(mergeReservations(db, a.id, { otherId: b.id })).rejects.toThrow(/anulată nu se poate uni/);
 
-    expect(await status(mergeReservations(d, a.id, { otherId: 'nu_exista' }))).toBe(404);
-    expect(await status(mergeReservations(d, a.id, {}))).toBe(400);
-    await d.close();
+    expect(await status(mergeReservations(db, a.id, { otherId: 'nu_exista' }))).toBe(404);
+    expect(await status(mergeReservations(db, a.id, {}))).toBe(400);
   });
 });
 
 describe('starea completă', () => {
   it('se citește cu tot ce ține de ea', async () => {
-    const d = await fresh();
-    const s = await loadState(d);
+    const s = await loadState(db);
     expect(s.properties.map(p => p.id)).toEqual(['p1', 'p2']);
-    expect(rooms(s, 'p1').map(r => r.id)).toEqual(['r1', 'r2', 'r3', 'rs', 'ru1', 'ru2']);
+    expect(s.floors.map(f => f.id)).toEqual(['f1', 'f2', 'f3']);
+    expect(tops(s)).toEqual(['r1', 'r2', 'r3', 'rs', 'r4', 'rx']);
+    expect(s.rooms.find(r => r.id === 'rx')?.active).toBe(false);
     expect(s.reservations).toHaveLength(1);
-    expect(s.reservations[0]).toMatchObject({ roomIds: ['r1'], checkIn: '2026-09-10', checkOut: '2026-09-12', total: 400 });
+    expect(s.reservations[0]).toMatchObject({ roomIds: ['r1'], checkIn: '2026-09-10', checkOut: '2026-09-12', total: 400, pax: 2 });
     expect(s.reservations[0].payments.map(p => p.amount)).toEqual([200]);
-    await d.close();
   });
 });

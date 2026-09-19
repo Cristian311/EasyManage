@@ -2,7 +2,7 @@
 // Everything the browser keeps in memory: the data from the server, what the calendar shows, open windows, toasts.
 // Changes show at once (optimistic) and go back if the server refuses them.
 import { create } from 'zustand';
-import type { AppState, Expense, Guest, Method, Rates, Reservation } from '@/domain/types';
+import type { AppState, Expense, Guest, Me, Method, Rates, Reservation } from '@/domain/types';
 import { addDays, money, todayIso } from '@/domain/dates';
 import { api } from './api';
 
@@ -21,8 +21,13 @@ export interface NewReservation {
 export interface RoomFields { name: string; type: string; capacity: number; price: number; color: string; desc: string; active: boolean; propertyId: string; floorId: string | null }
 export interface ExpenseFields { amount: number; date: string; category: string; desc: string; propertyId: string | null; recurring: boolean; until?: string }
 
+/** unknown = încă întrebăm serverul; login/setup = trebuie dus la pagina aceea. */
+export type AuthState = 'unknown' | 'ok' | 'login' | 'setup';
+
 interface Store {
   data: AppState | null;
+  me: Me | null;
+  auth: AuthState;
   loadError: string | null;
   view: View;
   drawerId: string | null;
@@ -37,6 +42,7 @@ interface Store {
   flashId: string | null;
   fin: Fin;
   load(): Promise<void>;
+  logout(): Promise<void>;
   setData(d: AppState): void;
   setView(p: Partial<View>): void;
   jumpTo(d: string): void;
@@ -78,6 +84,8 @@ export const useStore = create<Store>((set, get) => {
 
   return {
     data: null,
+    me: null,
+    auth: 'unknown',
     loadError: null,
     view: { prop: 'all', floor: 'all', start: addDays(todayIso(), -2), extra: 0, zoom: 1, q: '', jump: 0 },
     drawerId: null,
@@ -95,9 +103,20 @@ export const useStore = create<Store>((set, get) => {
     async load() {
       try { const saved = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null'); if (saved) set(s => ({ view: { ...s.view, ...saved } })); } catch {}
       try { const f = JSON.parse(localStorage.getItem(FIN_KEY) || 'null'); if (f) set(s => ({ fin: { ...s.fin, cur: f.cur === 'EUR' ? 'EUR' : 'RON', rate: f.rate > 0 ? f.rate : s.fin.rate } })); } catch {}
-      try { set({ data: await api<AppState>('/api/state'), loadError: null }); }
-      catch (e) { set({ loadError: (e as Error).message }); }
+      try {
+        // întâi cine suntem: fără cont nu are rost să cerem rezervările
+        const who = await api<{ user: Me | null; setup: boolean }>('/api/auth/me');
+        if (!who.user) { set({ me: null, data: null, auth: who.setup ? 'setup' : 'login' }); return; }
+        set({ me: who.user, auth: 'ok' });
+        set({ data: await api<AppState>('/api/state'), loadError: null });
+      } catch (e) { set({ loadError: (e as Error).message }); }
     },
+
+    async logout() {
+      try { await api('/api/auth/logout', 'POST'); } catch {}
+      set({ me: null, data: null, auth: 'login' });
+    },
+
     setData(d) { set({ data: d }); },
     setView(p) { const v = { ...get().view, ...p }; set({ view: v }); saveView(v); },
     jumpTo(d) { set(s => ({ view: { ...s.view, start: addDays(d, -2), extra: 0, jump: s.view.jump + 1 } })); },

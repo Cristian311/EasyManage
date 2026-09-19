@@ -4,6 +4,11 @@ export type Source = 'direct' | 'booking' | 'travelminit' | 'airbnb' | 'phone' |
 export type Status = 'confirmed' | 'pending' | 'checked_in' | 'checked_out' | 'cancelled';
 export type Method = 'cash' | 'card' | 'transfer' | 'other';
 export type PayStatus = 'unpaid' | 'partial' | 'paid';
+/** owner vede tot; reception nu vede Financiar și Setări. */
+export type Role = 'owner' | 'reception';
+
+/** Contul cu care ești intrat în program. */
+export interface Me { id: string; email: string; name: string; role: Role }
 
 export interface Property { id: string; name: string; city: string }
 export interface Floor { id: string; propertyId: string; name: string }
