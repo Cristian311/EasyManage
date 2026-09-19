@@ -35,6 +35,14 @@ export interface Guest {
   email: string;
   country: string;
   notes: string;
+  // pentru fișa de cazare; se completează la sosire, deci pot lipsi
+  birthDate?: string | null;
+  birthPlace?: string;
+  citizenship?: string;
+  address?: string;
+  idType?: string;
+  idSeries?: string;
+  idNumber?: string;
 }
 
 export interface Payment { id: string; amount: number; method: Method; date: string; note: string }

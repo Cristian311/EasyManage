@@ -14,9 +14,10 @@ stau separat, în [IDEI-NOI.md](IDEI-NOI.md).
 **Scurt, dacă ai timp doar de trei lucruri:** fazele 1, 2 și 4. Primele două fac din program ceva ce familia
 folosește pe bune. Fazele 5 și 8 sunt cele pentru care o pensiune plătește lunar.
 
-**Unde suntem:** sunt gata faza 1a (conturi și roluri) și faza 4 (facturi). Faza 2, publicarea, așteaptă un
-server. Până atunci se pot face, fără server: copia de siguranță pe calculator, fișa de cazare (faza 7),
-confirmarea pe WhatsApp (faza 6) și exportul în Excel (faza 3).
+**Unde suntem:** sunt gata fazele 1a (conturi), 3 (import și export), 4 (facturi), 6 (confirmare) și 7 (fișa de
+cazare), plus jumătatea fără server a fazei 2: copia de siguranță zilnică, cu restaurare verificată, și pornirea
+cu un dublu-click. Așteaptă un server: publicarea (2) și sincronizarea cu Booking (5). Urmează, fără server:
+e-Factura (8) și jurnalul cu datele personale (9).
 
 ---
 
@@ -76,7 +77,9 @@ rezervări și de plăți e același. Fără această probă, copiile nu se pun 
 
 ---
 
-## Faza 3 — Import și export
+## Faza 3 — Import și export ✅ gata
+
+*Făcut:* „Descarcă Excel” pe Rezervări, Oaspeți, Financiar, Facturi și Registru (CSV cu „;” și diacritice, pe care Excelul îl deschide direct; textele care ar arăta a formulă sunt ținute text). „Importă” din Rezervări: model de descărcat, verificare cu previzualizare pe fiecare rând, apoi scrierea rândurilor bune prin același drum ca o rezervare făcută de mână. Vede suprapunerile și între rândurile aceluiași fișier.
 
 **Ce vede utilizatorul.** Un buton „Descarcă Excel” pe paginile Rezervări, Oaspeți și Financiar. Și un
 „Importă rezervări” care cere un fișier CSV, arată o previzualizare („143 de rezervări, 2 se suprapun”) și abia
@@ -138,7 +141,9 @@ verific că dispare și la noi.
 
 ---
 
-## Faza 6 — Confirmare către oaspete
+## Faza 6 — Confirmare către oaspete ✅ gata
+
+*Făcut:* în sertarul rezervării, „Confirmă pe WhatsApp” și „Confirmă pe email” deschid aplicația omului cu textul gata scris; nimic nu pleacă de pe server și nu costă nimic. Șablonul se schimbă din Setări, cu previzualizare pe o rezervare adevărată. *Rămas:* trimiterea de pe server (SMTP), când va exista unul.
 
 **Ce vede utilizatorul.** În sertarul rezervării, două butoane: **WhatsApp** (deschide conversația cu textul deja
 scris — nu costă nimic) și **Email**. În Setări, textul șablon, cu câmpuri de completat automat: nume, perioadă,
@@ -150,7 +155,9 @@ cameră, total, avans.
 
 ---
 
-## Faza 7 — Fișa de cazare și registrul turiștilor
+## Faza 7 — Fișa de cazare și registrul turiștilor ✅ gata
+
+*Făcut:* actul, nașterea, cetățenia și domiciliul la oaspete (le completează și recepția), „Fișă de cazare” din sertar, gata de tipărit și semnat, și „Registrul turiștilor” pe o perioadă, de tipărit sau de dus în Excel. Pe fișă intră oaspetele principal al rezervării; însoțitorii se scriu de mână.
 
 Pensiunile sunt obligate să țină evidența cu actul de identitate, iar mulți o completează încă de mână.
 

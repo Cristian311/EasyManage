@@ -6,7 +6,10 @@ import { SRC, STATUS } from '@/domain/labels';
 import { nights, remaining, resGuest, roomLabel } from '@/domain/rules';
 import { useGoToReservation } from '@/components/useGoToReservation';
 import { IconPlus, IconSearch } from '@/components/Icons';
+import Link from 'next/link';
 import Table from '@/components/Table';
+import { downloadCsv } from '@/lib/client/csv';
+import { paid } from '@/domain/rules';
 
 export default function ReservationsPage() {
   const data = useData(), openModal = useStore(s => s.openModal), goTo = useGoToReservation();
@@ -22,6 +25,13 @@ export default function ReservationsPage() {
     <section className="page on" id="page-reservations">
       <div className="topbar"><h1>Rezervări</h1><div className="spacer" />
         <div className="search"><IconSearch /><input placeholder="Caută…" value={q} onChange={e => setQ(e.target.value)} /></div>
+        <Link className="btn" href="/registru">Registrul turiștilor</Link>
+        <Link className="btn" href="/import">Importă</Link>
+        <button className="btn" onClick={() => downloadCsv('rezervari', list, [
+          ['Oaspete', r => resGuest(data, r)], ['Cameră', r => roomLabel(data, r)], ['Check-in', r => r.checkIn], ['Check-out', r => r.checkOut],
+          ['Nopți', r => nights(r)], ['Persoane', r => r.pax], ['Sursă', r => SRC[r.source]], ['Status', r => STATUS[r.status]],
+          ['Total (lei)', r => r.total], ['Încasat (lei)', r => paid(r)], ['Rest (lei)', r => remaining(r)], ['Factură', r => r.invoiceNo], ['Observații', r => r.notes],
+        ])}>Descarcă Excel</button>
         <button className="btn primary" onClick={() => openModal()}><IconPlus />Rezervare nouă</button></div>
       <div className="scroll">
         <div className="card tbl-wrap">

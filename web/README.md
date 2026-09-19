@@ -54,9 +54,39 @@ următoarea deschidere; rezervările rămân neatinse.
 | Rulezi testele | `npm test` |
 | Ștergi baza de date și reîncepi cu datele demo | `npm run db:reset` |
 | Te uiți în baza de date din terminal | `npm run db:sql -- "SELECT name, price FROM rooms"` |
+| Pui înapoi o copie de siguranță | `npm run db:restore -- backups\velora-....sql.gz --da` |
 
 Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0` și deschide pe telefon
 `http://IP-ul-calculatorului:3000` (IP-ul îl vezi cu `ipconfig`).
+
+## Pornire cu un dublu-click
+
+În folderul proiectului e **Porneste Velora.bat**. Pornește MySQL dacă nu merge, pregătește programul la prima
+rulare, îl pornește și deschide browserul. Fereastra neagră rămâne deschisă cât lucrezi. Poți face o scurtătură
+spre el pe desktop (click dreapta → Trimite la → Desktop).
+
+## Copii de siguranță
+
+Cât timp merge programul, se face singură **o copie pe zi** cu tot: rezervări, plăți, facturi, conturi. Se țin 30 de
+zile. Din **Setări → Copii de siguranță** faci una pe loc, o descarci și alegi folderul — pune unul din OneDrive
+sau Google Drive, ca să existe și în afara calculatorului.
+
+Pui o copie înapoi așa (înlocuiește tot ce e acum în bază, de aceea cere `--da`):
+
+```powershell
+npm run db:restore -- backupselora-2026-09-19_120000.sql.gz --da
+```
+
+## Fișa de cazare, confirmări, Excel
+
+- **Fișa de cazare:** în sertarul rezervării, „Completează actul” (serie, număr, data nașterii, cetățenie, domiciliu),
+  apoi „Fișă de cazare” → Tipărește. Ce lipsește poate fi scris de mână de oaspete.
+- **Registrul turiștilor:** Rezervări → „Registrul turiștilor”, alegi perioada, tipărești sau descarci Excel.
+- **Confirmare:** în sertar, „Confirmă pe WhatsApp” sau „pe email” deschide aplicația ta cu mesajul gata scris; tu
+  apeși Trimite. Textul se schimbă din Setări.
+- **Excel:** butonul „Descarcă Excel” e pe Rezervări, Oaspeți, Financiar, Facturi și Registru.
+- **Import:** Rezervări → „Importă”. Descarci modelul, îl completezi în Excel, îl salvezi ca CSV, apeși „Verifică”
+  (vezi rând cu rând ce intră și de ce nu), apoi „Importă”.
 
 ## Facturi
 

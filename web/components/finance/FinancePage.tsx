@@ -9,6 +9,7 @@ import { resGuest, roomLabel, shortProp } from '@/domain/rules';
 import type { Expense, Method, Source } from '@/domain/types';
 import Table from '../Table';
 import { IconNext, IconPlus, IconPrev } from '../Icons';
+import { downloadCsv } from '@/lib/client/csv';
 import { drawDaily, drawMonthly, drawOcc, drawSrc, esc, VZ, type OccData, type Tips } from './charts';
 
 const pct = (v: number) => Math.round(v * 100) + '%';
@@ -26,6 +27,15 @@ export default function FinancePage() {
     const out: string[] = []; for (let k = -5; k <= 2; k++) { const mm = addMonths(today.slice(0, 7), k); if (mm >= first) out.push(mm); } return out;
   }, [data, m, today]);
   const mSeries = useMemo(() => months.map(mm => { const q = finMonth(data, mm, fin.prop); return { m: mm, cashed: q.cashed, spent: q.spent, profit: q.profit, occ: q.occ, earned: q.earned, comm: q.comm }; }), [months, data, fin.prop]);
+
+  /** Luna aleasă, pentru contabilă: întâi încasările, apoi cheltuielile, fiecare pe rândul ei. */
+  const excel = () => {
+    const pays = data.reservations.flatMap(r => r.payments.filter(p => p.date.startsWith(m)).map(p => ({
+      kind: 'Încasare', date: p.date, what: `${resGuest(data, r)} · ${roomLabel(data, r)}`, method: METHOD[p.method], amount: p.amount, doc: r.invoiceNo })));
+    const exps = expensesIn(data, m, fin.prop).map(e => ({ kind: 'Cheltuială', date: e.date.startsWith(m) ? e.date : m + '-01', what: [e.category, e.desc].filter(Boolean).join(' · '), method: '', amount: -e.amount, doc: '' }));
+    downloadCsv(`financiar_${m}`, [...pays, ...exps].sort((a, b) => a.date.localeCompare(b.date)), [
+      ['Fel', x => x.kind], ['Data', x => x.date], ['Ce', x => x.what], ['Metodă', x => x.method], ['Sumă (lei)', x => x.amount], ['Factură', x => x.doc]]);
+  };
 
   /* ---------- charts: drawn as SVG strings at the width of their card ---------- */
   const bodyRef = useRef<HTMLDivElement>(null), tips = useRef<Tips>([]), occ = useRef<OccData | null>(null);
@@ -71,6 +81,7 @@ export default function FinancePage() {
         <button className="btn icon" onClick={() => setFin({ month: addMonths(m, -1) })} title="Luna anterioară"><IconPrev /></button>
         <div className="period">{monthName(m)}</div>
         <button className="btn icon" onClick={() => setFin({ month: addMonths(m, 1) })} title="Luna următoare"><IconNext /></button>
+        <button className="btn" onClick={excel}>Descarcă Excel</button>
         <button className="btn primary" onClick={() => openExp()}><IconPlus />Cheltuială</button>
       </div>
       <div className="scroll" ref={bodyRef} onMouseMove={onMove} onMouseLeave={() => setTipHtml(null)} onClickCapture={onClickBody}>

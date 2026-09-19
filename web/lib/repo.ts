@@ -14,13 +14,16 @@ type ResRow = Omit<Reservation, 'roomIds' | 'payments'>;
 type PayRow = Payment & { reservationId: string };
 const PAY_COLS = 'id, reservation_id AS `reservationId`, amount, method, paid_on AS `date`, note';
 
+const GUEST_COLS = 'id, first_name AS `firstName`, last_name AS `lastName`, phone, email, country, notes, birth_date AS `birthDate`, ' +
+  'birth_place AS `birthPlace`, citizenship, address, id_type AS `idType`, id_series AS `idSeries`, id_number AS `idNumber`';
+
 export async function loadState(db: Db): Promise<AppState> {
   const [properties, floors, rooms, guests, res, rr, pays, rates, expenses] = await Promise.all([
     db.query<Property>('SELECT id, name, city FROM properties ORDER BY sort, created_at, id'),
     db.query<Floor>('SELECT id, property_id AS `propertyId`, name FROM floors ORDER BY sort, id'),
     db.query<Room>('SELECT id, property_id AS `propertyId`, floor_id AS `floorId`, parent_id AS `parentId`, name, type, capacity, price, color, ' +
       'description AS `desc`, active FROM rooms ORDER BY sort, id'),
-    db.query<Guest>('SELECT id, first_name AS `firstName`, last_name AS `lastName`, phone, email, country, notes FROM guests ORDER BY created_at, id'),
+    db.query<Guest>(`SELECT ${GUEST_COLS} FROM guests ORDER BY created_at, id`),
     db.query<ResRow>(`SELECT ${RES_COLS} FROM reservations r ORDER BY r.check_in, r.id`),
     db.query<{ reservationId: string; roomId: string }>('SELECT reservation_id AS `reservationId`, room_id AS `roomId` FROM reservation_rooms ORDER BY reservation_id, position'),
     db.query<PayRow>(`SELECT ${PAY_COLS} FROM payments ORDER BY paid_on, created_at`),
@@ -171,6 +174,29 @@ export async function addPayment(db: Db, id: string, raw: unknown) {
     if (cur.status === 'cancelled') throw new DomainError(400, 'Rezervarea este anulată.');
     await q('INSERT INTO payments (id, reservation_id, amount, method, paid_on, note) VALUES ($1,$2,$3,$4,$5,$6)', [newId('pay_'), id, amount, method, date, note]);
     return { reservation: (await getReservation(q, id))! };
+  });
+}
+
+/** Datele unui oaspete: nume, contact și actul de pe fișa de cazare. Se schimbă numai ce e trimis. */
+export async function updateGuest(db: Db, id: string, raw: unknown): Promise<{ guest: Guest }> {
+  const b = asBody(raw);
+  return db.tx(async q => {
+    const [cur] = await q<Guest>(`SELECT ${GUEST_COLS} FROM guests WHERE id = $1`, [id]);
+    if (!cur) throw new DomainError(404, 'Oaspetele nu mai există.');
+    const pick = (k: keyof Guest, max: number) => (b[k] === undefined ? (cur[k] as string | undefined) ?? '' : str(b[k], max) ?? '');
+    const firstName = pick('firstName', 120);
+    if (!firstName) throw new DomainError(400, 'Scrie numele oaspetelui.');
+    const birthDate = b.birthDate === undefined ? cur.birthDate ?? null : str(b.birthDate) || null;
+    if (birthDate && (!isIsoDate(birthDate) || birthDate > todayIso())) throw new DomainError(400, 'Data nașterii nu este validă.');
+    const g: Guest = {
+      id, firstName, lastName: pick('lastName', 120), phone: pick('phone', 60), email: pick('email', 160), country: pick('country', 80),
+      notes: pick('notes', 2000), birthDate, birthPlace: pick('birthPlace', 120), citizenship: pick('citizenship', 80), address: pick('address', 300),
+      idType: pick('idType', 30), idSeries: pick('idSeries', 20).toUpperCase(), idNumber: pick('idNumber', 30),
+    };
+    await q(`UPDATE guests SET first_name=$2, last_name=$3, phone=$4, email=$5, country=$6, notes=$7, birth_date=$8, birth_place=$9,
+      citizenship=$10, address=$11, id_type=$12, id_series=$13, id_number=$14 WHERE id=$1`,
+      [id, g.firstName, g.lastName, g.phone, g.email, g.country, g.notes, g.birthDate, g.birthPlace, g.citizenship, g.address, g.idType, g.idSeries, g.idNumber]);
+    return { guest: g };
   });
 }
 

@@ -9,6 +9,7 @@ import { api } from '@/lib/client/api';
 import { useStore } from '@/lib/client/store';
 import { IconSearch } from '@/components/Icons';
 import Table from '@/components/Table';
+import { downloadCsv } from '@/lib/client/csv';
 
 export default function InvoicesPage() {
   const toast = useStore(s => s.toast);
@@ -43,7 +44,12 @@ export default function InvoicesPage() {
 
   return (
     <section className="page on">
-      <div className="topbar"><h1>Facturi</h1><div className="spacer" /><div className="search"><IconSearch /><input placeholder="Caută număr, client, CUI…" value={q} onChange={e => setQ(e.target.value)} /></div></div>
+      <div className="topbar"><h1>Facturi</h1><div className="spacer" /><div className="search"><IconSearch /><input placeholder="Caută număr, client, CUI…" value={q} onChange={e => setQ(e.target.value)} /></div>
+        <button className="btn" disabled={!rows.length} onClick={() => downloadCsv('facturi', rows, [
+          ['Număr', i => invoiceNo(i.series, i.number)], ['Data', i => i.issuedOn], ['Fel', i => (i.kind === 'storno' ? 'Stornare' : stornoed.has(i.id) ? 'Stornată' : 'Factură')],
+          ['Client', i => i.buyerName], ['CUI / CNP', i => i.buyerTaxId], ['Adresă', i => i.buyerAddress],
+          ['Fără TVA (lei)', i => Number(i.net)], ['TVA (lei)', i => Number(i.vat)], ['Total (lei)', i => Number(i.total)],
+        ])}>Descarcă Excel</button></div>
       <div className="scroll">
         {loaded && !list.length ? (
           <div className="ph">

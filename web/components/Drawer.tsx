@@ -7,6 +7,8 @@ import { METHOD, PAY_L, SRC, STATUS } from '@/domain/labels';
 import { guestById, guestName, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
 import { growRoom, shrinkRoom } from '@/lib/client/actions';
 import type { Method, Status } from '@/domain/types';
+import Link from 'next/link';
+import { fillTemplate, mailLink, messageVars, waLink } from '@/domain/message';
 import { IconClose } from './Icons';
 
 export default function Drawer() {
@@ -14,7 +16,7 @@ export default function Drawer() {
   const view = useStore(s => s.view);
   const id = useStore(s => s.drawerId), close = useStore(s => s.closeDrawer), patch = useStore(s => s.patchReservation);
   const addPayment = useStore(s => s.addPayment), openModal = useStore(s => s.openModal), del = useStore(s => s.deleteReservation), toast = useStore(s => s.toast);
-  const me = useStore(s => s.me), openInvoice = useStore(s => s.openInvoice);
+  const me = useStore(s => s.me), openInvoice = useStore(s => s.openInvoice), openGuest = useStore(s => s.openGuest), loadMsg = useStore(s => s.loadMsg);
   const r = id ? data.reservations.find(x => x.id === id) : undefined;
   const [amt, setAmt] = useState(''), [method, setMethod] = useState<Method>('cash'), [inv, setInv] = useState('');
   const rem = r ? remaining(r) : 0;
@@ -34,6 +36,15 @@ export default function Drawer() {
   };
   const pay = async () => { const a = Number(amt); if (!a || a <= 0) { toast('Introdu o sumă', 'bad'); return; } await addPayment(r.id, a, method); };
   const saveInvoice = async () => { const v = inv.trim(); const err = await patch(r.id, { invoiceNo: v }); if (!err) toast(v ? `Factura ${v} salvată` : 'Număr factură șters', 'ok'); };
+
+  /** Deschide WhatsApp sau programul de email cu mesajul de confirmare gata scris; omul doar apasă „Trimite”. */
+  const confirmTo = async (how: 'wa' | 'mail') => {
+    const m = await loadMsg(); if (!m || !g) return;
+    const text = fillTemplate(m.template, messageVars(data, r, m.sender));
+    const url = how === 'wa' ? waLink(g.phone, text) : mailLink(g.email, `Confirmare rezervare ${fmtD(r.checkIn)} – ${fmtD(r.checkOut)}`, text);
+    if (!url) { toast(how === 'wa' ? 'Oaspetele nu are un număr de telefon valid' : 'Oaspetele nu are o adresă de email validă', 'bad'); openGuest(g.id); return; }
+    window.open(url, '_blank', 'noopener');
+  };
 
   const past = g ? data.reservations.filter(x => x.guestId === g.id && x.id !== r.id && x.status !== 'cancelled').sort((a, b) => b.checkIn.localeCompare(a.checkIn)) : [];
   const owed = past.filter(x => x.checkOut <= todayIso()).reduce((s, x) => s + remaining(x), 0);
@@ -95,7 +106,7 @@ export default function Drawer() {
           {r.invoiceNo ? (
             <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
               <b style={{ flex: 1 }}>{r.invoiceNo}{r.invoiceDate ? ` · ${fmtD(r.invoiceDate)}` : ''}</b>
-              <a className="btn sm" href="/facturi">Vezi în registru</a>
+              <Link className="btn sm" href="/facturi" onClick={close}>Vezi în registru</Link>
             </div>
           ) : (
             <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -109,6 +120,12 @@ export default function Drawer() {
           </div>}
         </div>}
         {g && <div><div className="sec-t">Oaspete</div>
+          <div style={{ margin: '8px 0', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button className="btn sm" onClick={() => openGuest(g.id)}>{g.idNumber ? 'Date și act' : 'Completează actul'}</button>
+            <Link className="btn sm" href={`/fisa/${r.id}`} onClick={close}>Fișă de cazare</Link>
+            <button className="btn sm" onClick={() => confirmTo('wa')}>Confirmă pe WhatsApp</button>
+            <button className="btn sm" onClick={() => confirmTo('mail')}>Confirmă pe email</button>
+          </div>
           <div className="hist">
             <div className="lead">{past.length ? `A mai stat de ${past.length} ${past.length === 1 ? 'dată' : 'ori'} · ultima dată în ${roomLabel(data, past[0])}, ${fmtD(past[0].checkIn)}` : 'Prima ședere la noi'}
               {owed > 0 && <> · <span style={{ color: 'var(--bad)' }}>datorii vechi {money(owed)}</span></>}</div>

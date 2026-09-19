@@ -35,6 +35,8 @@ interface Store {
   roomModal: { editId: string | null } | null;
   expModal: { editId: string | null } | null;
   invoiceFor: string | null;      // rezervarea pentru care se emite o factură
+  guestModal: string | null;      // oaspetele ale cărui date se editează
+  msg: { template: string; sender: string } | null;   // șablonul confirmării, luat o dată
   menu: MenuState | null;
   toasts: Toast[];
   focus: boolean;
@@ -57,6 +59,10 @@ interface Store {
   openExpModal(editId?: string | null): void;
   closeExpModal(): void;
   openInvoice(reservationId: string): void;
+  loadMsg(force?: boolean): Promise<{ template: string; sender: string } | null>;
+  openGuest(id: string): void;
+  closeGuest(): void;
+  saveGuest(id: string, x: Partial<Guest>): Promise<string | null>;
   closeInvoice(): void;
   openMenu(m: MenuState): void;
   closeMenu(): void;
@@ -96,6 +102,8 @@ export const useStore = create<Store>((set, get) => {
     roomModal: null,
     expModal: null,
     invoiceFor: null,
+    guestModal: null,
+    msg: null,
     menu: null,
     toasts: [],
     focus: false,
@@ -140,6 +148,20 @@ export const useStore = create<Store>((set, get) => {
     closeExpModal() { set({ expModal: null }); },
     openInvoice(reservationId) { set({ invoiceFor: reservationId }); },
     closeInvoice() { set({ invoiceFor: null }); },
+    async loadMsg(force = false) {
+      if (get().msg && !force) return get().msg;
+      try { const m = await api<{ template: string; sender: string }>('/api/message-template'); set({ msg: m }); return m; }
+      catch (e) { get().toast((e as Error).message, 'bad'); return null; }
+    },
+    openGuest(id) { set({ guestModal: id }); },
+    closeGuest() { set({ guestModal: null }); },
+    async saveGuest(id, x) {
+      try {
+        const { guest } = await api<{ guest: Guest }>(`/api/guests/${id}`, 'PATCH', x);
+        set(s => s.data ? { data: { ...s.data, guests: s.data.guests.map(g => (g.id === id ? guest : g)) } } : {});
+        return null;
+      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
+    },
     openMenu(m) { set({ menu: m }); },
     closeMenu() { set({ menu: null }); },
     toast(msg, kind = '', action, ms = action ? 6000 : 2800) {

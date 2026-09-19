@@ -6,6 +6,8 @@ import { ROLE } from '@/domain/labels';
 import { api } from '@/lib/client/api';
 import { useStore } from '@/lib/client/store';
 import Table from '@/components/Table';
+import { DEFAULT_TEMPLATE, PLACEHOLDERS, fillTemplate, messageVars } from '@/domain/message';
+import { useData } from '@/lib/client/store';
 
 type U = Me & { active: boolean };
 
@@ -62,6 +64,7 @@ export default function SettingsPage() {
         </div>
 
         <CompanyForm />
+        <TemplateCard />
         <BackupCard />
 
         <div className="ph">
@@ -203,6 +206,44 @@ function BackupCard() {
         </div>
       ))}
       <div className="hint" style={{ marginTop: 10 }}>Ca să pui o copie înapoi: oprești programul și rulezi în folderul web <code>{'npm run db:restore -- backups\\velora-....sql.gz --da'}</code>.</div>
+    </div>
+  );
+}
+
+/** Mesajul de confirmare trimis oaspetelui pe WhatsApp sau pe email, cu previzualizare pe o rezervare adevărată. */
+function TemplateCard() {
+  const data = useData(), toast = useStore(s => s.toast), loadMsg = useStore(s => s.loadMsg);
+  const [t, setT] = useState<string | null>(null), [sender, setSender] = useState(''), [busy, setBusy] = useState(false);
+  useEffect(() => { api<{ template: string; sender: string }>('/api/message-template').then(m => { setT(m.template); setSender(m.sender); }).catch(e => toast((e as Error).message, 'bad')); }, [toast]);
+  if (t === null) return null;
+  const sample = data.reservations.find(r => r.status !== 'cancelled' && r.payments.length > 0) ?? data.reservations[0];
+
+  const save = async (text: string) => {
+    setBusy(true);
+    try { const m = await api<{ template: string }>('/api/message-template', 'PUT', { template: text }); setT(m.template); await loadMsg(true); toast('Mesajul a fost salvat', 'ok'); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="card" style={{ marginBottom: 16, padding: '14px 16px 18px' }}>
+      <div className="ch" style={{ padding: '0 0 12px', marginBottom: 12 }}>Mesajul de confirmare pentru oaspeți</div>
+      <p style={{ margin: '0 0 12px', color: 'var(--ink-2)' }}>Din sertarul unei rezervări, „Confirmă pe WhatsApp” deschide conversația cu acest text deja scris. Nu costă nimic și nu se trimite nimic fără să apeși tu „Trimite”.</p>
+      <div className="g2">
+        <div className="f">
+          <label>Textul</label>
+          <textarea value={t} onChange={e => setT(e.target.value)} style={{ minHeight: 230, fontFamily: 'inherit' }} />
+          <div className="hint">Se înlocuiesc singure: {PLACEHOLDERS.map(([k, d]) => <span key={k} title={d} style={{ marginRight: 8, whiteSpace: 'nowrap' }}><code>{k}</code></span>)}</div>
+        </div>
+        <div className="f">
+          <label>Cum arată pentru {sample ? 'o rezervare de-a ta' : 'oaspete'}</label>
+          <div className="notes" style={{ whiteSpace: 'pre-wrap', minHeight: 230, margin: 0 }}>{sample ? fillTemplate(t, messageVars(data, sample, sender)) : t}</div>
+        </div>
+      </div>
+      <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+        <button className="btn primary" disabled={busy} onClick={() => save(t)}>Salvează mesajul</button>
+        <button className="btn" disabled={busy || t === DEFAULT_TEMPLATE} onClick={() => save('')}>Înapoi la cel de la început</button>
+      </div>
     </div>
   );
 }

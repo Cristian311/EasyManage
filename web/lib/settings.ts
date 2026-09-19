@@ -1,6 +1,7 @@
 // Setările programului, ținute ca perechi nume/valoare în tabelul settings.
 import type { Company } from '@/domain/invoice';
 import { EMPTY_COMPANY } from '@/domain/invoice';
+import { DEFAULT_TEMPLATE } from '@/domain/message';
 import type { Db, Q } from './db';
 
 const KEYS: Record<keyof Company, string> = {
@@ -60,4 +61,23 @@ export async function saveCompany(db: Db, raw: unknown): Promise<Company> {
     }
   });
   return next;
+}
+
+/* ---------- șablonul mesajului de confirmare ---------- */
+
+export interface MessageTemplate { template: string; sender: string; isDefault: boolean }
+
+/** Șablonul și numele care semnează. Îl citește și recepția, pentru că ea trimite confirmările. */
+export async function getTemplate(db: Db): Promise<MessageTemplate> {
+  const rows = await db.query<{ name: string; value: string }>("SELECT name, `value` FROM settings WHERE name IN ('confirm_template', 'company_name')");
+  const got = new Map(rows.map(r => [r.name, r.value]));
+  const saved = (got.get('confirm_template') ?? '').trim();
+  return { template: saved || DEFAULT_TEMPLATE, sender: got.get('company_name') ?? '', isDefault: !saved };
+}
+
+/** Un șablon gol înseamnă „înapoi la cel implicit”. */
+export async function saveTemplate(db: Db, raw: unknown): Promise<MessageTemplate> {
+  const t = typeof raw === 'string' ? raw.trim().slice(0, 3000) : '';
+  await db.query("INSERT INTO settings (name, `value`) VALUES ('confirm_template', $1) ON DUPLICATE KEY UPDATE `value` = $1, updated_at = now()", [t]);
+  return getTemplate(db);
 }
