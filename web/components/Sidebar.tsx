@@ -6,7 +6,7 @@ import { useStore } from '@/lib/client/store';
 import { todayIso } from '@/domain/dates';
 import { ROLE, initials } from '@/domain/labels';
 import { isActiveRes, propById } from '@/domain/rules';
-import { IconCalendar, IconCollapse, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
+import { IconCalendar, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
 
 const NAV = [
   { href: '/azi', label: 'Azi', Icon: IconToday, badge: true },
@@ -23,7 +23,7 @@ const NAV = [
 
 export default function Sidebar() {
   const path = usePathname();
-  const data = useStore(s => s.data), view = useStore(s => s.view), collapsed = useStore(s => s.collapsed), setCollapsed = useStore(s => s.setCollapsed);
+  const data = useStore(s => s.data), view = useStore(s => s.view), setMenuOpen = useStore(s => s.setMenuOpen);
   const me = useStore(s => s.me), logout = useStore(s => s.logout);
   const badge = useMemo(() => {
     if (!data) return 0; const t = todayIso();
@@ -45,7 +45,7 @@ export default function Sidebar() {
       <nav className="nav">
         {NAV.map((n, i) => 'sec' in n ? <div className="sec" key={i}>{n.sec}</div> : (
           'owner' in n && me?.role !== 'owner' ? null : (
-            <Link key={n.href} href={n.href} className={`nav-item ${path.startsWith(n.href) ? 'active' : ''} ${'soon' in n ? 'soonwrap' : ''}`}>
+            <Link key={n.href} href={n.href} onClick={() => setMenuOpen(false)} className={`nav-item ${path.startsWith(n.href) ? 'active' : ''} ${'soon' in n ? 'soonwrap' : ''}`}>
               <n.Icon /><span>{n.label}</span>
               {'badge' in n && badge > 0 && <span className="badge">{badge}</span>}
               {'soon' in n && <span className="soon">curând</span>}
@@ -55,7 +55,6 @@ export default function Sidebar() {
       </nav>
       <div className="side-foot">
         <button className="nav-item" onClick={toggleTheme}><IconMoon /><span>Temă</span></button>
-        <button className="nav-item" onClick={() => setCollapsed(!collapsed)}><IconCollapse /><span>Restrânge</span></button>
         <button className="user" onClick={() => { if (confirm('Ieși din cont?')) logout(); }} title="Ieși din cont">
           <div className="av">{initials(me?.name ?? '')}</div>
           <div><div className="u1">{me?.name ?? '—'}</div><div className="u2">{me ? ROLE[me.role] : 'Ieși'}</div></div>

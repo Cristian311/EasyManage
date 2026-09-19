@@ -1,13 +1,13 @@
 'use client';
 // Everything about one reservation, on the right: who, when, money, payments, invoice, the guest's history.
 import { useEffect, useState, type CSSProperties } from 'react';
+import Link from 'next/link';
 import { useData, useStore } from '@/lib/client/store';
 import { fmtD, fmtDL, money, todayIso } from '@/domain/dates';
 import { METHOD, PAY_L, SRC, STATUS } from '@/domain/labels';
 import { guestById, guestName, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
 import { growRoom, shrinkRoom } from '@/lib/client/actions';
 import type { Method, Status } from '@/domain/types';
-import Link from 'next/link';
 import { fillTemplate, mailLink, messageVars, waLink } from '@/domain/message';
 import { IconClose } from './Icons';
 
@@ -139,7 +139,7 @@ export default function Drawer() {
         {r.status === 'checked_in' && <button className="btn primary" onClick={() => setStatus('checked_out')}>Check-out</button>}
         {r.status === 'pending' && <button className="btn" onClick={() => setStatus('confirmed')}>Confirmă</button>}
         <button className="btn" onClick={() => openModal(null, r.id)}>Editează</button>
-        {r.status !== 'cancelled' && r.status !== 'checked_out' && <button className="btn danger" onClick={() => setStatus('cancelled')}>Anulează</button>}
+        {r.status !== 'cancelled' && r.status !== 'checked_out' &&<button className="btn danger" onClick={() => setStatus('cancelled')}>Anulează</button>}
         {r.status === 'cancelled' && <button className="btn danger" onClick={() => { if (confirm('Ștergi definitiv această rezervare?')) del(r.id); }}>Șterge definitiv</button>}
       </div>
     </aside>

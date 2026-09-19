@@ -46,7 +46,6 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 
 /* ---------- App shell ---------- */
 .app{display:grid;grid-template-columns:var(--sidebar) 1fr;height:100vh;height:100dvh;transition:grid-template-columns .2s ease}
-.app.collapsed{grid-template-columns:var(--sidebar-min) 1fr}
 
 .sidebar{background:var(--surface);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden;min-width:0}
 .brand{display:flex;align-items:center;gap:12px;padding:18px 16px 14px;border-bottom:1px solid var(--line-2)}
@@ -66,9 +65,29 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .user .av{width:30px;height:30px;border-radius:50%;background:var(--brass);color:#fff;display:grid;place-items:center;font-weight:700;font-size:12px;flex:none}
 .user .u1{font-weight:700;font-size:13px;white-space:nowrap}
 .user .u2{font-size:11px;color:var(--ink-3);white-space:nowrap}
-.app.collapsed .brand .name,.app.collapsed .brand .sub,.app.collapsed .nav-item span,.app.collapsed .nav .sec,.app.collapsed .user div,.app.collapsed .badge,.app.collapsed .soon{display:none}
-.app.collapsed .nav-item{justify-content:center;padding:10px}
-.app.collapsed .user{justify-content:center}
+/* Calendar: the menu keeps only a narrow rail of icons so the chart gets the width. Point at it — or press the
+   button in the top bar — and it opens over the page; picking a page or Esc closes it again. */
+@media (min-width:721px){
+  .app.nomenu{grid-template-columns:var(--sidebar-min) 1fr}
+  /* a fixed sidebar leaves the grid, so the page would slide into the narrow first column without this */
+  .app.nomenu:not(.focus) .main{grid-column:2}
+  .app.nomenu .sidebar{position:fixed;top:0;bottom:0;left:0;width:var(--sidebar-min);z-index:130;transition:width .18s ease,box-shadow .18s ease}
+  /* the icons never move: they stay where the narrow rail centres them (10 + 14 + half of 20 = 34px, half of 68),
+     and widening only uncovers the labels, which the sidebar's overflow clips while it is narrow.
+     Nothing is hidden with display:none, so no row changes height and nothing jumps. */
+  .app.nomenu .nav{overflow-x:hidden}
+  .app.nomenu .brand .name,.app.nomenu .brand .sub,.app.nomenu .nav-item span,.app.nomenu .user div,.app.nomenu .badge{display:block}
+  .app.nomenu .nav-item{justify-content:flex-start;padding:9px 14px}
+  .app.nomenu .user{justify-content:flex-start}
+  /* the labels start right after the icon, inside the 68px rail, so they fade out too or their first letters show */
+  .app.nomenu .nav .sec,.app.nomenu .brand>div:last-child,.app.nomenu .nav-item>span,.app.nomenu .user>div:last-child{opacity:0;transition:opacity .15s}
+  .app.nomenu .nav .sec{display:block}
+  .app.nomenu .sidebar:hover,.app.nomenu.menuopen .sidebar{width:var(--sidebar);box-shadow:var(--shadow-lg)}
+  .app.nomenu .sidebar:hover :is(.nav .sec,.brand>div:last-child,.nav-item>span,.user>div:last-child),
+  .app.nomenu.menuopen .sidebar :is(.nav .sec,.brand>div:last-child,.nav-item>span,.user>div:last-child){opacity:1}
+}
+@media (max-width:720px){#menuBtn{display:none}}
+.menu-back{position:fixed;inset:0;z-index:125;background:rgba(10,20,25,.35)}
 
 .main{display:flex;flex-direction:column;min-width:0;min-height:0}
 .topbar{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--surface);border-bottom:1px solid var(--line);flex-wrap:wrap}
@@ -93,9 +112,6 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .seg button+button{border-left:1px solid var(--line)}
 .seg button.on{background:var(--accent-soft);color:var(--accent)}
 .period{font-family:var(--font-d);font-weight:600;font-size:15px;min-width:150px;text-align:center}
-.legend{display:flex;gap:12px;align-items:center;font-size:12px;color:var(--ink-2);flex-wrap:wrap}
-@media (max-width:1400px){.hint-long{display:none}}
-.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 .search{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--surface-2);border-radius:9px;padding:0 10px;height:34px;min-width:150px}
 .search input{border:0;background:transparent;outline:0;width:100%}
 .search svg{width:15px;height:15px;stroke:var(--ink-3);fill:none;stroke-width:2.2;stroke-linecap:round}
@@ -107,6 +123,20 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 
 /* ---------- Tape chart ---------- */
 .chart-wrap{flex:1;min-height:0;display:flex;flex-direction:column;padding:14px 18px 18px}
+/* room scrollbars: the one above the chart (HScroll, it starts where the rooms start) and the chart's own,
+   both thick rounded pills that take the accent colour under the pointer */
+.hscroll{position:relative;flex:none;height:14px;margin:0 0 8px;border-radius:99px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line-2);cursor:pointer;touch-action:none}
+.hscroll[hidden]{display:none}
+.hs-thumb{position:absolute;top:2px;bottom:2px;left:0;border-radius:99px;cursor:grab;transition:background .15s;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--accent) 50%,var(--surface)),color-mix(in srgb,var(--accent) 70%,var(--surface)));
+  box-shadow:0 1px 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.hscroll:hover .hs-thumb,.hscroll.drag .hs-thumb{background:var(--accent)}
+.hscroll.drag .hs-thumb{cursor:grabbing}
+.chart::-webkit-scrollbar{width:12px;height:14px}
+.chart::-webkit-scrollbar-track{background:var(--surface-2);border-radius:99px}
+.chart::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--accent) 50%,var(--surface));border-radius:99px;border:3px solid var(--surface-2)}
+.chart::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+.chart::-webkit-scrollbar-corner{background:var(--surface)}
 .chart{flex:1;min-height:0;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);position:relative;display:grid;grid-template-columns:var(--datew) max-content;grid-template-rows:var(--headh) max-content;--datew:84px;--headh:70px;--colw:156px;--rowh:52px;--peekw:260px;--z:1;user-select:none}
 .corner{position:sticky;top:0;left:0;z-index:40;background:var(--surface);border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;justify-content:flex-end;padding:8px 10px;font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase}
 .rhead{position:sticky;top:0;z-index:30;background:var(--surface);border-bottom:2px solid var(--line);display:flex;height:var(--headh)}
@@ -612,20 +642,23 @@ table.t thead th.s-desc::after{content:" \25BC";font-size:9px}
 .floors .fchip small{color:var(--ink-3);font-weight:600}
 .floors .fchip button{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;color:var(--ink-3);font-size:12px}
 .floors .fchip button:hover{background:var(--surface-3);color:var(--ink)}
-.todaybar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 2px 10px}
-.todaybar .tb-d{font-family:var(--font-d);font-weight:600;font-size:14px;margin-right:4px}
 .tb-chip{display:inline-flex;align-items:center;gap:7px;padding:5px 11px 5px 9px;border:1px solid var(--line);border-radius:99px;background:var(--surface);font-weight:600;font-size:12.5px;color:var(--ink-2);cursor:pointer;transition:border-color .12s,color .12s}
 .tb-chip:hover{border-color:var(--accent);color:var(--ink)}
 .tb-chip b{font-family:var(--font-d);font-size:15px;color:var(--ink);font-variant-numeric:tabular-nums}
 .tb-chip.warn{border-color:color-mix(in srgb,var(--bad) 40%,var(--line))}
 .tb-chip.warn b{color:var(--bad)}
-.tb-chip i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.tb-chip.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
 /* Quick actions, alerts, focus flash */
 .res .qa{font-size:max(9px,calc(10.5px*var(--z)));font-weight:800;padding:2px 9px;border-radius:99px;color:#fff;background:var(--ok);margin-right:auto;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.2);cursor:pointer;line-height:1.5}
 .res .qa.leave{background:var(--accent)}
 .res .qa:hover{filter:brightness(1.1)}
 .res .ft:has(.qa) .src{display:none}
 .res .ft:has(.qa){justify-content:space-between}
+/* the resize strip (.rs) covers the bottom 9px. At rest "Cazează" sits low, over the strip, so it covers less of
+   the reservation and a tap on it is always a check-in; only while the grip shows (hover) does it rise clear of it */
+.res:not(.short):has(.qa){padding-bottom:max(26px,calc(34px*var(--z)))}
+.res:not(.short) .ft:has(.qa){z-index:3;transition:bottom .15s}
+.res:not(.short):hover .ft:has(.qa),.res.peek:not(.short) .ft:has(.qa){bottom:max(11px,calc(14px*var(--z)))}
 .res .ft .qa{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .res .al{position:absolute;top:3px;right:3px;width:max(11px,calc(16px*var(--z)));height:max(11px,calc(16px*var(--z)));border-radius:50%;background:var(--bad);color:#fff;font-size:max(8px,calc(10.5px*var(--z)));font-weight:900;display:grid;place-items:center;z-index:3;box-shadow:0 0 0 2px var(--surface)}
 .res .al.warn{background:var(--src-due);color:#3A2A00}
@@ -656,14 +689,12 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
 @media (hover:none){.res{touch-action:auto}}
 
 /* ---------- Calendar only (full screen) ---------- */
-.zoom2{display:none}
-.zoom2 button{padding:6px 13px;font-size:17px;line-height:1}
 .focusbar{display:none;position:fixed;right:12px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:95;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow-lg);align-items:center;overflow:hidden}
 .focusbar button{padding:10px 16px;font-size:20px;font-weight:800;line-height:1;color:var(--ink)}
 .focusbar span{min-width:50px;text-align:center;font-weight:800;font-size:13px;color:var(--ink-2)}
 .focusbar #focusExit{font-size:14px;border-left:1px solid var(--line);color:var(--accent)}
 .app.focus{grid-template-columns:1fr!important;grid-template-rows:1fr!important}
-.app.focus .sidebar,.app.focus #page-calendar .topbar,.app.focus #page-calendar .propbar,.app.focus #page-calendar .todaybar,.app.focus #page-calendar .legend{display:none!important}
+.app.focus .sidebar,.app.focus #page-calendar .topbar,.app.focus #page-calendar .propbar{display:none!important}
 .app.focus .focusbar{display:flex}
 .app.focus #page-calendar .chart-wrap{padding:4px}
 .app.focus #page-calendar .chart{grid-row:1/-1!important;margin:4px!important}
@@ -687,9 +718,8 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
   .propbar>*,.rt-quick>*{flex:none}
   .propbar .pb-l,.propbar>.btn.sm:first-child,.propbar>.btn.sm:first-child+.sep,.propbar .btn.ghost{display:none}
   .propbar .seg button{padding:5px 10px}
-  #page-calendar .todaybar,#page-calendar .legend{display:none}
-  .zoom2{display:inline-flex}
   #page-calendar .chart{grid-column:1/-1;grid-row:2/4;margin:6px 8px 8px}
+  #page-calendar .hscroll{display:none}   /* no height to spare sideways; the chart keeps its own bar */
   #newResBtn{position:fixed;right:16px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:90;width:52px;height:52px;border-radius:50%;padding:0;justify-content:center;gap:0;font-size:0;box-shadow:0 12px 26px -8px rgba(14,124,134,.7)}
   #newResBtn svg{width:24px;height:24px}
   /* rates: group buttons on one sliding line, the panel only when something is chosen */
@@ -714,7 +744,6 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
   .app .brand .name,.app .brand .sub,.app .nav-item span,.app .nav .sec,.app .user div,.app .badge,.app .soon{display:none}
   .app .nav-item{justify-content:center;padding:10px}
   .app .user{justify-content:center}
-  .hint-long{display:none}
 }
 @media (max-width:720px){
   .app{grid-template-columns:1fr;grid-template-rows:1fr auto}
@@ -746,14 +775,11 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
   #newResBtn{position:fixed;right:14px;bottom:calc(80px + env(safe-area-inset-bottom));z-index:90;width:56px;height:56px;border-radius:50%;padding:0;justify-content:center;gap:0;font-size:0;box-shadow:0 12px 26px -8px rgba(14,124,134,.7)}
   #newResBtn svg{width:26px;height:26px}
   .chart-wrap{padding:6px 8px 8px}
-  .propbar,.todaybar,.rt-quick,#page-calendar .legend{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:0 0 6px!important}
-  .propbar::-webkit-scrollbar,.todaybar::-webkit-scrollbar,.rt-quick::-webkit-scrollbar,#page-calendar .legend::-webkit-scrollbar{display:none}
-  .propbar>*,.todaybar>*,.rt-quick>*,#page-calendar .legend>*{flex:none}
+  .propbar,.rt-quick{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;gap:6px;padding:0 0 6px!important}
+  .propbar::-webkit-scrollbar,.rt-quick::-webkit-scrollbar{display:none}
+  .propbar>*,.rt-quick>*{flex:none}
   .propbar .pb-l,.propbar>.btn.sm:first-child,.propbar>.btn.sm:first-child+.sep,.propbar .btn.ghost{display:none}
   .propbar .seg button{padding:6px 10px}
-  #page-calendar .legend{font-size:11px}
-  #page-calendar .legend>span:nth-last-of-type(-n+2){display:none}
-  #zoomSeg{order:-1;margin-left:0!important}
   .rt-leg{white-space:nowrap}
   /* lists: each row becomes a small card, every value under its column name */
   table.t thead{display:none}
@@ -869,3 +895,33 @@ button.user:hover{background:var(--surface-3)}
 .inv-t a{color:inherit;text-decoration:none;border-bottom:1px dotted var(--ink-3)}
 @media (max-width:640px){.fgrid,.fgrid.three{grid-template-columns:1fr}}
 @media print{.frow{border-color:#777}.inv-t a{border:0}.invoice.sheet.wide{max-width:none}}
+/* ---------- Reservation list: tabs, filters, day headings ---------- */
+.seg.segtabs button{color:var(--ink);font-weight:800;font-size:12.5px;padding:8px 13px}
+.seg button b{margin-left:5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink-3)}
+.seg button.on b{color:var(--accent)}
+.propbar select.fsel{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 9px;font-weight:700;font-size:12px;color:var(--ink-2);cursor:pointer}
+.propbar select.fsel:hover{border-color:var(--ink-3);color:var(--ink)}
+/* several properties: a name and its floors are one piece that wraps as a whole, so a name never ends a line
+   while its floors start the next */
+.propbar .pb-fg{display:flex;align-items:center;gap:8px;flex:none}
+.propbar .pb-more{margin-left:auto}
+/* only where the bar wraps: a piece wider than the whole bar scrolls its buttons instead of breaking apart.
+   The one-line strips (phones, short windows) scroll the whole bar, so there the buttons must keep their width. */
+@media (min-width:721px) and (min-height:521px){
+  .propbar .pb-fg{max-width:100%}
+  .propbar .pb-fg .seg{min-width:0;overflow-x:auto;scrollbar-width:none}
+}
+/* a day heading between the rows it introduces. The cell must stay a table cell, or colSpan stops working and it
+   covers only the first column; the flex row lives inside it. On phones the first-cell rule already makes it full width. */
+table.t tr.grp{cursor:default}
+table.t tr.grp:hover td{background:var(--surface-2)}
+table.t tr.grp td{padding:8px 14px;background:var(--surface-2);border-top:2px solid var(--line);border-bottom:1px solid var(--line-2);
+  font-family:var(--font-d);font-weight:600;font-size:13.5px;color:var(--ink)}
+table.t tr.grp .grp-h{display:flex;align-items:center;gap:8px}
+table.t tr.grp .grp-h .late{color:var(--bad)}
+table.t tr.grp td .cnt{margin-left:auto;font-family:var(--font);font-size:12px;color:var(--ink-3);font-weight:700}
+table.t tbody tr.grp:first-child td{border-top:0}
+@media (max-width:720px){table.t tr.grp{padding:0;border-bottom:0}}
+/* something needs attention on this booking (late arrival, leaving with a balance) */
+.rowal{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--bad);margin-left:7px;vertical-align:1px}
+.rowal.warn{background:var(--warn)}

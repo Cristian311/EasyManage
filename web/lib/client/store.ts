@@ -40,7 +40,7 @@ interface Store {
   menu: MenuState | null;
   toasts: Toast[];
   focus: boolean;
-  collapsed: boolean;
+  menuOpen: boolean;           // the menu held open by the button, on pages where it is only a rail (the calendar)
   addMode: string | null;      // reservation that is getting extra rooms drawn onto it
   flashId: string | null;
   fin: Fin;
@@ -69,7 +69,7 @@ interface Store {
   toast(msg: string, kind?: Toast['kind'], action?: Toast['action'], ms?: number): number;
   dismiss(id: number): void;
   setFocus(on: boolean): void;
-  setCollapsed(on: boolean): void;
+  setMenuOpen(on: boolean): void;
   setAddMode(id: string | null): void;
   setFin(p: Partial<Fin>): void;
   createReservation(x: NewReservation): Promise<{ error: string | null; id?: string }>;
@@ -107,7 +107,7 @@ export const useStore = create<Store>((set, get) => {
     menu: null,
     toasts: [],
     focus: false,
-    collapsed: false,
+    menuOpen: false,
     addMode: null,
     flashId: null,
     fin: { month: todayIso().slice(0, 7), prop: 'all', cur: 'RON', rate: 5.09 },
@@ -171,7 +171,7 @@ export const useStore = create<Store>((set, get) => {
     },
     dismiss(id) { set(s => ({ toasts: s.toasts.filter(t => t.id !== id) })); },
     setFocus(on) { set({ focus: on }); },
-    setCollapsed(on) { set({ collapsed: on }); },
+    setMenuOpen(on) { set({ menuOpen: on }); },
     setAddMode(id) { set({ addMode: id, drawerId: id ? null : get().drawerId }); },
     setFin(p) { const fin = { ...get().fin, ...p }; set({ fin }); try { localStorage.setItem(FIN_KEY, JSON.stringify({ cur: fin.cur, rate: fin.rate })); } catch {} },
 

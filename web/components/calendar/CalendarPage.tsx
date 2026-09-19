@@ -3,15 +3,14 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useData, useStore } from '@/lib/client/store';
 import { addDays, todayIso } from '@/domain/dates';
 import { propById, floorById } from '@/domain/rules';
-import { IconFull, IconJump, IconNext, IconPlus, IconPrev, IconSearch } from '../Icons';
+import { IconFull, IconJump, IconMenu, IconNext, IconPlus, IconPrev, IconSearch } from '../Icons';
 import Chart from './Chart';
 import PropBar from './PropBar';
-import TodayBar from './TodayBar';
 
 export default function CalendarPage() {
   const data = useData();
   const view = useStore(s => s.view), setView = useStore(s => s.setView), jumpTo = useStore(s => s.jumpTo), openModal = useStore(s => s.openModal);
-  const focus = useStore(s => s.focus), setFocus = useStore(s => s.setFocus);
+  const focus = useStore(s => s.focus), setFocus = useStore(s => s.setFocus), setMenuOpen = useStore(s => s.setMenuOpen);
   const [period, setPeriod] = useState('');
   const onPeriod = useCallback((p: string) => setPeriod(p), []);
   const jumpRef = useRef<HTMLInputElement>(null);
@@ -49,6 +48,7 @@ export default function CalendarPage() {
   return (
     <section className="page on" id="page-calendar">
       <div className="topbar">
+        <button className="btn icon ghost" id="menuBtn" onClick={() => setMenuOpen(true)} title="Meniu" aria-label="Meniu"><IconMenu /></button>
         <h1>Calendar <small>{sub}</small></h1>
         <div className="spacer" />
         <div className="search"><IconSearch /><input placeholder="Caută oaspete…" value={view.q} onChange={e => setView({ q: e.target.value })} /></div>
@@ -58,29 +58,16 @@ export default function CalendarPage() {
         <label className="period num" onClick={pickDate} title="Click: sari la o dată" style={{ cursor: 'pointer' }}>{period}</label>
         <button className="btn icon" onClick={pickDate} title="Sari la o dată"><IconJump /></button>
         <input type="date" ref={jumpRef} style={{ width: 0, height: 0, opacity: 0, position: 'absolute', pointerEvents: 'none' }} onChange={e => { if (e.target.value) jumpTo(e.target.value); }} />
-        <div className="seg zoom2" title="Zoom calendar"><button onClick={() => setZoom(view.zoom - 0.1)} aria-label="Micșorează">−</button><button onClick={() => setZoom(view.zoom + 0.1)} aria-label="Mărește">+</button></div>
+        <div className="seg" id="zoomSeg" title="Zoom (Ctrl + rotiță sau tastele + / −)">
+          <button onClick={() => setZoom(view.zoom - 0.1)} aria-label="Micșorează" style={{ padding: '6px 10px' }}>−</button>
+          <button className="num" onClick={() => setZoom(1)} style={{ minWidth: 46, padding: '6px 4px' }}>{zoomLbl}</button>
+          <button onClick={() => setZoom(view.zoom + 0.1)} aria-label="Mărește" style={{ padding: '6px 10px' }}>+</button>
+        </div>
         <button className="btn icon" id="focusBtn" onClick={enterFocus} title="Ecran complet: doar calendarul" aria-label="Ecran complet"><IconFull /></button>
         <button className="btn primary" id="newResBtn" onClick={() => openModal()}><IconPlus />Rezervare nouă <span className="kbd kbd-hint" style={{ color: 'rgba(255,255,255,.8)', borderColor: 'rgba(255,255,255,.4)', background: 'transparent' }}>N</span></button>
       </div>
       <div className="chart-wrap">
         <PropBar />
-        <TodayBar />
-        <div className="legend" style={{ padding: '0 2px 10px' }}>
-          <span><i style={{ background: 'var(--src-booking)' }} />Booking.com</span>
-          <span><i style={{ background: 'var(--src-travelminit)' }} />Travelminit</span>
-          <span><i style={{ background: 'var(--src-airbnb)' }} />Airbnb</span>
-          <span><i style={{ background: 'var(--src-direct)' }} />Direct / telefon</span>
-          <span><i style={{ background: 'var(--src-due)' }} />De cazat !</span>
-          <span><i style={{ background: 'transparent', outline: '1.5px dashed var(--ink-3)', outlineOffset: '-1.5px' }} />În așteptare</span>
-          <span><i style={{ background: 'repeating-linear-gradient(135deg,transparent 0 2px,var(--st-cancel) 2px 4px)' }} />Anulată</span>
-          <span style={{ fontWeight: 700, color: 'var(--ink-2)' }}>1 rând = 1 noapte (data sosirii)</span>
-          <span style={{ marginLeft: 'auto', color: 'var(--ink-3)' }} className="hint-long">Derulează pentru alte zile · trage blocul ca să-l muți · marginea de jos prelungește · trage pe celule goale pentru o rezervare nouă</span>
-          <div className="seg" id="zoomSeg" title="Zoom (Ctrl + rotiță sau tastele + / −)" style={{ marginLeft: 6 }}>
-            <button onClick={() => setZoom(view.zoom - 0.1)} aria-label="Micșorează" style={{ padding: '4px 9px' }}>−</button>
-            <button className="num" onClick={() => setZoom(1)} style={{ minWidth: 48, padding: '4px 6px' }}>{zoomLbl}</button>
-            <button onClick={() => setZoom(view.zoom + 0.1)} aria-label="Mărește" style={{ padding: '4px 9px' }}>+</button>
-          </div>
-        </div>
         <Chart onPeriod={onPeriod} />
         <div className="focusbar" id="focusBar">
           <button onClick={() => setZoom(view.zoom - 0.1)} aria-label="Micșorează">−</button><span className="num">{zoomLbl}</span>

@@ -2,7 +2,7 @@
 // The tape chart: nights down, rooms across. Drag a block to move it, drag its bottom edge to change the
 // departure, drag over empty cells to book. Click a block to expand it, click again for the details,
 // right-click for actions. On a phone: tap for details, hold to pick a block up or to open the actions.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as RPointerEvent } from 'react';
 import { useData, useStore } from '@/lib/client/store';
 import { useMedia } from '@/lib/client/useMedia';
 import { doQuick, finishAddRooms, offerMerge, openBlockMenu, openRoomMenu } from '@/lib/client/actions';
@@ -10,6 +10,7 @@ import { addDays, diffDays, DOWS, fmtD, fmtDL, fromIso, MONTHS, money, todayIso 
 import { SRC, SRC_SHORT, STATUS } from '@/domain/labels';
 import { addOutcome, columns, conflictAny, floorById, guestById, orderedTops, paid, payStatus, propById, rateFor, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
 import { layoutBlocks, type Block } from './layout';
+import HScroll from './HScroll';
 
 type Cand = { roomIds: string[]; checkIn: string; checkOut: string };
 type ResDrag = { mode: 'move' | 'resize'; id: string; x0: number; y0: number; rooms0: string[]; in0: string; out0: string; moved: boolean; touch: boolean; armed: boolean; cand?: Cand; valid: boolean };
@@ -21,7 +22,8 @@ const EASE = 'cubic-bezier(.2,.8,.2,1)';
 const D = (s: string) => { const d = fromIso(s); return `${DOWS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`; };
 const nn = (n: number) => `${n} ${n === 1 ? 'noapte' : 'nopți'}`;
 
-export default function Chart({ onPeriod }: { onPeriod: (label: string) => void }) {
+// memo: the page redraws when the period label changes, the chart itself does not need to
+export default memo(function Chart({ onPeriod }: { onPeriod: (label: string) => void }) {
   const data = useData();
   const view = useStore(s => s.view), setView = useStore(s => s.setView);
   const openDrawer = useStore(s => s.openDrawer), openModal = useStore(s => s.openModal), toast = useStore(s => s.toast), patch = useStore(s => s.patchReservation);
@@ -78,7 +80,9 @@ export default function Chart({ onPeriod }: { onPeriod: (label: string) => void 
   const [peek, setPeek] = useState<Peek | null>(null);
   const peekTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const startPeek = (b: Block) => { clearTimeout(peekTimer.current); setPeek({ id: b.r.id, phase: 'measure', w0: b.span * COLW - 8, h0: b.h - 4, w: 0, h: 0, ml: 0, mt: 0 }); };
-  const closePeek = () => { clearTimeout(peekTimer.current); setPeek(p => (p && p.phase !== 'closing' ? { ...p, phase: 'closing' } : p)); peekTimer.current = setTimeout(() => setPeek(null), 300); };
+  // stable callbacks, so the memoised blocks are not all drawn again on every render of the chart
+  const closePeek = useCallback(() => { clearTimeout(peekTimer.current); setPeek(p => (p && p.phase !== 'closing' ? { ...p, phase: 'closing' } : p)); peekTimer.current = setTimeout(() => setPeek(null), 300); }, []);
+  const onPeekMeasured = useCallback((id: string, g: { w: number; h: number; ml: number; mt: number }) => setPeek(p => (p && p.id === id ? { ...p, ...g, phase: 'open' } : p)), []);
   const dropPeek = () => { clearTimeout(peekTimer.current); setPeek(null); };
   useEffect(() => { if (peek && !blocks.some(b => b.r.id === peek.id)) dropPeek(); }, [blocks]);   // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -121,7 +125,9 @@ export default function Chart({ onPeriod }: { onPeriod: (label: string) => void 
       if (d.mode === 'select') {
         d.r1 = Math.max(0, Math.min(nDays - 1, Math.floor((e.clientY - rect.top) / ROWH)));
         d.c1 = Math.max(0, Math.min(cols.length - 1, Math.floor((e.clientX - rect.left) / COLW)));
-        d.moved = true; setSel({ c0: d.c0, c1: d.c1, r0: d.r0, r1: d.r1 }); return;
+        d.moved = true;
+        setSel(s => (s && s.c0 === d.c0 && s.c1 === d.c1 && s.r0 === d.r0 && s.r1 === d.r1 ? s : { c0: d.c0, c1: d.c1, r0: d.r0, r1: d.r1 }));
+        return;
       }
       const dx = e.clientX - d.x0, dy = e.clientY - d.y0;
       if (!d.moved && Math.abs(dx) < 4 && Math.abs(dy) < 4) return;
@@ -146,7 +152,11 @@ export default function Chart({ onPeriod }: { onPeriod: (label: string) => void 
       d.valid = cand.roomIds.every(id => roomById(data, id)?.active) && !conflictAny(data, cand.roomIds, cand.checkIn, cand.checkOut, d.id);
       const b = blocks.find(x => x.r.id === d.id) as Block;
       const l = rect.left + b.ci * COLW + 4 + pdx, t = rect.top + b.top + 2 + pdy;
-      setPreview({ id: d.id, dx: pdx, dy: pdy, h: ph, valid: d.valid, cand, rect: { l, t, r: l + b.span * COLW - 8, b: t + (ph ?? b.h - 4) } });
+      // the block snaps to whole cells, so most pointer moves change nothing: keep the same preview and skip the render
+      const valid = d.valid;
+      setPreview(p => (p && p.id === d.id && p.dx === pdx && p.dy === pdy && p.h === ph && p.valid === valid && p.rect.l === l && p.rect.t === t
+        && p.cand.checkIn === cand.checkIn && p.cand.checkOut === cand.checkOut && p.cand.roomIds.join() === cand.roomIds.join())
+        ? p : { id: d.id, dx: pdx, dy: pdy, h: ph, valid, cand, rect: { l, t, r: l + b.span * COLW - 8, b: t + (ph ?? b.h - 4) } });
     };
     const up = (e: PointerEvent) => {
       clearTimeout(lpTimer.current);
@@ -245,6 +255,7 @@ export default function Chart({ onPeriod }: { onPeriod: (label: string) => void 
 
   return (
     <>
+      <HScroll target={chartRef} inset={DATEW + 1} />
       <div className={`chart ${z < 1 ? 'zoomed-out' : ''} ${ROWH < 38 ? 'tight' : ''} ${addMode ? 'adding' : ''}`} id="chart" ref={chartRef} style={style} onScroll={onScroll}>
         <div className="corner">Zi ↓ <span className="c-room">Cameră →</span></div>
         <div className="rhead">
@@ -289,7 +300,7 @@ export default function Chart({ onPeriod }: { onPeriod: (label: string) => void 
           {sel && <SelBox sel={sel} />}
           {blocks.map(b => <BlockView key={b.key} b={b} COLW={COLW} today={today} q={q} lifted={lifted === b.r.id} flash={flashId === b.r.id} addingSrc={addMode === b.r.id}
             pv={preview && preview.id === b.r.id ? preview : null} peek={peek && peek.id === b.r.id ? peek : null} chartRef={chartRef}
-            onPeekMeasured={g => setPeek(p => (p && p.id === b.r.id ? { ...p, ...g, phase: 'open' } : p))} onPeekLeave={closePeek} />)}
+            onPeekMeasured={onPeekMeasured} onPeekLeave={closePeek} />)}
           {bridges.map(x => <div key={x.key} className={`bridge ${x.past ? 'past' : ''}`} style={{ '--c': x.color, left: x.left, width: 10, top: x.top, height: x.height } as CSSProperties} />)}
         </div>
       </div>
@@ -312,11 +323,12 @@ export default function Chart({ onPeriod }: { onPeriod: (label: string) => void 
     return <div className={`selbox ${merge && !bad ? 'merge' : ''}`} style={{ display: 'block', left: c0 * COLW + 3, top: a * ROWH + 2, width: (c1 - c0 + 1) * COLW - 6, height: (b - a + 1) * ROWH, ...(bad ? { borderColor: 'var(--bad)', background: 'var(--bad-soft)' } : {}) }}>
       <span className="lab">{label}</span></div>;
   }
-}
+});
 
-function BlockView({ b, COLW, today, q, lifted, flash, addingSrc, pv, peek, chartRef, onPeekMeasured, onPeekLeave }: {
+// memo: while scrolling or dragging, only the blocks whose props change are drawn again, not every block on the chart
+const BlockView = memo(function BlockView({ b, COLW, today, q, lifted, flash, addingSrc, pv, peek, chartRef, onPeekMeasured, onPeekLeave }: {
   b: Block; COLW: number; today: string; q: string; lifted: boolean; flash: boolean; addingSrc: boolean; pv: Preview | null; peek: Peek | null;
-  chartRef: React.RefObject<HTMLDivElement | null>; onPeekMeasured: (g: { w: number; h: number; ml: number; mt: number }) => void; onPeekLeave: () => void;
+  chartRef: React.RefObject<HTMLDivElement | null>; onPeekMeasured: (id: string, g: { w: number; h: number; ml: number; mt: number }) => void; onPeekLeave: () => void;
 }) {
   const data = useData();
   const { r } = b, n = diffDays(r.checkIn, r.checkOut), rem = remaining(r), ps = payStatus(r);
@@ -333,7 +345,7 @@ function BlockView({ b, COLW, today, q, lifted, flash, addingSrc, pv, peek, char
     const cr = chartRef.current!.getBoundingClientRect(), er = el.getBoundingClientRect();
     const ml = er.left + w1 > cr.right - 12 ? -(w1 - peek.w0) : 0, mt = er.top + h1 > cr.bottom - 12 ? -(h1 - peek.h0) : 0;
     el.style.width = w1 + 'px'; el.style.height = h1 + 'px'; el.style.marginLeft = ml ? ml + 'px' : ''; el.style.marginTop = mt ? mt + 'px' : '';
-    onPeekMeasured({ w: w1, h: h1, ml, mt });
+    onPeekMeasured(r.id, { w: w1, h: h1, ml, mt });
   }, [peek?.phase]);   // eslint-disable-line react-hooks/exhaustive-deps
 
   const cls = ['res', r.status, r.checkOut <= today ? 'past' : '', ['short', 't1', 't2', 't3', ''][b.tier], b.span > 1 ? 'multi' : '',
@@ -366,7 +378,7 @@ function BlockView({ b, COLW, today, q, lifted, flash, addingSrc, pv, peek, char
       <div className="rs" />
     </div>
   );
-}
+});
 
 // everything the receptionist needs at a glance, shown inside the expanded block
 function PeekContent({ b }: { b: Block }) {

@@ -19,21 +19,30 @@ const BARE = ['/intrare', '/start'];
 export default function AppShell({ children }: { children: ReactNode }) {
   const ready = useStore(s => !!s.data), loadError = useStore(s => s.loadError), load = useStore(s => s.load);
   const auth = useStore(s => s.auth);
-  const focus = useStore(s => s.focus), collapsed = useStore(s => s.collapsed), addMode = useStore(s => s.addMode);
+  const focus = useStore(s => s.focus), addMode = useStore(s => s.addMode);
+  const menuOpen = useStore(s => s.menuOpen), setMenuOpen = useStore(s => s.setMenuOpen);
   const path = usePathname(), router = useRouter();
   const bare = BARE.includes(path);
+  // the calendar needs every pixel, so there the menu slides in over the page instead of holding a column
+  const slideMenu = path.startsWith('/calendar');
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
     const go = auth === 'login' ? '/intrare' : auth === 'setup' ? '/start' : auth === 'ok' && bare ? '/calendar' : null;
     if (go && go !== path) router.replace(go);
   }, [auth, bare, path, router]);
+  useEffect(() => { if (!slideMenu) setMenuOpen(false); }, [slideMenu, setMenuOpen]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false); };
+    window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k);
+  }, [menuOpen, setMenuOpen]);
 
   if (bare) return <><div className="auth-page">{children}</div><Toasts /></>;
 
   return (
     <>
-      <div className={`app ${focus ? 'focus' : ''} ${collapsed ? 'collapsed' : ''} ${addMode ? 'adding' : ''}`} id="app">
+      <div className={`app ${focus ? 'focus' : ''} ${addMode ? 'adding' : ''} ${slideMenu ? 'nomenu' : ''} ${slideMenu && menuOpen ? 'menuopen' : ''}`} id="app">
         <Sidebar />
         <div className="main">
           {ready ? children : (
@@ -45,6 +54,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           )}
         </div>
       </div>
+      {slideMenu && menuOpen && <div className="menu-back" onClick={() => setMenuOpen(false)} />}
       {ready && <><Drawer /><ResModal /><RoomModal /><ExpenseModal /><InvoiceModal /><GuestModal /><Menu /></>}
       <Toasts />
     </>
