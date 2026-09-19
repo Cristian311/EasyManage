@@ -17,7 +17,7 @@ const NAV = [
   { href: '/camere', label: 'Camere', Icon: IconRooms },
   { href: '/tarife', label: 'Tarife', Icon: IconRates },
   { href: '/financiar', label: 'Financiar', Icon: IconFinance, owner: true },
-  { href: '/facturi', label: 'Facturi', Icon: IconInvoice, soon: true },
+  { href: '/facturi', label: 'Facturi', Icon: IconInvoice, owner: true },
   { href: '/setari', label: 'Setări', Icon: IconSettings, owner: true },
 ] as const;
 

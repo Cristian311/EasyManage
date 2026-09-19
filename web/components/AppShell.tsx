@@ -9,6 +9,7 @@ import Drawer from './Drawer';
 import ResModal from './ResModal';
 import RoomModal from './RoomModal';
 import ExpenseModal from './ExpenseModal';
+import InvoiceModal from './InvoiceModal';
 import Menu from './Menu';
 import Toasts from './Toasts';
 
@@ -43,7 +44,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           )}
         </div>
       </div>
-      {ready && <><Drawer /><ResModal /><RoomModal /><ExpenseModal /><Menu /></>}
+      {ready && <><Drawer /><ResModal /><RoomModal /><ExpenseModal /><InvoiceModal /><Menu /></>}
       <Toasts />
     </>
   );

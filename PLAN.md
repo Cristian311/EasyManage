@@ -14,7 +14,9 @@ stau separat, în [IDEI-NOI.md](IDEI-NOI.md).
 **Scurt, dacă ai timp doar de trei lucruri:** fazele 1, 2 și 4. Primele două fac din program ceva ce familia
 folosește pe bune. Fazele 5 și 8 sunt cele pentru care o pensiune plătește lunar.
 
-**Unde suntem:** faza 1a e gata (conturi și roluri). Urmează faza 2, publicarea pe un server cu copii de siguranță.
+**Unde suntem:** sunt gata faza 1a (conturi și roluri) și faza 4 (facturi). Faza 2, publicarea, așteaptă un
+server. Până atunci se pot face, fără server: copia de siguranță pe calculator, fișa de cazare (faza 7),
+confirmarea pe WhatsApp (faza 6) și exportul în Excel (faza 3).
 
 ---
 
@@ -87,22 +89,32 @@ contabila nu poate lucra.
 
 ---
 
-## Faza 4 — Facturi
+## Faza 4 — Facturi ✅ gata
 
-Pagina „Facturi” e goală acum.
+**Ce vede utilizatorul.** În Setări, datele pensiunii așa cum apar pe factură: nume, CUI, Reg. Com., adresă,
+IBAN, bancă, seria facturilor, termenul de plată, mențiuni, și dacă e plătitor de TVA (cu cota scrisă de el).
+În sertarul unei rezervări, butonul **Emite factură** deschide factura deja completată — clientul, o linie
+„Cazare 101, 3 nopți (…)” cu totalul rezervării — pe care o poți corecta: alt client (o firmă, cu CUI), linii
+în plus (mic dejun, parcare), altă dată. Pagina **Facturi** e registrul: căutare după număr, client sau CUI,
+totalul pe fiecare lună, și butonul **Stornează**. Factura deschisă are **Tipărește sau salvează PDF**.
 
-**Ce vede utilizatorul.** În Setări, datele firmei (nume, CUI, adresă, cont). Pe o rezervare, butonul
-„Emite factură”, care deschide factura completată, cu serie și număr. Butoanele „Descarcă PDF” și „Stornează”.
-Pagina Facturi arată lista, cu căutare și cu totalul pe lună.
+**Cum e făcut.** Migrarea `003_facturi.sql`: `settings`, `invoice_series`, `invoices`, `invoice_lines`.
+- *Fără goluri în numerotare:* contorul seriei se ia cu `FOR UPDATE` în aceeași tranzacție care scrie factura,
+  deci o emitere eșuată nu consumă niciun număr, iar două emiteri în același moment primesc numere diferite.
+- *O factură emisă nu se mai schimbă:* datele pensiunii și ale clientului sunt copiate în factură la emitere.
+  Dacă îți muți sediul, facturile vechi rămân cu sediul vechi. Facturile nu se șterg; se stornează, adică se
+  emite una nouă cu aceleași sume în minus, iar rezervarea rămâne liberă pentru o factură corectă.
+- *PDF-ul e tipărirea browserului* („Salvare ca PDF”), cu o foaie de stil pentru tipar. Fără nicio bibliotecă
+  în plus, iar diacriticele și fontul ies exact ca pe ecran.
+- Prețurile scrise pe factură sunt cu TVA inclus, cum e obiceiul la cazare; TVA-ul se scoate din ele.
+- Numai proprietarul vede facturile și datele firmei; recepția primește 403.
 
-**Baza de date.** `invoice_series` (serie, ultimul număr), `invoices`, `invoice_lines`. Numerotarea nu are voie
-să aibă goluri, deci numărul se ia într-o tranzacție, cu `SELECT ... FOR UPDATE`.
+**Ce nu face încă.** Nu trimite factura la ANAF (faza 8) și nu o trimite pe email (faza 6). Nu are chitanțe.
+Cota de TVA nu e pusă de program: s-a schimbat de mai multe ori în ultimii ani, deci o scrie proprietarul,
+după ce întreabă contabila.
 
-**Decizie.** Facem singuri factura sau folosim un serviciu românesc (Oblio, SmartBill) prin API-ul lor. Serviciul
-costă câțiva euro pe lună, dar rezolvă și faza 8. Recomand să cerem prețurile lor înainte de a scrie cod.
-
-**Verificare.** Emitere, stornare și o a doua emitere: numerele ies 1, 2, 3, fără goluri, chiar dacă două facturi
-se emit în același moment.
+**Verificat cu** 20 de teste (numere la rând, emitere eșuată care nu consumă număr, contor separat pe serie,
+copia datelor pensiunii, socoteala cu și fără TVA, stornare o singură dată) și un test prin server de 20 de pași.
 
 ---
 

@@ -806,3 +806,54 @@ button.user:hover{background:var(--surface-3)}
 .urole{font-size:11.5px;font-weight:700;color:var(--ink-2);background:var(--surface-3);border-radius:999px;padding:2px 9px;white-space:nowrap}
 .urole.owner{background:var(--accent-soft);color:var(--accent-2)}
 .uoff{color:var(--ink-3)}
+
+/* ---------- Facturi ---------- */
+/* o linie de factură: descrierea pe tot rândul, dedesubt cantitatea, unitatea, prețul și cât face */
+.invline{display:grid;grid-template-columns:100px 90px 150px 1fr 34px;gap:8px;align-items:end;margin-bottom:12px;
+  padding-bottom:12px;border-bottom:1px dashed var(--line-2)}
+.invline .wide{grid-column:1/-1}
+.invline .linesum{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;padding-bottom:9px;color:var(--ink-2);white-space:nowrap}
+.invline .btn.icon{margin-bottom:2px}
+@media (max-width:640px){.invline{grid-template-columns:1fr 1fr 34px}.invline .linesum{grid-column:1/3;text-align:left}}
+
+.invoice{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);
+  padding:30px 34px;max-width:860px;margin:0 auto;color:var(--ink)}
+.invoice header{display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;padding-bottom:18px;border-bottom:2px solid var(--line)}
+.invoice header>div{font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.invoice .big{font-family:var(--font-d);font-size:19px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.invoice .meta{text-align:right}
+.invoice .meta .title{font-family:var(--font-d);font-size:17px;font-weight:600;color:var(--ink)}
+.invoice .meta .no{font-family:var(--font-d);font-size:25px;font-weight:700;color:var(--accent);letter-spacing:.01em;margin:2px 0 6px}
+.invoice .parties{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin:20px 0 22px}
+.invoice .parties>div{background:var(--surface-2);border:1px solid var(--line-2);border-radius:10px;padding:12px 14px;font-size:12.5px;color:var(--ink-2);line-height:1.6}
+.invoice .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;font-weight:800;color:var(--ink-3);margin-bottom:4px}
+.invoice .nm{font-weight:700;font-size:14px;color:var(--ink)}
+.inv-t{width:100%;border-collapse:collapse;font-size:13px}
+.inv-t th{text-align:left;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-3);font-weight:800;
+  padding:8px 8px;border-bottom:1px solid var(--line)}
+.inv-t td{padding:9px 8px;border-bottom:1px solid var(--line-2);vertical-align:top}
+.inv-t .r{text-align:right;font-variant-numeric:tabular-nums}
+.inv-t .n{width:28px;color:var(--ink-3)}
+.invoice .sums{margin:16px 0 0;margin-left:auto;width:min(320px,100%);font-size:13px}
+.invoice .sums>div{display:flex;justify-content:space-between;gap:16px;padding:6px 8px;color:var(--ink-2)}
+.invoice .sums b{font-variant-numeric:tabular-nums;color:var(--ink)}
+.invoice .sums .tot{border-top:2px solid var(--line);margin-top:4px;padding-top:9px;font-family:var(--font-d);font-size:16px}
+.invoice .sums .tot b{font-size:19px;font-weight:700;color:var(--accent)}
+.invoice .note{margin-top:20px;background:var(--surface-2);border:1px solid var(--line-2);border-radius:9px;padding:10px 13px;font-size:12.5px;color:var(--ink-2)}
+.invoice .sign{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:40px}
+.invoice .sign .line{border-bottom:1px solid var(--line);height:34px}
+
+@media print{
+  html,body{overflow:visible;background:#fff}
+  .sidebar,.drawer,.topbar,.noprint,.toasts,.overlay,.ctx{display:none!important}
+  .app,.main,.page,.scroll{display:block!important;overflow:visible!important;height:auto!important;padding:0!important;margin:0!important}
+  .invoice{border:0;box-shadow:none;border-radius:0;max-width:none;padding:0;color:#000}
+  .invoice .parties>div,.invoice .note{background:#fff;border-color:#999}
+  .invoice .meta .no,.invoice .sums .tot b{color:#000}
+  .inv-t th,.inv-t td,.invoice header{border-color:#999}
+  .inv-t tr{break-inside:avoid}
+  @page{margin:16mm}
+}
+/* linkurile din tabele (numărul facturii) poartă culoarea aplicației, nu albastrul browserului */
+.t a{color:var(--accent);text-decoration:none}
+.t a:hover{text-decoration:underline}

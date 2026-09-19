@@ -33,8 +33,11 @@ export async function freshDb(): Promise<Db> {
   };
 }
 
-// în ordinea în care cheile străine permit ștergerea; unitățile înaintea camerelor din care fac parte
-const CLEAR = ['DELETE FROM payments', 'DELETE FROM room_nights', 'DELETE FROM reservation_rooms', 'DELETE FROM reservations',
+// în ordinea în care cheile străine permit ștergerea: stornările înaintea facturilor pe care le
+// anulează, unitățile înaintea camerelor din care fac parte
+const CLEAR = ['DELETE FROM invoice_lines', 'DELETE FROM invoices WHERE storno_of IS NOT NULL', 'DELETE FROM invoices',
+  'DELETE FROM invoice_series', 'DELETE FROM settings',
+  'DELETE FROM payments', 'DELETE FROM room_nights', 'DELETE FROM reservation_rooms', 'DELETE FROM reservations',
   'DELETE FROM rates', 'DELETE FROM expenses', 'DELETE FROM guests', 'DELETE FROM rooms WHERE parent_id IS NOT NULL',
   'DELETE FROM rooms', 'DELETE FROM floors', 'DELETE FROM properties'];
 

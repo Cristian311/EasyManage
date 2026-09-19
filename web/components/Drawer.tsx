@@ -14,6 +14,7 @@ export default function Drawer() {
   const view = useStore(s => s.view);
   const id = useStore(s => s.drawerId), close = useStore(s => s.closeDrawer), patch = useStore(s => s.patchReservation);
   const addPayment = useStore(s => s.addPayment), openModal = useStore(s => s.openModal), del = useStore(s => s.deleteReservation), toast = useStore(s => s.toast);
+  const me = useStore(s => s.me), openInvoice = useStore(s => s.openInvoice);
   const r = id ? data.reservations.find(x => x.id === id) : undefined;
   const [amt, setAmt] = useState(''), [method, setMethod] = useState<Method>('cash'), [inv, setInv] = useState('');
   const rem = r ? remaining(r) : 0;
@@ -90,12 +91,23 @@ export default function Drawer() {
           )}
         </div>
         {r.notes && <div><div className="sec-t">Observații</div><div className="notes" style={{ marginTop: 8 }}>{r.notes}</div></div>}
-        <div><div className="sec-t">Factură</div>
-          <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
-            <input placeholder="Număr factură (ex: VS-2026-0142)" value={inv} onChange={e => setInv(e.target.value)} style={{ ...field, flex: 1 }} />
-            <button className="btn sm" onClick={saveInvoice}>{r.invoiceNo ? 'Actualizează' : 'Marchează facturat'}</button>
-          </div>
-        </div>
+        {me?.role === 'owner' && <div><div className="sec-t">Factură</div>
+          {r.invoiceNo ? (
+            <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+              <b style={{ flex: 1 }}>{r.invoiceNo}{r.invoiceDate ? ` · ${fmtD(r.invoiceDate)}` : ''}</b>
+              <a className="btn sm" href="/facturi">Vezi în registru</a>
+            </div>
+          ) : (
+            <div style={{ marginTop: 8, display: 'flex', gap: 6, alignItems: 'center' }}>
+              <button className="btn primary sm" onClick={() => openInvoice(r.id)}>Emite factură</button>
+              <span style={{ color: 'var(--ink-3)', fontSize: 12 }}>sau scrie numărul uneia făcute în alt program:</span>
+            </div>
+          )}
+          {!r.invoiceNo && <div style={{ marginTop: 6, display: 'flex', gap: 6, alignItems: 'center' }}>
+            <input placeholder="ex: VS-2026-0142" value={inv} onChange={e => setInv(e.target.value)} style={{ ...field, flex: 1 }} />
+            <button className="btn sm" onClick={saveInvoice}>Marchează facturat</button>
+          </div>}
+        </div>}
         {g && <div><div className="sec-t">Oaspete</div>
           <div className="hist">
             <div className="lead">{past.length ? `A mai stat de ${past.length} ${past.length === 1 ? 'dată' : 'ori'} · ultima dată în ${roomLabel(data, past[0])}, ${fmtD(past[0].checkIn)}` : 'Prima ședere la noi'}

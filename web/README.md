@@ -58,6 +58,24 @@ următoarea deschidere; rezervările rămân neatinse.
 Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0` și deschide pe telefon
 `http://IP-ul-calculatorului:3000` (IP-ul îl vezi cu `ipconfig`).
 
+## Facturi
+
+1. **O singură dată:** în **Setări → Datele pensiunii** scrii numele firmei, CUI-ul, adresa, IBAN-ul și seria
+   facturilor (de ex. `VD`). Dacă ești plătitor de TVA, bifezi și scrii cota pentru cazare — întreab-o pe
+   contabilă, s-a tot schimbat. Fără nume, CUI și adresă, programul nu emite nimic și îți spune ce lipsește.
+2. **Emiți:** deschizi rezervarea din calendar → **Emite factură**. Factura vine completată cu clientul și cu o
+   linie de cazare pe totalul rezervării. Poți schimba clientul (o firmă, cu CUI), adăuga linii (mic dejun,
+   parcare) și data. Numărul se dă singur, la rând: `VD 0001`, `VD 0002`…
+3. **Tipărești sau salvezi PDF:** în factura deschisă, butonul din dreapta sus. În fereastra de tipărire alegi
+   imprimanta sau „Salvare ca PDF”.
+4. **Ai greșit?** O factură emisă nu se șterge și nu se modifică. O **stornezi** din registru: se emite una nouă,
+   cu aceleași sume în minus, iar rezervarea rămâne liberă ca să emiți factura corectă.
+
+Pagina **Facturi** e registrul: toate facturile, cu căutare după număr, client sau CUI și cu totalul pe lună.
+Facturile și datele firmei le vede numai proprietarul.
+
+Programul nu trimite încă facturile la ANAF (e-Factura) și nu face chitanțe.
+
 ## Baza de date
 
 - **MySQL / MariaDB**, baza se numește `velora`. Aplicația o creează singură dacă nu există.
@@ -86,7 +104,9 @@ public/demo.html  demo-ul vechi, pentru paginile care nu sunt mutate încă
 
 API: `GET /api/state`, `POST /api/reservations`, `PATCH|DELETE /api/reservations/:id`,
 `POST /api/reservations/:id/payments`, `POST /api/demo/reset`,
-`POST /api/auth/login|logout|setup`, `GET /api/auth/me`, `GET|POST /api/users`, `PATCH|DELETE /api/users/:id`.
+`POST /api/auth/login|logout|setup`, `GET /api/auth/me`, `GET|POST /api/users`, `PATCH|DELETE /api/users/:id`,
+`GET|POST /api/invoices` (`?draft=<rezervare>` dă factura propusă), `GET /api/invoices/:id`,
+`POST /api/invoices/:id/storno`, `GET|PUT /api/settings`.
 
 **Cine are voie** se verifică într-un singur loc, `handle()` din [lib/http.ts](lib/http.ts), prin care trec toate
 rutele. O rută nouă e închisă din start: ca să fie deschisă, trebuie scris anume `handleOpen`. `handleOwner`
@@ -103,10 +123,11 @@ sertarul cu plăți și factură, fereastra de rezervare, paginile Azi, Rezervă
 camere), Tarife (grilă, grupuri, editor pe un preț) și Financiar (grafice, tabele, cheltuieli, lei/€). Tabelele se
 sortează din cap.
 
-Plus conturile: pagina de intrare, rolurile proprietar/recepție și gestiunea conturilor din Setări.
+Plus, față de demo: conturile (pagina de intrare, rolurile proprietar/recepție, gestiunea conturilor din Setări)
+și facturile (datele pensiunii, emitere din rezervare, registru, stornare, tipărire și PDF).
 
 Nu e mutat: împărțirea unei camere în unități (rar folosită). Ce urmează e scris în [PLAN.md](../PLAN.md):
-publicarea pe server cu copii de siguranță, facturile, sincronizarea cu Booking.
+publicarea pe server cu copii de siguranță, fișa de cazare, sincronizarea cu Booking.
 
 API în plus: `PUT /api/rates`, `POST|PATCH|DELETE` pe `/api/rooms`, `/api/floors`, `/api/properties`, `/api/expenses`,
 `PUT /api/rooms/order`, `POST /api/reservations/:id/merge`.

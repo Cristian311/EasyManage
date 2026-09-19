@@ -34,6 +34,7 @@ interface Store {
   modal: ModalState | null;
   roomModal: { editId: string | null } | null;
   expModal: { editId: string | null } | null;
+  invoiceFor: string | null;      // rezervarea pentru care se emite o factură
   menu: MenuState | null;
   toasts: Toast[];
   focus: boolean;
@@ -55,6 +56,8 @@ interface Store {
   closeRoomModal(): void;
   openExpModal(editId?: string | null): void;
   closeExpModal(): void;
+  openInvoice(reservationId: string): void;
+  closeInvoice(): void;
   openMenu(m: MenuState): void;
   closeMenu(): void;
   toast(msg: string, kind?: Toast['kind'], action?: Toast['action'], ms?: number): number;
@@ -92,6 +95,7 @@ export const useStore = create<Store>((set, get) => {
     modal: null,
     roomModal: null,
     expModal: null,
+    invoiceFor: null,
     menu: null,
     toasts: [],
     focus: false,
@@ -134,6 +138,8 @@ export const useStore = create<Store>((set, get) => {
     closeRoomModal() { set({ roomModal: null }); },
     openExpModal(editId = null) { set({ expModal: { editId } }); },
     closeExpModal() { set({ expModal: null }); },
+    openInvoice(reservationId) { set({ invoiceFor: reservationId }); },
+    closeInvoice() { set({ invoiceFor: null }); },
     openMenu(m) { set({ menu: m }); },
     closeMenu() { set({ menu: null }); },
     toast(msg, kind = '', action, ms = action ? 6000 : 2800) {
