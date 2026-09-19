@@ -1,11 +1,15 @@
-# Velora Stay: aplicația (Next.js + React + PostgreSQL)
+# Velora Stay: aplicația (Next.js + React + MySQL)
 
 Versiunea nouă a demo-ului [velora-stay-demo.html](../velora-stay-demo.html): aceeași interfață, dar cu server
 și bază de date. Rezervările se salvează pe server, deci toată lumea (recepția, telefonul) vede aceleași date.
 
 ## Pornire, prima dată
 
-Ai nevoie de Node.js 20 sau mai nou. Pe calculatorul tău e deja instalat Node 24 prin nvm.
+Ai nevoie de Node.js 20 sau mai nou (pe calculatorul tău e deja Node 24 prin nvm) și de MySQL din XAMPP.
+
+1. Deschide **XAMPP Control Panel** și apasă **Start** în dreptul lui **MySQL**. (Apasă Start și la **Apache**
+   dacă vrei phpMyAdmin.)
+2. În terminal:
 
 ```powershell
 nvm use 24.14.0        # o singură dată; dacă cere drepturi, deschide terminalul „ca administrator”
@@ -14,10 +18,12 @@ npm install            # descarcă pachetele (un minut)
 npm run dev            # pornește serverul
 ```
 
-Deschide http://localhost:3000. La prima pornire aplicația își creează singură baza de date și încarcă datele demo
-(Vila Duduleanu, Vila Mateo, august plin). Durează câteva secunde, apoi e instant.
+Deschide http://localhost:3000. La prima pornire aplicația își creează singură baza de date `velora` și încarcă
+datele demo (Vila Duduleanu, Vila Mateo, august plin). Durează câteva secunde, apoi e instant.
 
 Oprești serverul cu `Ctrl + C` în terminal.
+
+Dacă vezi „Nu mă pot conecta la MySQL”, înseamnă că ai uitat de pasul 1.
 
 ## Zilnic
 
@@ -26,24 +32,25 @@ Oprești serverul cu `Ctrl + C` în terminal.
 | Pornești serverul pentru lucru | `npm run dev` |
 | Varianta rapidă, ca în producție | `npm run build` apoi `npm start` |
 | Rulezi testele | `npm test` |
-| Ștergi baza de date locală și reîncepi cu datele demo | oprești serverul, apoi `npm run db:reset` |
-| Te uiți în baza de date | oprești serverul, apoi `npm run db:sql -- "SELECT name, price FROM rooms"` |
+| Ștergi baza de date și reîncepi cu datele demo | `npm run db:reset` |
+| Te uiți în baza de date din terminal | `npm run db:sql -- "SELECT name, price FROM rooms"` |
 
 Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0` și deschide pe telefon
 `http://IP-ul-calculatorului:3000` (IP-ul îl vezi cu `ipconfig`).
 
 ## Baza de date
 
-- **Pe calculatorul tău:** PostgreSQL adevărat prin PGlite, rulează în interiorul aplicației, fără nimic de instalat.
-  Datele stau în `web/.data/pglite` (folderul nu intră în git). Nu există un server la care să te conectezi cu
-  phpMyAdmin (acela e pentru MySQL); te uiți în date cu `npm run db:sql` sau, când vei avea un PostgreSQL adevărat,
-  cu pgAdmin sau DBeaver.
-- **Pe un server:** copiezi `.env.example` ca `.env.local` și pui `DATABASE_URL=postgres://...` (Neon, Supabase sau un
-  PostgreSQL propriu). Același cod, aceleași tabele.
-- **Schema** e în [db/migrations](db/migrations). O modificare nouă înseamnă un fișier nou (`002_...sql`); se aplică singur
-  la pornire, o singură dată.
-- **Rezervările duble sunt imposibile:** baza de date refuză două rezervări active pe aceeași cameră în aceeași noapte
-  (constrângerea `room_is_free`). Aplicația verifică înainte și dă un mesaj clar; baza de date e plasa de siguranță.
+- **MySQL / MariaDB**, baza se numește `velora`. Aplicația o creează singură dacă nu există.
+- **În phpMyAdmin:** pornește Apache din XAMPP și deschide http://localhost/phpmyadmin, apoi alege `velora`
+  în stânga. Vezi tabelele, poți căuta și modifica direct.
+- **Pe alt server:** copiază `.env.example` ca `.env.local` și pune
+  `DATABASE_URL=mysql://utilizator:parola@host:3306/velora`. Același cod, aceleași tabele.
+- **Schema** e în [db/migrations](db/migrations). O modificare nouă înseamnă un fișier nou (`002_...sql`); se aplică
+  singur la pornire, o singură dată. Fișierele se pot importa și în phpMyAdmin așa cum sunt.
+- **Rezervările duble sunt imposibile:** tabelul `room_nights` ține câte un rând pentru fiecare cameră și fiecare
+  noapte ocupată, cu cheia unică `room_is_free`. A doua rezervare pe aceeași noapte lovește cheia și e refuzată,
+  chiar dacă cineva scrie direct în phpMyAdmin. Rândurile sunt ținute la zi de trei triggere. Aplicația verifică
+  înainte și dă un mesaj clar; baza de date e plasa de siguranță.
 
 ## Ce e unde
 
@@ -52,12 +59,15 @@ app/            paginile (calendar, azi, rezervari, oaspeti, ...) și API-ul (ap
 components/     bucățile de interfață: calendarul, sertarul, fereastra de rezervare
 domain/         regulile, fără interfață și fără bază de date: suprapuneri, prețuri, alerte (cu teste)
 lib/            baza de date, migrările, datele demo, citirea și salvarea rezervărilor (cu teste)
-db/migrations/  schema PostgreSQL
+db/migrations/  schema MySQL
 public/demo.html  demo-ul vechi, pentru paginile care nu sunt mutate încă
 ```
 
 API: `GET /api/state`, `POST /api/reservations`, `PATCH|DELETE /api/reservations/:id`,
 `POST /api/reservations/:id/payments`, `POST /api/demo/reset`.
+
+Interogările din cod sunt scrise cu `$1, $2, ...`; [lib/db.ts](lib/db.ts) le traduce în `?` pentru MySQL, ca
+același parametru să poată fi folosit de două ori sau în altă ordine.
 
 ## Ce e mutat și ce urmează
 
@@ -67,14 +77,19 @@ sertarul cu plăți și factură, fereastra de rezervare, paginile Azi, Rezervă
 camere), Tarife (grilă, grupuri, editor pe un preț) și Financiar (grafice, tabele, cheltuieli, lei/€). Tabelele se
 sortează din cap.
 
-Nu e mutat: împărțirea unei camere în unități (rar folosită). Urmează: autentificare (conturi pentru recepție),
-facturi și e-Factura, căutarea „am loc liber?” cu voce.
+Nu e mutat: împărțirea unei camere în unități (rar folosită). Ce urmează e scris în [PLAN.md](../PLAN.md):
+conturi, publicare pe server, facturi, sincronizare cu Booking.
 
 API în plus: `PUT /api/rates`, `POST|PATCH|DELETE` pe `/api/rooms`, `/api/floors`, `/api/properties`, `/api/expenses`,
 `PUT /api/rooms/order`, `POST /api/reservations/:id/merge`.
 
+## Teste
+
+`npm test` rulează și testele care au nevoie de bază de date. Fiecare își face o bază proprie
+(`velora_test_...`), pe care o șterge la final, deci datele tale nu sunt atinse. MySQL trebuie să fie pornit.
+
 ## Viteză
 
 `npm run dev` compilează fiecare pagină la prima deschidere, deci prima încărcare durează câteva secunde, iar prima
-pornire mai creează și baza de date. După aceea `/api/state` răspunde în ~0,1 s. Pentru viteza reală rulează
+pornire mai creează și baza de date. După aceea `/api/state` răspunde în ~0,03 s. Pentru viteza reală rulează
 `npm run build` și apoi `npm start`.

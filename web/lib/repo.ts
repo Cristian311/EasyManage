@@ -8,25 +8,25 @@ import { validateReservation } from '@/domain/rules';
 import { DomainError, isRoomTaken } from './errors';
 import { newId } from './ids';
 
-const RES_COLS = `r.id, r.guest_id AS "guestId", r.check_in::text AS "checkIn", r.check_out::text AS "checkOut", r.pax,
-  r.total::float8 AS total, r.source, r.status, r.notes, r.invoice_no AS "invoiceNo", r.invoice_date::text AS "invoiceDate", r.created_at::text AS "createdAt"`;
+const RES_COLS = `r.id, r.guest_id AS \`guestId\`, r.check_in AS \`checkIn\`, r.check_out AS \`checkOut\`, r.pax,
+  r.total AS total, r.source, r.status, r.notes, r.invoice_no AS \`invoiceNo\`, r.invoice_date AS \`invoiceDate\`, r.created_at AS \`createdAt\``;
 type ResRow = Omit<Reservation, 'roomIds' | 'payments'>;
 type PayRow = Payment & { reservationId: string };
-const PAY_COLS = `id, reservation_id AS "reservationId", amount::float8 AS amount, method, paid_on::text AS date, note`;
+const PAY_COLS = 'id, reservation_id AS `reservationId`, amount, method, paid_on AS `date`, note';
 
 export async function loadState(db: Db): Promise<AppState> {
   const [properties, floors, rooms, guests, res, rr, pays, rates, expenses] = await Promise.all([
     db.query<Property>('SELECT id, name, city FROM properties ORDER BY sort, created_at, id'),
-    db.query<Floor>('SELECT id, property_id AS "propertyId", name FROM floors ORDER BY sort, id'),
-    db.query<Room>(`SELECT id, property_id AS "propertyId", floor_id AS "floorId", parent_id AS "parentId", name, type, capacity, price, color,
-      description AS "desc", active FROM rooms ORDER BY sort, id`),
-    db.query<Guest>('SELECT id, first_name AS "firstName", last_name AS "lastName", phone, email, country, notes FROM guests ORDER BY created_at, id'),
+    db.query<Floor>('SELECT id, property_id AS `propertyId`, name FROM floors ORDER BY sort, id'),
+    db.query<Room>('SELECT id, property_id AS `propertyId`, floor_id AS `floorId`, parent_id AS `parentId`, name, type, capacity, price, color, ' +
+      'description AS `desc`, active FROM rooms ORDER BY sort, id'),
+    db.query<Guest>('SELECT id, first_name AS `firstName`, last_name AS `lastName`, phone, email, country, notes FROM guests ORDER BY created_at, id'),
     db.query<ResRow>(`SELECT ${RES_COLS} FROM reservations r ORDER BY r.check_in, r.id`),
-    db.query<{ reservationId: string; roomId: string }>('SELECT reservation_id AS "reservationId", room_id AS "roomId" FROM reservation_rooms ORDER BY reservation_id, position'),
+    db.query<{ reservationId: string; roomId: string }>('SELECT reservation_id AS `reservationId`, room_id AS `roomId` FROM reservation_rooms ORDER BY reservation_id, position'),
     db.query<PayRow>(`SELECT ${PAY_COLS} FROM payments ORDER BY paid_on, created_at`),
-    db.query<{ roomId: string; night: string; price: number }>('SELECT room_id AS "roomId", night::text AS night, price FROM rates'),
-    db.query<Expense>(`SELECT id, property_id AS "propertyId", category, description AS "desc", amount::float8 AS amount, spent_on::text AS date,
-      recurring, COALESCE(until::text, '') AS until FROM expenses ORDER BY spent_on, id`),
+    db.query<{ roomId: string; night: string; price: number }>('SELECT room_id AS `roomId`, night, price FROM rates'),
+    db.query<Expense>('SELECT id, property_id AS `propertyId`, category, description AS `desc`, amount, spent_on AS `date`, ' +
+      'recurring, COALESCE(`until`, \'\') AS `until` FROM expenses ORDER BY spent_on, id'),
   ]);
   const byId = new Map<string, Reservation>();
   const reservations = res.map(r => { const x: Reservation = { ...r, roomIds: [], payments: [] }; byId.set(r.id, x); return x; });
@@ -40,7 +40,7 @@ export async function loadState(db: Db): Promise<AppState> {
 async function getReservation(q: Q, id: string): Promise<Reservation | null> {
   const [r] = await q<ResRow>(`SELECT ${RES_COLS} FROM reservations r WHERE r.id = $1`, [id]);
   if (!r) return null;
-  const rooms = await q<{ roomId: string }>('SELECT room_id AS "roomId" FROM reservation_rooms WHERE reservation_id = $1 ORDER BY position', [id]);
+  const rooms = await q<{ roomId: string }>('SELECT room_id AS `roomId` FROM reservation_rooms WHERE reservation_id = $1 ORDER BY position', [id]);
   const pays = await q<PayRow>(`SELECT ${PAY_COLS} FROM payments WHERE reservation_id = $1 ORDER BY paid_on, created_at`, [id]);
   return { ...r, roomIds: rooms.map(x => x.roomId), payments: pays.map(({ reservationId: _, ...p }) => p) };
 }
@@ -54,18 +54,18 @@ const idList = (v: unknown) => (Array.isArray(v) && v.every(x => typeof x === 's
 
 /** The first active stay that already holds one of these rooms on these nights, for a readable message. */
 async function findConflict(q: Q, roomIds: string[], checkIn: string, checkOut: string, exceptId: string | null) {
-  const ph = roomIds.map((_, i) => '$' + (i + 4)).join(',');
+  if (!roomIds.length) return null;
   const [c] = await q<{ guest: string; room: string; checkIn: string; checkOut: string }>(
-    `SELECT trim(g.first_name || ' ' || g.last_name) AS guest, rm.name AS room, r.check_in::text AS "checkIn", r.check_out::text AS "checkOut"
-       FROM reservation_rooms rr JOIN reservations r ON r.id = rr.reservation_id JOIN guests g ON g.id = r.guest_id JOIN rooms rm ON rm.id = rr.room_id
-      WHERE rr.room_id IN (${ph}) AND NOT rr.cancelled AND rr.stay && daterange($1::date, $2::date, '[)') AND r.id <> $3
-      ORDER BY r.check_in LIMIT 1`, [checkIn, checkOut, exceptId ?? '', ...roomIds]);
+    'SELECT TRIM(CONCAT(g.first_name, \' \', g.last_name)) AS guest, rm.name AS room, r.check_in AS `checkIn`, r.check_out AS `checkOut`' +
+    `  FROM reservation_rooms rr JOIN reservations r ON r.id = rr.reservation_id JOIN guests g ON g.id = r.guest_id JOIN rooms rm ON rm.id = rr.room_id
+      WHERE rr.room_id IN ($4) AND r.status <> 'cancelled' AND r.check_in < $2 AND r.check_out > $1 AND r.id <> $3
+      ORDER BY r.check_in LIMIT 1`, [checkIn, checkOut, exceptId ?? '', roomIds]);
   return c ? `Camera ${c.room} este ocupată de ${c.guest} (${fmtD(c.checkIn)} – ${fmtD(c.checkOut)}).` : null;
 }
 
 async function checkRooms(q: Q, roomIds: string[]) {
-  const ph = roomIds.map((_, i) => '$' + (i + 1)).join(',');
-  const rows = await q<{ id: string; name: string; active: boolean }>(`SELECT id, name, active FROM rooms WHERE id IN (${ph})`, roomIds);
+  if (!roomIds.length) return;
+  const rows = await q<{ id: string; name: string; active: boolean }>('SELECT id, name, active FROM rooms WHERE id IN ($1)', [roomIds]);
   if (rows.length !== roomIds.length) throw new DomainError(400, 'Una dintre camere nu există.');
   const off = rows.find(r => !r.active); if (off) throw new DomainError(400, `Camera ${off.name} este dezactivată.`);
 }
@@ -151,9 +151,12 @@ export async function updateReservation(db: Db, id: string, raw: unknown) {
 }
 
 export async function deleteReservation(db: Db, id: string) {
-  const rows = await db.query('DELETE FROM reservations WHERE id = $1 RETURNING id', [id]);
-  if (!rows.length) throw new DomainError(404, 'Rezervarea nu mai există.');
-  return { ok: true };
+  return db.tx(async q => {
+    const rows = await q('SELECT id FROM reservations WHERE id = $1', [id]);
+    if (!rows.length) throw new DomainError(404, 'Rezervarea nu mai există.');
+    await q('DELETE FROM reservations WHERE id = $1', [id]);   // camerele, nopțile și plățile pleacă odată cu ea
+    return { ok: true };
+  });
 }
 
 export async function addPayment(db: Db, id: string, raw: unknown) {

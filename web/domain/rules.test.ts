@@ -1,14 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { AppState, Reservation } from './types';
+import { res, state } from './fixtures';
 import { alertFor, conflict, payStatus, quickAction, remaining, stayPrice, validateReservation } from './rules';
-
-const room = (id: string, price = 200) => ({ id, propertyId: 'p', floorId: null, parentId: null, name: id, type: 'Dublă', capacity: 2, price, color: '', desc: '', active: true });
-const res = (id: string, roomIds: string[], checkIn: string, checkOut: string, over: Partial<Reservation> = {}): Reservation => ({
-  id, guestId: 'g', roomIds, checkIn, checkOut, pax: 2, total: 400, source: 'direct', status: 'confirmed', notes: '', invoiceNo: '', invoiceDate: null, payments: [], createdAt: '', ...over,
-});
-const state = (reservations: Reservation[], rates: AppState['rates'] = {}): AppState => ({
-  properties: [{ id: 'p', name: 'Vila', city: '' }], floors: [], rooms: [room('A'), room('B', 300)], guests: [], reservations, rates, expenses: [],
-});
 
 describe('conflict', () => {
   const s = state([res('r1', ['A'], '2026-09-10', '2026-09-12')]);
@@ -32,7 +24,7 @@ describe('money', () => {
     expect(payStatus(r)).toBe('partial');
   });
   it('prices a stay night by night, special prices first', () => {
-    const s = state([], { A: { '2026-09-11': 250 } });
+    const s = state([], { rates: { A: { '2026-09-11': 250 } } });
     expect(stayPrice(s, ['A', 'B'], '2026-09-10', '2026-09-12')).toBe(200 + 250 + 300 + 300);
   });
 });

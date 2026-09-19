@@ -186,7 +186,7 @@ async function insertMany(q: Q, table: string, cols: string[], rows: unknown[][]
   for (let i = 0; i < rows.length; i += chunk) {
     const params: unknown[] = [];
     const values = rows.slice(i, i + chunk).map(r => '(' + r.map(v => { params.push(v); return '$' + params.length; }).join(',') + ')').join(',');
-    await q(`INSERT INTO ${table} (${cols.join(',')}) VALUES ${values}`, params);
+    await q(`INSERT INTO ${table} (${cols.map(c => '`' + c + '`').join(',')}) VALUES ${values}`, params);
   }
 }
 
@@ -217,6 +217,10 @@ export async function seedDemo(db: Db) {
 
 /** Empties every table and loads the demo again. */
 export async function resetDemo(db: Db) {
-  await db.exec('TRUNCATE payments, reservation_rooms, reservations, rates, expenses, guests, rooms, floors, properties CASCADE');
+  await db.tx(async q => {
+    // rezervările duc cu ele camerele, nopțile și plățile; unitățile pleacă înaintea camerelor-părinte
+    for (const sql of ['DELETE FROM reservations', 'DELETE FROM rates', 'DELETE FROM expenses', 'DELETE FROM guests',
+      'DELETE FROM rooms WHERE parent_id IS NOT NULL', 'DELETE FROM rooms', 'DELETE FROM floors', 'DELETE FROM properties']) await q(sql);
+  });
   return seedDemo(db);
 }

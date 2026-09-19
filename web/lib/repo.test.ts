@@ -1,7 +1,9 @@
-// Runs against a real PostgreSQL (PGlite in memory): the schema, the triggers and the double-booking constraint.
+// Runs against a real MySQL / MariaDB (the one from XAMPP), on its own database velora_test, which is
+// thrown away and built again before every run: the schema, the triggers and the double-booking key.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { addDays, todayIso } from '@/domain/dates';
-import { createDb, type Db } from './db';
+import { type Db } from './db';
+import { freshDb } from './testdb';
 import { seedDemo } from './seed';
 import { addPayment, createReservation, loadState, updateReservation } from './repo';
 import { DomainError, isRoomTaken } from './errors';
@@ -11,7 +13,7 @@ let roomA: string, roomB: string, guestId: string;
 const far = addDays(todayIso(), 400);   // nights nobody has booked
 
 beforeAll(async () => {
-  db = await createDb('memory://');
+  db = await freshDb();
   await seedDemo(db);
   const s = await loadState(db);
   [roomA, roomB] = s.rooms.filter(r => r.capacity === 2).map(r => r.id);
@@ -29,6 +31,19 @@ describe('database', () => {
     expect(s.rooms).toHaveLength(37);
     expect(s.reservations.length).toBeGreaterThan(800);
     expect(s.reservations.every(r => r.roomIds.length >= 1)).toBe(true);
+  });
+
+  it('talks to the server in strict mode, so wrong data is refused and not quietly cut', async () => {
+    const [{ mode }] = await db.query<{ mode: string }>('SELECT @@SESSION.sql_mode AS mode');
+    expect(mode).toContain('STRICT_ALL_TABLES');
+  });
+
+  it('keeps room_nights in step with the reservations', async () => {
+    const [{ held, expected }] = await db.query<{ held: number; expected: number }>(
+      `SELECT (SELECT count(*) FROM room_nights) AS held,
+              (SELECT coalesce(sum(datediff(r.check_out, r.check_in) * (SELECT count(*) FROM reservation_rooms rr WHERE rr.reservation_id = r.id)), 0)
+                 FROM reservations r WHERE r.status <> 'cancelled') AS expected`);
+    expect(Number(held)).toBe(Number(expected));
   });
 
   it('creates a booking with a new guest and an advance', async () => {

@@ -1,7 +1,7 @@
 // Rooms, floors, properties, prices and expenses; joining two stays. These change rarely, so most of them
 // simply hand back the whole state afterwards.
 import type { Db, Q } from './db';
-import type { AppState, Rates } from '@/domain/types';
+import type { AppState, Expense, Rates } from '@/domain/types';
 import { addDays, isIsoDate, isWkNight } from '@/domain/dates';
 import { EXP_CATS } from '@/domain/finance';
 import { DomainError, isRoomTaken } from './errors';
@@ -18,7 +18,7 @@ const need = (v: string | undefined, msg: string) => { if (!v) throw new DomainE
 /* ---------- properties ---------- */
 export async function createProperty(db: Db, raw: unknown) {
   const b = asBody(raw), name = need(str(b.name, 120), 'Scrie numele proprietății.');
-  const [{ n }] = await db.query<{ n: number }>('SELECT count(*)::int AS n FROM properties');
+  const [{ n }] = await db.query<{ n: number }>('SELECT count(*) AS n FROM properties');
   await db.query('INSERT INTO properties (id, name, city, sort) VALUES ($1,$2,$3,$4)', [newId('p_'), name, str(b.city, 120) ?? '', n]);
   return loadState(db);
 }
@@ -30,9 +30,9 @@ export async function updateProperty(db: Db, id: string, raw: unknown) {
   return loadState(db);
 }
 export async function deleteProperty(db: Db, id: string) {
-  const [{ n }] = await db.query<{ n: number }>('SELECT count(*)::int AS n FROM properties');
+  const [{ n }] = await db.query<{ n: number }>('SELECT count(*) AS n FROM properties');
   if (n < 2) throw new DomainError(400, 'Trebuie să rămână cel puțin o proprietate.');
-  const [{ r }] = await db.query<{ r: number }>('SELECT count(*)::int AS r FROM rooms WHERE property_id = $1', [id]);
+  const [{ r }] = await db.query<{ r: number }>('SELECT count(*) AS r FROM rooms WHERE property_id = $1', [id]);
   if (r) throw new DomainError(400, 'Mută sau șterge întâi camerele acestei proprietăți.');
   await db.query('DELETE FROM properties WHERE id = $1', [id]);
   return loadState(db);
@@ -42,7 +42,7 @@ export async function deleteProperty(db: Db, id: string) {
 export async function createFloor(db: Db, raw: unknown) {
   const b = asBody(raw), name = need(str(b.name, 80), 'Scrie numele etajului.'), pid = need(str(b.propertyId, 100), 'Alege proprietatea.');
   const [p] = await db.query('SELECT id FROM properties WHERE id = $1', [pid]); if (!p) throw new DomainError(400, 'Proprietatea nu există.');
-  const [{ n }] = await db.query<{ n: number }>('SELECT count(*)::int AS n FROM floors');
+  const [{ n }] = await db.query<{ n: number }>('SELECT count(*) AS n FROM floors');
   const id = newId('f_');
   await db.query('INSERT INTO floors (id, property_id, name, sort) VALUES ($1,$2,$3,$4)', [id, pid, name, n]);
   return { id, state: await loadState(db) };
@@ -87,7 +87,7 @@ export async function createRoom(db: Db, raw: unknown) {
   const b = asBody(raw);
   await db.tx(async q => {
     const f = await roomFields(q, b);
-    const [{ n }] = await q<{ n: number }>('SELECT coalesce(max(sort), -1)::int + 1 AS n FROM rooms');
+    const [{ n }] = await q<{ n: number }>('SELECT coalesce(max(sort), -1) + 1 AS n FROM rooms');
     await q('INSERT INTO rooms (id, property_id, floor_id, parent_id, name, type, capacity, price, color, description, active, sort) VALUES ($1,$2,$3,NULL,$4,$5,$6,$7,$8,$9,$10,$11)',
       [newId('r_'), f.pid, f.fid, f.name, f.type || 'Cameră', f.capacity, f.price, f.color, f.desc, f.active, n]);
   });
@@ -105,9 +105,12 @@ export async function updateRoom(db: Db, id: string, raw: unknown) {
   return loadState(db);
 }
 export async function deleteRoom(db: Db, id: string) {
-  const [{ n }] = await db.query<{ n: number }>('SELECT count(*)::int AS n FROM reservation_rooms WHERE room_id = $1', [id]);
+  const [{ n }] = await db.query<{ n: number }>('SELECT count(*) AS n FROM reservation_rooms WHERE room_id = $1 OR room_id IN (SELECT id FROM rooms WHERE parent_id = $1)', [id]);
   if (n) throw new DomainError(400, 'Camera are rezervări. Dezactiveaz-o în loc s-o ștergi.');
-  await db.query('DELETE FROM rooms WHERE id = $1 OR parent_id = $1', [id]);
+  await db.tx(async q => {
+    await q('DELETE FROM rooms WHERE parent_id = $1', [id]);   // unitățile întâi, apoi camera
+    await q('DELETE FROM rooms WHERE id = $1', [id]);
+  });
   return loadState(db);
 }
 /** The calendar order of the top-level rooms, as a list of ids. Rooms not in the list keep their place at the end. */
@@ -136,9 +139,10 @@ export async function setRates(db: Db, raw: unknown): Promise<{ rates: Rates }> 
   const nights: string[] = []; for (let d = from; d <= to; d = addDays(d, 1)) if (!wkOnly || isWkNight(d)) nights.push(d);
   if (nights.length > 800 * 1) throw new DomainError(400, 'Alege o perioadă mai scurtă (cel mult doi ani).');
   await db.tx(async q => {
-    const rooms = await q<{ id: string; price: number }>(`SELECT id, price FROM rooms WHERE id IN (${ids.map((_, i) => '$' + (i + 1)).join(',')})`, ids);
+    const rooms = await q<{ id: string; price: number }>('SELECT id, price FROM rooms WHERE id IN ($1)', [ids]);
     if (rooms.length !== ids.length) throw new DomainError(400, 'Una dintre camere nu există.');
-    await q(`DELETE FROM rates WHERE room_id = ANY($1::text[]) AND night = ANY($2::date[])`, [ids, nights]);
+    if (!nights.length) return;
+    await q('DELETE FROM rates WHERE room_id IN ($1) AND night IN ($2)', [ids, nights]);
     const rows: unknown[] = []; let values = '';
     rooms.forEach(rm => { if (price === null || price === rm.price) return; nights.forEach(d => { values += (values ? ',' : '') + `($${rows.length + 1},$${rows.length + 2},$${rows.length + 3})`; rows.push(rm.id, d, Math.round(price)); }); });
     for (let i = 0; i < rows.length; i += 999) {
@@ -146,7 +150,7 @@ export async function setRates(db: Db, raw: unknown): Promise<{ rates: Rates }> 
       await q(`INSERT INTO rates (room_id, night, price) VALUES ${vals}`, chunk);
     }
   });
-  const rows = await db.query<{ roomId: string; night: string; price: number }>('SELECT room_id AS "roomId", night::text AS night, price FROM rates WHERE room_id = ANY($1::text[])', [ids]);
+  const rows = await db.query<{ roomId: string; night: string; price: number }>('SELECT room_id AS `roomId`, night, price FROM rates WHERE room_id IN ($1)', [ids]);
   const rates: Rates = {}; ids.forEach(id => { rates[id] = {}; }); rows.forEach(x => { rates[x.roomId][x.night] = x.price; });
   return { rates };
 }
@@ -162,25 +166,36 @@ function expenseFields(b: Body, cur?: Record<string, unknown>) {
   return { amount: Math.round(amount * 100) / 100, date, category: EXP_CATS.includes(category) ? category : 'Altele', desc: str(b.desc, 300) ?? (cur?.description as string) ?? '',
     propertyId: b.propertyId === undefined ? (cur?.property_id as string | null) ?? null : str(b.propertyId, 100) || null, recurring: bool(b.recurring) ?? (cur?.recurring as boolean) ?? false, until };
 }
-const EXP_ROW = `id, property_id AS "propertyId", category, description AS "desc", amount::float8 AS amount, spent_on::text AS date, recurring, COALESCE(until::text, '') AS until`;
+const EXP_ROW = 'id, property_id AS `propertyId`, category, description AS `desc`, amount, spent_on AS `date`, recurring, COALESCE(`until`, \'\') AS `until`';
+const readExpense = (q: Q, id: string) => q<Expense>(`SELECT ${EXP_ROW} FROM expenses WHERE id = $1`, [id]);
 export async function createExpense(db: Db, raw: unknown) {
   const f = expenseFields(asBody(raw));
-  if (f.propertyId) { const [p] = await db.query('SELECT id FROM properties WHERE id = $1', [f.propertyId]); if (!p) throw new DomainError(400, 'Proprietatea nu există.'); }
-  const [e] = await db.query(`INSERT INTO expenses (id, property_id, category, description, amount, spent_on, recurring, until) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING ${EXP_ROW}`,
-    [newId('e_'), f.propertyId, f.category, f.desc, f.amount, f.date, f.recurring, f.until]);
-  return { expense: e };
+  return db.tx(async q => {
+    if (f.propertyId) { const [p] = await q('SELECT id FROM properties WHERE id = $1', [f.propertyId]); if (!p) throw new DomainError(400, 'Proprietatea nu există.'); }
+    const id = newId('e_');
+    await q('INSERT INTO expenses (id, property_id, category, description, amount, spent_on, recurring, `until`) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)',
+      [id, f.propertyId, f.category, f.desc, f.amount, f.date, f.recurring, f.until]);
+    const [e] = await readExpense(q, id);
+    return { expense: e };
+  });
 }
 export async function updateExpense(db: Db, id: string, raw: unknown) {
-  const [cur] = await db.query<Record<string, unknown>>('SELECT * FROM expenses WHERE id = $1', [id]); if (!cur) throw new DomainError(404, 'Cheltuiala nu există.');
-  const f = expenseFields(asBody(raw), cur);
-  const [e] = await db.query(`UPDATE expenses SET property_id=$2, category=$3, description=$4, amount=$5, spent_on=$6, recurring=$7, until=$8 WHERE id=$1 RETURNING ${EXP_ROW}`,
-    [id, f.propertyId, f.category, f.desc, f.amount, f.date, f.recurring, f.until]);
-  return { expense: e };
+  return db.tx(async q => {
+    const [cur] = await q<Record<string, unknown>>('SELECT * FROM expenses WHERE id = $1', [id]); if (!cur) throw new DomainError(404, 'Cheltuiala nu există.');
+    const f = expenseFields(asBody(raw), cur);
+    await q('UPDATE expenses SET property_id=$2, category=$3, description=$4, amount=$5, spent_on=$6, recurring=$7, `until`=$8 WHERE id=$1',
+      [id, f.propertyId, f.category, f.desc, f.amount, f.date, f.recurring, f.until]);
+    const [e] = await readExpense(q, id);
+    return { expense: e };
+  });
 }
 export async function deleteExpense(db: Db, id: string) {
-  const rows = await db.query('DELETE FROM expenses WHERE id = $1 RETURNING id', [id]);
-  if (!rows.length) throw new DomainError(404, 'Cheltuiala nu există.');
-  return { ok: true };
+  return db.tx(async q => {
+    const rows = await q('SELECT id FROM expenses WHERE id = $1', [id]);
+    if (!rows.length) throw new DomainError(404, 'Cheltuiala nu există.');
+    await q('DELETE FROM expenses WHERE id = $1', [id]);
+    return { ok: true };
+  });
 }
 
 /* ---------- joining two stays of the same guest into one ---------- */
@@ -190,7 +205,7 @@ export async function mergeReservations(db: Db, keepId: string, raw: unknown) {
   try {
     await db.tx(async q => {
       type R = { id: string; guest_id: string; check_in: string; check_out: string; pax: number; total: number; status: string; notes: string; invoice_no: string };
-      const get = async (id: string) => { const [r] = await q<R>('SELECT id, guest_id, check_in::text, check_out::text, pax, total::float8 AS total, status, notes, invoice_no FROM reservations WHERE id = $1', [id]); return r; };
+      const get = async (id: string) => { const [r] = await q<R>('SELECT id, guest_id, check_in, check_out, pax, total, status, notes, invoice_no FROM reservations WHERE id = $1', [id]); return r; };
       const a = await get(keepId), o = await get(otherId);
       if (!a || !o) throw new DomainError(404, 'Una dintre rezervări nu mai există.');
       if (a.guest_id !== o.guest_id || a.check_in !== o.check_in || a.check_out !== o.check_out) throw new DomainError(400, 'Se pot uni doar rezervările aceluiași oaspete, pe aceleași nopți.');
