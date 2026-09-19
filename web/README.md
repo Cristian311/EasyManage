@@ -74,7 +74,7 @@ sau Google Drive, ca să existe și în afara calculatorului.
 Pui o copie înapoi așa (înlocuiește tot ce e acum în bază, de aceea cere `--da`):
 
 ```powershell
-npm run db:restore -- backupselora-2026-09-19_120000.sql.gz --da
+npm run db:restore -- backups\velora-2026-09-19_120000.sql.gz --da
 ```
 
 ## Fișa de cazare, confirmări, Excel
