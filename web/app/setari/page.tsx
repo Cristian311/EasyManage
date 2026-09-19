@@ -1,5 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
+import Link from 'next/link';
 import type { Me, Role } from '@/domain/types';
 import type { Company } from '@/domain/invoice';
 import { ROLE } from '@/domain/labels';
@@ -35,7 +36,7 @@ export default function SettingsPage() {
 
   return (
     <section className="page on">
-      <div className="topbar"><h1>Setări</h1><div className="spacer" /><button className="btn primary" onClick={() => setOpen(true)}>Cont nou</button></div>
+      <div className="topbar"><h1>Setări</h1><div className="spacer" /><Link className="btn" href="/jurnal">Jurnal: cine a făcut ce</Link><button className="btn primary" onClick={() => setOpen(true)}>Cont nou</button></div>
       <div className="scroll">
         <div className="card tbl-wrap" style={{ marginBottom: 16 }}>
           <div className="ch">Conturi<span className="cnt">{users.length}</span></div>

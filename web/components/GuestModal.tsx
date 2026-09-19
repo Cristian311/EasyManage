@@ -2,6 +2,7 @@
 // Datele unui oaspete: nume, contact și actul de identitate pentru fișa de cazare.
 import { useEffect, useState } from 'react';
 import type { Guest } from '@/domain/types';
+import { api } from '@/lib/client/api';
 import { useData, useStore } from '@/lib/client/store';
 import { IconClose } from './Icons';
 
@@ -14,6 +15,7 @@ export default function GuestModal() {
 
 function Form({ id }: { id: string }) {
   const data = useData(), close = useStore(s => s.closeGuest), save = useStore(s => s.saveGuest), toast = useStore(s => s.toast);
+  const me = useStore(s => s.me), setData = useStore(s => s.setData);
   const g0 = data.guests.find(g => g.id === id);
   const [g, setG] = useState<Guest | undefined>(g0), [busy, setBusy] = useState(false);
   useEffect(() => { const k = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); }; window.addEventListener('keydown', k); return () => window.removeEventListener('keydown', k); }, [close]);
@@ -26,6 +28,24 @@ function Form({ id }: { id: string }) {
     const err = await save(id, g);
     setBusy(false);
     if (!err) { toast('Datele oaspetelui au fost salvate', 'ok'); close(); }
+  };
+
+  const exportAll = async () => {
+    try {
+      const all = await api<unknown>(`/api/guests/${id}/export`);
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' }));
+      a.download = `date-oaspete-${g.firstName}-${g.lastName}.json`.replace(/[^\w.-]+/g, '_'); a.click();
+    } catch (e) { toast((e as Error).message, 'bad'); }
+  };
+  const erase = async () => {
+    if (!confirm(`Ștergi datele personale ale lui ${g.firstName} ${g.lastName}?\n\nNumele, telefonul, emailul și actul dispar pentru totdeauna. Șederile și banii rămân, fără nume.`)) return;
+    try {
+      const out = await api<{ guest: Guest; invoicesKept: number }>(`/api/guests/${id}/anonymize`, 'POST');
+      setData({ ...data, guests: data.guests.map(x => (x.id === id ? out.guest : x)), reservations: data.reservations.map(r => (r.guestId === id ? { ...r, notes: '' } : r)) });
+      toast(out.invoicesKept ? `Date șterse. ${out.invoicesKept} facturi rămân cu numele lui, cum cere legea.` : 'Datele personale au fost șterse', 'ok');
+      close();
+    } catch (e) { toast((e as Error).message, 'bad'); }
   };
 
   return (
@@ -60,6 +80,17 @@ function Form({ id }: { id: string }) {
             <div className="f"><label>Țara</label><input value={g.country} onChange={e => set({ country: e.target.value })} /></div>
           </div>
           <div className="f"><label>Observații despre oaspete</label><textarea value={g.notes} onChange={e => set({ notes: e.target.value })} placeholder="ex: vine cu un câine mic, preferă etajul 1" /></div>
+
+          {me?.role === 'owner' && (
+            <div style={{ marginTop: 14 }}>
+              <div className="sec-t">Date personale, la cererea oaspetelui</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                <button className="btn sm" onClick={exportAll}>Descarcă tot ce ținem despre el</button>
+                <button className="btn sm danger" onClick={erase}>Șterge datele personale</button>
+              </div>
+              <div className="hint" style={{ marginTop: 6 }}>Ștergerea scoate numele, telefonul, emailul și actul. Șederile și banii rămân, fără nume; facturile emise rămân întregi, cum cere legea.</div>
+            </div>
+          )}
         </div>
         <div className="ft"><button className="btn" onClick={close}>Renunță</button><button className="btn primary" onClick={submit} disabled={busy}>Salvează</button></div>
       </div>

@@ -88,6 +88,14 @@ npm run db:restore -- backups\velora-2026-09-19_120000.sql.gz --da
 - **Import:** Rezervări → „Importă”. Descarci modelul, îl completezi în Excel, îl salvezi ca CSV, apeși „Verifică”
   (vezi rând cu rând ce intră și de ce nu), apoi „Importă”.
 
+## Jurnal și date personale
+
+- **Jurnalul** (Setări → „Jurnal: cine a făcut ce”, numai proprietarul): cine a făcut o rezervare, cine a șters-o,
+  cine a încasat, cine a schimbat un preț, cine a intrat în cont. Se caută și se descarcă în Excel.
+- **La cererea unui oaspete** (fereastra „Date oaspete”, numai proprietarul): „Descarcă tot ce ținem despre el” dă un
+  fișier cu datele, șederile, plățile și facturile lui; „Șterge datele personale” îi scoate numele, contactul și
+  actul. Șederile și banii rămân, fără nume; facturile emise rămân întregi, cum cere legea.
+
 ## Facturi
 
 1. **O singură dată:** în **Setări → Datele pensiunii** scrii numele firmei, CUI-ul, adresa, IBAN-ul și seria

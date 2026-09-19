@@ -16,8 +16,8 @@ folosește pe bune. Fazele 5 și 8 sunt cele pentru care o pensiune plătește l
 
 **Unde suntem:** sunt gata fazele 1a (conturi), 3 (import și export), 4 (facturi), 6 (confirmare) și 7 (fișa de
 cazare), plus jumătatea fără server a fazei 2: copia de siguranță zilnică, cu restaurare verificată, și pornirea
-cu un dublu-click. Așteaptă un server: publicarea (2) și sincronizarea cu Booking (5). Urmează, fără server:
-e-Factura (8) și jurnalul cu datele personale (9).
+cu un dublu-click. Așteaptă un server: publicarea (2) și sincronizarea cu Booking (5). Tot fără server s-au făcut jurnalul și datele personale (9). A rămas e-Factura (8), care cere
+adrese pe câmpuri (județ, localitate) și un certificat digital de la ANAF, deci se face împreună cu contabila.
 
 ---
 
@@ -186,7 +186,12 @@ stării. Se lucrează întâi în mediul de test al ANAF.
 
 ---
 
-## Faza 9 — Jurnal, date personale, supraveghere
+## Faza 9 — Jurnal, date personale, supraveghere (jurnalul și datele personale ✅ gata)
+
+*Făcut:* **Jurnalul** (Setări → „Jurnal: cine a făcut ce”): fiecare schimbare — rezervări, încasări, facturi, prețuri, camere, conturi, setări, copii de siguranță, intrări în cont — cu omul, ora și un rezumat care se înțelege și după ce rezervarea dispare. În jurnal intră numele câmpurilor schimbate, niciodată parola sau seria buletinului. Se caută și se duce în Excel. **Datele personale:** din fereastra oaspetelui, proprietarul descarcă tot ce ține programul despre el sau îi șterge datele personale; șederile și banii rămân fără nume, numele dispare și din jurnal, iar facturile emise rămân întregi, cum cere legea. Nu se poate cât timp omul e cazat sau urmează să vină.
+
+*Rămas:* ștergerea automată după un termen (trebuie hotărât termenul), textul politicii de confidențialitate (îl scrie un om, nu programul) și supravegherea cu alerte, care are rost abia pe un server.
+
 
 **Jurnal.** Un tabel `audit_log` scris din `lib/repo.ts`: cine a mutat rezervarea, cine a șters-o, când. Într-o
 echipă cu mai mulți oameni devine repede necesar.

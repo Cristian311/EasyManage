@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit';
 import { countUsers, createUser, startSession } from '@/lib/auth';
 import { getDb } from '@/lib/db';
 import { DomainError } from '@/lib/errors';
@@ -15,6 +16,7 @@ export async function POST(req: Request) {
     if (await countUsers(db) > 0) throw new DomainError(409, 'Programul are deja conturi. Intră cu contul tău.');
     const user = await createUser(db, await readJson(req), 'owner');
     await setSessionCookie(await startSession(db, user.id));
+    await audit(db, user, 'user.setup', 'user', user.id, user.email);
     return { user };
   }, 201);
 }

@@ -1,3 +1,4 @@
+import { audit } from '@/lib/audit';
 import { getDb } from '@/lib/db';
 import { handleOwner, readJson } from '@/lib/http';
 import { getCompany, saveCompany } from '@/lib/settings';
@@ -9,5 +10,9 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  return handleOwner(async () => ({ company: await saveCompany(await getDb(), await readJson(req)) }));
+  return handleOwner(async user => {
+    const db = await getDb(), company = await saveCompany(db, await readJson(req));
+    await audit(db, user, 'settings.company', 'settings', '', company.name);
+    return { company };
+  });
 }

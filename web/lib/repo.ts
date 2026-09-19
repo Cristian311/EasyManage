@@ -14,7 +14,7 @@ type ResRow = Omit<Reservation, 'roomIds' | 'payments'>;
 type PayRow = Payment & { reservationId: string };
 const PAY_COLS = 'id, reservation_id AS `reservationId`, amount, method, paid_on AS `date`, note';
 
-const GUEST_COLS = 'id, first_name AS `firstName`, last_name AS `lastName`, phone, email, country, notes, birth_date AS `birthDate`, ' +
+export const GUEST_COLS = 'id, first_name AS `firstName`, last_name AS `lastName`, phone, email, country, notes, birth_date AS `birthDate`, ' +
   'birth_place AS `birthPlace`, citizenship, address, id_type AS `idType`, id_series AS `idSeries`, id_number AS `idNumber`';
 
 export async function loadState(db: Db): Promise<AppState> {

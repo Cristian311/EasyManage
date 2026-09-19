@@ -1,6 +1,8 @@
+import { audit } from '@/lib/audit';
 import { getDb } from '@/lib/db';
 import { handleOwner, readJson } from '@/lib/http';
 import { createInvoice, draftFor, listInvoices } from '@/lib/invoices';
+import { invoiceNo } from '@/domain/invoice';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,5 +16,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  return handleOwner(async () => ({ invoice: await createInvoice(await getDb(), await readJson(req)) }), 201);
+  return handleOwner(async user => {
+    const db = await getDb(), invoice = await createInvoice(db, await readJson(req));
+    await audit(db, user, 'invoice.create', 'invoice', invoice.id, `${invoiceNo(invoice.series, invoice.number)} · ${invoice.buyerName} · ${invoice.total} lei`);
+    return { invoice };
+  }, 201);
 }
