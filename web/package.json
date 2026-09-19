@@ -13,7 +13,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:reset": "node scripts/db-reset.mjs",
-    "db:sql": "node scripts/db-sql.mjs"
+    "db:sql": "node scripts/db-sql.mjs",
+    "db:restore": "node scripts/db-restore.mjs"
   },
   "dependencies": {
     "mysql2": "^3.24.4",

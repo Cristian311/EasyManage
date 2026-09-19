@@ -113,6 +113,8 @@ export function getDb(): Promise<Db> {
         const [{ n }] = await db.query<{ n: number }>('SELECT count(*) AS n FROM properties');
         if (Number(n) === 0) { const { seedDemo } = await import('./seed'); await seedDemo(db); }
       }
+      // o copie de siguranță pe zi, cât timp merge serverul
+      const { startAutoBackup } = await import('./backup'); startAutoBackup(db);
       return db;
     })().catch(e => { g.__veloraDb = undefined; throw e; });
   }

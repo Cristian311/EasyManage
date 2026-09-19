@@ -6,3 +6,6 @@ next-env.d.ts
 .data/
 .env
 .env.local
+
+# copiile de siguranță ale bazei de date
+backups/

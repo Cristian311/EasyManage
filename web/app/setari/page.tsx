@@ -62,6 +62,7 @@ export default function SettingsPage() {
         </div>
 
         <CompanyForm />
+        <BackupCard />
 
         <div className="ph">
           <h2>De la început</h2>
@@ -155,6 +156,53 @@ function CompanyForm() {
       {c.vatPayer && <div className="hint" style={{ marginTop: 6 }}>Cota pentru cazare s-a tot schimbat în ultimii ani. Întreabă contabila ce cotă e valabilă acum și scrie-o aici. Prețurile pe care le scrii pe factură sunt cu TVA inclus; TVA-ul se scoate din ele.</div>}
 
       <div style={{ marginTop: 14 }}><button className="btn primary" onClick={save} disabled={busy}>Salvează datele pensiunii</button></div>
+    </div>
+  );
+}
+
+interface Bk { name: string; date: string; size: number; at: string }
+interface BkView { dir: string; keepDays: number; backups: Bk[] }
+
+/** Copiile de siguranță: una pe zi se face singură; de aici se face una pe loc, se descarcă și se alege folderul. */
+function BackupCard() {
+  const toast = useStore(s => s.toast);
+  const [v, setV] = useState<BkView | null>(null), [dir, setDir] = useState(''), [busy, setBusy] = useState(false);
+  const take = (x: BkView) => { setV(x); setDir(x.dir); };
+  useEffect(() => { api<BkView>('/api/backups').then(take).catch(e => toast((e as Error).message, 'bad')); }, [toast]);
+
+  const run = async (method: 'POST' | 'PUT', body: unknown, ok: string) => {
+    setBusy(true);
+    try { take(await api<BkView>('/api/backups', method, body)); toast(ok, 'ok'); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+    finally { setBusy(false); }
+  };
+  if (!v) return null;
+  const last = v.backups[0];
+  const kb = (n: number) => (n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB');
+
+  return (
+    <div className="card" style={{ marginBottom: 16, padding: '14px 16px 18px' }}>
+      <div className="ch" style={{ padding: '0 0 12px', marginBottom: 12 }}>Copii de siguranță<span className="cnt">{v.backups.length}</span></div>
+      <p style={{ margin: '0 0 12px', color: 'var(--ink-2)' }}>
+        Cât timp merge programul, se face singură o copie pe zi cu toate rezervările, plățile și facturile. Se păstrează {v.keepDays} de zile.{' '}
+        {last ? <>Ultima: <b>{last.at}</b>.</> : <b style={{ color: 'var(--bad)' }}>Încă nu există nicio copie.</b>}
+      </p>
+      <div className="f">
+        <label>Folderul în care se salvează</label>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input value={dir} onChange={e => setDir(e.target.value)} placeholder={'ex: C:\\Users\\Nume\\OneDrive\\Velora'} />
+          <button className="btn" disabled={busy || dir === v.dir} onClick={() => run('PUT', { dir }, 'Folderul a fost schimbat')}>Salvează</button>
+        </div>
+        <div className="hint">Alege un folder din OneDrive sau Google Drive: așa copiile ajung și în afara calculatorului, iar dacă se strică discul, rezervările nu se pierd.</div>
+      </div>
+      <div style={{ margin: '12px 0' }}><button className="btn primary" disabled={busy} onClick={() => run('POST', undefined, 'Copie făcută')}>{busy ? 'Se face…' : 'Fă o copie acum'}</button></div>
+      {v.backups.slice(0, 7).map(b => (
+        <div key={b.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 0', borderTop: '1px solid var(--line-2)' }}>
+          <span style={{ flex: 1 }}>{b.at}</span><span style={{ color: 'var(--ink-3)' }}>{kb(b.size)}</span>
+          <a className="btn sm" href={`/api/backups/${b.name}`}>Descarcă</a>
+        </div>
+      ))}
+      <div className="hint" style={{ marginTop: 10 }}>Ca să pui o copie înapoi: oprești programul și rulezi în folderul web <code>{'npm run db:restore -- backups\\velora-....sql.gz --da'}</code>.</div>
     </div>
   );
 }
