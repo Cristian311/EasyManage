@@ -817,11 +817,16 @@ a.btn.primary{color:#fff}
 .seg button.on b{color:var(--accent)}
 .propbar select.fsel{border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:6px 9px;font-weight:700;font-size:12px;color:var(--ink-2);cursor:pointer}
 .propbar select.fsel:hover{border-color:var(--ink-3);color:var(--ink)}
-/* several properties: each one takes its own line, so its floors stay under its name;
-   the link to the floors page moves up to the end of the first line instead of taking a line of its own */
-.propbar .pb-fg{display:flex;align-items:center;gap:8px;flex:1 1 100%;min-width:0;order:2}
-.propbar .pb-fg .pb-g{min-width:84px;text-align:right;margin-left:0}
-.propbar .pb-more{order:1;margin-left:auto}
+/* several properties: a name and its floors are one piece that wraps as a whole, so a name never ends a line
+   while its floors start the next */
+.propbar .pb-fg{display:flex;align-items:center;gap:8px;flex:none}
+.propbar .pb-more{margin-left:auto}
+/* only where the bar wraps: a piece wider than the whole bar scrolls its buttons instead of breaking apart.
+   The one-line strips (phones, short windows) scroll the whole bar, so there the buttons must keep their width. */
+@media (min-width:721px) and (min-height:521px){
+  .propbar .pb-fg{max-width:100%}
+  .propbar .pb-fg .seg{min-width:0;overflow-x:auto;scrollbar-width:none}
+}
 /* a day heading between the rows it introduces. The cell must stay a table cell, or colSpan stops working and it
    covers only the first column; the flex row lives inside it. On phones the first-cell rule already makes it full width. */
 table.t tr.grp{cursor:default}
