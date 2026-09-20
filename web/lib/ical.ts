@@ -104,7 +104,9 @@ export async function syncFeed(db: Db, feed: Feed, fetchText: FetchText = fetchI
   else for (const l of gone) {
     try { await updateReservation(db, l.reservationId, { status: 'cancelled' }); rep.cancelled++; } catch (err) { rep.conflicts.push(msg(err)); }
   }
-  await db.query('UPDATE ical_feeds SET last_sync = now(), last_error = $2 WHERE id = $1', [feed.id, rep.error]);
+  // ce nu a intrat rămâne scris la link, ca să se vadă în Azi și în Setări până e rezolvat
+  const left = rep.error || (rep.conflicts.length ? `${rep.conflicts.length === 1 ? 'O rezervare de pe site nu a intrat' : `${rep.conflicts.length} rezervări de pe site nu au intrat`}: ${rep.conflicts[0]}`.slice(0, 290) : '');
+  await db.query('UPDATE ical_feeds SET last_sync = now(), last_error = $2 WHERE id = $1', [feed.id, left]);
   return rep;
 }
 

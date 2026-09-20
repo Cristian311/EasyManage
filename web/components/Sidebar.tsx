@@ -6,13 +6,14 @@ import { useStore } from '@/lib/client/store';
 import { todayIso } from '@/domain/dates';
 import { ROLE, initials } from '@/domain/labels';
 import { isActiveRes, propById } from '@/domain/rules';
-import { IconCalendar, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
+import { IconCalendar, IconClean, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
 
 const NAV = [
   { href: '/azi', label: 'Azi', Icon: IconToday, badge: true },
   { href: '/calendar', label: 'Calendar', Icon: IconCalendar },
   { href: '/rezervari', label: 'Rezervări', Icon: IconList },
   { href: '/oaspeti', label: 'Oaspeți', Icon: IconGuests },
+  { href: '/curatenie', label: 'Curățenie', Icon: IconClean },
   { sec: 'Administrare' },
   { href: '/camere', label: 'Camere', Icon: IconRooms },
   { href: '/tarife', label: 'Tarife', Icon: IconRates },

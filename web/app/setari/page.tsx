@@ -294,7 +294,7 @@ function IcalCard() {
           Linkul arată doar ce nopți sunt ocupate, fără nume și fără prețuri. Merge numai când programul e pus pe internet, nu de pe calculatorul de acasă.
         </p>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          <select value={outRoom} onChange={e => { setOutRoom(e.target.value); setOutUrl(''); }} style={{ maxWidth: 220 }}><option value="">Alege camera…</option>{rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
+          <select value={outRoom} onChange={e => { setOutRoom(e.target.value); setOutUrl(''); }} style={{ maxWidth: 220, border: '1px solid var(--line)', borderRadius: 9, padding: '8px 10px', background: 'var(--surface)' }}><option value="">Alege camera…</option>{rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
           <button className="btn" disabled={!outRoom} onClick={() => showLink(false)}>Arată linkul</button>
           {outUrl && <button className="btn sm" onClick={() => { if (confirm('Fac un link nou? Cel vechi nu va mai merge și trebuie schimbat pe site.')) showLink(true); }}>Link nou</button>}
         </div>

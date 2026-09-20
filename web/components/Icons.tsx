@@ -19,6 +19,7 @@ export const IconNext = () => <S><path d="M9 5l7 7-7 7" /></S>;
 export const IconClose = () => <S><path d="M6 6l12 12M18 6L6 18" /></S>;
 export const IconSearch = () => <S><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></S>;
 export const IconJump = () => <S><rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" /><circle cx="12" cy="15" r="1.6" fill="currentColor" stroke="none" /></S>;
-export const IconMenu = () => <S><path d="M4 6h16M4 12h16M4 18h16" /></S>;
+export const IconClean = () => <S><path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9l4.4-1.6z" /><path d="M18.5 15l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" /></S>;
+export const IconMenu =() => <S><path d="M4 6h16M4 12h16M4 18h16" /></S>;
 export const IconPrint = () => <S><path d="M6 9V3h12v6" /><rect x="3" y="9" width="18" height="8" rx="2" /><path d="M7 14h10v7H7z" /></S>;
 export const IconFull = () => <S><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></S>;
