@@ -267,7 +267,9 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .pk .pc-h{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
 .pk .pc-h b{font-family:var(--font-d);font-size:16px;font-weight:600;color:var(--ink);white-space:normal}
 .pk .pc-row{display:flex;justify-content:space-between;gap:10px;padding:2px 0;font-variant-numeric:tabular-nums}
-.pk .pc-row span:last-child{color:var(--ink-3);text-align:right}
+.pk .pc-row span:last-child{text-align:right}
+/* sosirea și plecarea sunt ce se caută întâi în fereastra asta */
+.pk .pc-dates{font-weight:800;font-size:13.5px;color:var(--ink);padding:4px 0}
 .pk .pc-money{display:flex;justify-content:space-between;gap:8px;margin:7px 0 4px;padding:7px 9px;background:var(--surface-2);border-radius:8px;font-size:12px}
 .pk .pc-money b{color:var(--ink);font-variant-numeric:tabular-nums}
 .pk .pc-money .unpaid b,.pk .pc-money .partial b{color:var(--bad)}
@@ -337,7 +339,7 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res.peek.short .m,.res.peek.short .nt,.res.peek.short .x{display:block}
 /* peeked block shows the full detail card */
 .res .pk{display:none}
-.res.peek .pk{display:block;position:relative;z-index:1;font-size:12.5px;line-height:1.4;color:var(--ink-2)}
+.res.peek .pk{display:block;position:relative;z-index:1;font-size:12.5px;line-height:1.4;color:var(--ink)}
 .res.peek > .g,.res.peek > .m,.res.peek > .x,.res.peek > .nt,.res.peek > .ft,.res.peek > .al,.res.peek > .rooms{display:none!important}
 .res.peek,.res.peek.short{padding:10px 12px 10px 14px}
 .pk .pc-row span{min-width:0;overflow-wrap:anywhere}

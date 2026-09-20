@@ -388,7 +388,7 @@ function PeekContent({ b }: { b: Block }) {
       <div className="pc-h"><b>{b.gn}</b><span className={`pill ${r.status}`}><i />{STATUS[r.status]}</span></div>
       {b.alert && <div className={`pc-al ${b.alert.level}`}>{b.alert.text}</div>}
       <div className="pc-row"><span>{roomLabel(data, r)}</span><span>{r.roomIds.length > 1 ? `${r.roomIds.length} camere` : roomById(data, r.roomIds[0])?.type}</span></div>
-      <div className="pc-row"><span>{fmtDL(r.checkIn)}</span><span>→ {fmtDL(r.checkOut)}</span></div>
+      <div className="pc-row pc-dates"><span>{fmtDL(r.checkIn)}</span><span>→ {fmtDL(r.checkOut)}</span></div>
       <div className="pc-row"><span>{nn(n)} · {r.pax} pers.</span><span className="src-tag" style={{ '--sc': `var(--src-${r.source}, var(--src-other))` } as CSSProperties}>{SRC[r.source]}</span></div>
       <div className="pc-money"><span>Total <b>{money(r.total)}</b></span><span>Încasat <b>{money(paid(r))}</b></span><span className={ps}>{rem > 0 ? <>Rest <b>{money(rem)}</b></> : <b>Achitat</b>}</span></div>
       {r.notes && <div className="pc-notes">{r.notes}</div>}
