@@ -76,7 +76,8 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
      and widening only uncovers the labels, which the sidebar's overflow clips while it is narrow.
      Nothing is hidden with display:none, so no row changes height and nothing jumps. */
   .app.nomenu .nav{overflow-x:hidden}
-  .app.nomenu .brand .name,.app.nomenu .brand .sub,.app.nomenu .nav-item span,.app.nomenu .user div,.app.nomenu .badge{display:block}
+  /* numai eticheta de lângă bulină, nu și bulina: `.user div` ar prinde și `.av`, care trebuie să rămână grid ca să stea inițialele la mijloc */
+  .app.nomenu .brand .name,.app.nomenu .brand .sub,.app.nomenu .nav-item span,.app.nomenu .user>div:last-child,.app.nomenu .badge{display:block}
   .app.nomenu .nav-item{justify-content:flex-start;padding:9px 14px}
   .app.nomenu .user{justify-content:flex-start}
   /* the labels start right after the icon, inside the 68px rail, so they fade out too or their first letters show */
@@ -741,7 +742,7 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
 .menu-toggle{display:none}
 @media (max-width:1100px){
   .app{grid-template-columns:var(--sidebar-min) 1fr}
-  .app .brand .name,.app .brand .sub,.app .nav-item span,.app .nav .sec,.app .user div,.app .badge,.app .soon{display:none}
+  .app .brand .name,.app .brand .sub,.app .nav-item span,.app .nav .sec,.app .user>div:last-child,.app .badge,.app .soon{display:none}
   .app .nav-item{justify-content:center;padding:10px}
   .app .user{justify-content:center}
 }
