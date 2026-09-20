@@ -215,6 +215,13 @@ export async function seedDemo(db: Db) {
   return s;
 }
 
+/** Trecerea pe date reale: vilele, etajele și camerele rămân, tot ce e inventat (rezervări, oaspeți, prețuri speciale, cheltuieli) pleacă. */
+export async function startClean(db: Db) {
+  await db.tx(async q => {
+    for (const sql of ['DELETE FROM reservations', 'DELETE FROM rates', 'DELETE FROM expenses', 'DELETE FROM guests']) await q(sql);
+  });
+}
+
 /** Empties every table and loads the demo again. */
 export async function resetDemo(db: Db) {
   await db.tx(async q => {

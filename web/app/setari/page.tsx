@@ -13,7 +13,8 @@ import { useData } from '@/lib/client/store';
 type U = Me & { active: boolean };
 
 export default function SettingsPage() {
-  const reset = useStore(s => s.resetDemo), toast = useStore(s => s.toast), me = useStore(s => s.me);
+  const admin = useStore(s => s.admin);
+  const reset = useStore(s => s.resetDemo),toast = useStore(s => s.toast), me = useStore(s => s.me);
   const [users, setUsers] = useState<U[]>([]);
   const [open, setOpen] = useState(false);
 
@@ -67,6 +68,12 @@ export default function SettingsPage() {
         <CompanyForm />
         <TemplateCard />
         <BackupCard />
+
+        <div className="ph">
+          <h2>Încep cu datele mele</h2>
+          <p>Șterge rezervările, oaspeții, prețurile speciale și cheltuielile de probă. Vilele, etajele, camerele, conturile și facturile rămân. Înainte se face o copie de siguranță.</p>
+          <button className="btn primary" onClick={() => { if (confirm('Șterg toate rezervările, oaspeții și cheltuielile și păstrez camerele?\n\nFă asta o singură dată, când treci de la datele de probă la cele adevărate.')) admin('POST', '/api/demo/clean', undefined, 'Gata: camerele au rămas, restul e gol'); }}>Șterge datele de probă, păstrează camerele</button>
+        </div>
 
         <div className="ph">
           <h2>De la început</h2>
