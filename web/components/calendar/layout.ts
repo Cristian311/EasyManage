@@ -70,6 +70,8 @@ export function layoutBlocks(s: AppState, cols: Column[], d0: string, nDays: num
         if (wantQa) room -= Math.max(6, 8 * zoom);
         nl = Math.max(1, Math.min(need, Math.floor(room / lnName)));
         room -= nl * lnName; tier = 1;
+        // on hover the footer rises clear of the resize grip; the detail lines must leave it that room
+        room -= Math.max(5, 7 * zoom);
         if (room >= lnDet) { tier = 2; room -= lnDet; }
         if (tier === 2 && room >= lnDet) { tier = 3; room -= lnDet; }
         if (tier === 3 && r.notes && room >= lnNote) tier = 4;
