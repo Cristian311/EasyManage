@@ -118,7 +118,7 @@ export function planImport(table: string[][], s: AppState): { rows: ImportRow[];
     if (!errors.length) {
       shadow = { ...shadow, reservations: [...shadow.reservations, {
         id: `import_${i}`, guestId: row.guestId ?? `nou_${i}`, roomIds, checkIn, checkOut, pax: row.pax, total: row.total, source: row.source,
-        status: 'confirmed', notes: '', invoiceNo: '', invoiceDate: null, payments: [], createdAt: '',
+        status: 'confirmed', kind: 'stay', notes: '', invoiceNo: '', invoiceDate: null, payments: [], createdAt: '',
       }], guests: row.guestId ? shadow.guests : [...shadow.guests, { id: `nou_${i}`, firstName: guest, lastName: '', phone: '', email: '', country: '', notes: '' }] };
     }
     return row;

@@ -57,6 +57,9 @@ următoarea deschidere; rezervările rămân neatinse.
 | Pui înapoi o copie de siguranță | `npm run db:restore -- backups\velora-....sql.gz --da` |
 | Proprietarul și-a uitat parola | `npm run user:password -- email@exemplu.ro parola-noua` |
 | Treci de la datele de probă la cele adevărate | Setări → „Șterge datele de probă, păstrează camerele” |
+| Scoți o cameră din vânzare (reparații) | Calendar → „Blochează” |
+| Vezi cât de plină a fost pensiunea | Meniu → Ocupare |
+| Tipărești confirmarea unei rezervări | Sertarul rezervării → „Confirmare de tipărit” |
 
 Din telefon, în aceeași rețea Wi-Fi: pornește cu `npm run dev -- -H 0.0.0.0` și deschide pe telefon
 `http://IP-ul-calculatorului:3000` (IP-ul îl vezi cu `ipconfig`).

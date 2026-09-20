@@ -9,7 +9,7 @@ import { DomainError, isRoomTaken } from './errors';
 import { newId } from './ids';
 
 const RES_COLS = `r.id, r.guest_id AS \`guestId\`, r.check_in AS \`checkIn\`, r.check_out AS \`checkOut\`, r.pax,
-  r.total AS total, r.source, r.status, r.notes, r.invoice_no AS \`invoiceNo\`, r.invoice_date AS \`invoiceDate\`, r.created_at AS \`createdAt\``;
+  r.total AS total, r.source, r.status, r.kind, r.notes, r.invoice_no AS \`invoiceNo\`, r.invoice_date AS \`invoiceDate\`, r.created_at AS \`createdAt\``;
 type ResRow = Omit<Reservation, 'roomIds' | 'payments'>;
 type PayRow = Payment & { reservationId: string };
 const PAY_COLS = 'id, reservation_id AS `reservationId`, amount, method, paid_on AS `date`, note';

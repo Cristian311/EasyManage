@@ -5,7 +5,7 @@ import { api } from '@/lib/client/api';
 import { useData, useStore } from '@/lib/client/store';
 import { fmtD, fmtDL, MONTHS, money, todayIso } from '@/domain/dates';
 import { PAY_L, SRC } from '@/domain/labels';
-import { isActiveRes, payStatus, remaining, resGuest, roomLabel } from '@/domain/rules';
+import { isActiveRes, isStay, payStatus, remaining, resGuest, roomLabel } from '@/domain/rules';
 import type { Reservation, Source } from '@/domain/types';
 import { useGoToReservation } from '@/components/useGoToReservation';
 import { IconPlus } from '@/components/Icons';
@@ -14,7 +14,7 @@ export default function TodayPage() {
   const data = useData(), openModal = useStore(s => s.openModal), goTo = useGoToReservation();
   const T = todayIso(), owner = useStore(s => s.me?.role === 'owner');
   const d = useMemo(() => {
-    const act = data.reservations.filter(isActiveRes);
+    const act = data.reservations.filter(r => isActiveRes(r) && isStay(r));
     const arr = act.filter(r => r.checkIn === T && r.status !== 'checked_out'), dep = act.filter(r => r.checkOut === T && r.status !== 'checked_out'), stay = act.filter(r => r.status === 'checked_in');
     const rooms = data.rooms.filter(r => r.active && !data.rooms.some(u => u.parentId === r.id)), occ = new Set(act.filter(r => r.checkIn <= T && r.checkOut > T).flatMap(r => r.roomIds));
     const owed = act.filter(r => remaining(r) > 0), m0 = T.slice(0, 7);

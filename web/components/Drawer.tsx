@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useData, useStore } from '@/lib/client/store';
 import { fmtD, fmtDL, money, todayIso } from '@/domain/dates';
 import { METHOD, PAY_L, SRC, STATUS } from '@/domain/labels';
-import { guestById, guestName, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
+import { guestById, guestName, isBlock, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
 import { growRoom, shrinkRoom } from '@/lib/client/actions';
 import type { Method, Status } from '@/domain/types';
 import { fillTemplate, mailLink, messageVars, waLink } from '@/domain/message';
@@ -17,6 +17,7 @@ export default function Drawer() {
   const id = useStore(s => s.drawerId), close = useStore(s => s.closeDrawer), patch = useStore(s => s.patchReservation);
   const addPayment = useStore(s => s.addPayment), openModal = useStore(s => s.openModal), del = useStore(s => s.deleteReservation), toast = useStore(s => s.toast);
   const me = useStore(s => s.me), openInvoice = useStore(s => s.openInvoice), openGuest = useStore(s => s.openGuest), loadMsg = useStore(s => s.loadMsg);
+  const admin = useStore(s => s.admin);
   const r = id ? data.reservations.find(x => x.id === id) : undefined;
   const [amt, setAmt] = useState(''), [method, setMethod] = useState<Method>('cash'), [inv, setInv] = useState('');
   const rem = r ? remaining(r) : 0;
@@ -27,6 +28,29 @@ export default function Drawer() {
   }, [close]);
 
   if (!r) return <aside className="drawer" aria-hidden="true" />;
+
+  // o cameră blocată nu are oaspete, bani sau factură: doar de când până când și de ce
+  if (isBlock(r)) return (
+    <aside className="drawer open" aria-label="Cameră blocată">
+      <div className="hd">
+        <div style={{ flex: 1, minWidth: 0 }}><h2>{r.notes || 'Cameră blocată'}</h2><div className="sub">Scoasă din vânzare</div></div>
+        <button className="btn icon ghost" onClick={close} title="Închide"><IconClose /></button>
+      </div>
+      <div className="bd">
+        <div className="kv">
+          <div style={{ gridColumn: '1 / -1' }}><label>{r.roomIds.length > 1 ? 'Camere' : 'Cameră'}</label><b>{roomLabel(data, r)}</b></div>
+          <div><label>Din</label><b>{fmtDL(r.checkIn)}</b></div>
+          <div><label>Până în dimineața zilei</label><b>{fmtDL(r.checkOut)}</b></div>
+          <div><label>Nopți</label><b>{nights(r)}</b></div>
+        </div>
+        <p className="hint" style={{ marginTop: 12 }}>Cât e blocată, nimeni nu poate face o rezervare pe camera aceasta în zilele de mai sus. Nu intră în încasări și nici în raportul de ocupare.</p>
+      </div>
+      <div className="ft">
+        <button className="btn danger" onClick={() => { if (confirm(`Scoți blocarea „${r.notes}” de pe ${roomLabel(data, r)}?\n\nCamera devine liberă din nou.`)) { admin('DELETE', `/api/blocks/${r.id}`, undefined, 'Blocarea a fost scoasă'); close(); } }}>Scoate blocarea</button>
+      </div>
+    </aside>
+  );
+
   const g = guestById(data, r.guestId), rm = roomById(data, r.roomIds[0]), n = nights(r), p = paid(r), ps = payStatus(r), gn = resGuest(data, r);
 
   const setStatus = (s: Status) => {
@@ -123,6 +147,7 @@ export default function Drawer() {
           <div style={{ margin: '8px 0', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
             <button className="btn sm" onClick={() => openGuest(g.id)}>{g.idNumber ? 'Date și act' : 'Completează actul'}</button>
             <Link className="btn sm" href={`/fisa/${r.id}`} onClick={close}>Fișă de cazare</Link>
+            <Link className="btn sm" href={`/confirmare/${r.id}`} onClick={close}>Confirmare de tipărit</Link>
             <button className="btn sm" onClick={() => confirmTo('wa')}>Confirmă pe WhatsApp</button>
             <button className="btn sm" onClick={() => confirmTo('mail')}>Confirmă pe email</button>
           </div>

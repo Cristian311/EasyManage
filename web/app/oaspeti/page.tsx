@@ -5,6 +5,7 @@ import { idDoc } from '@/domain/register';
 import { downloadCsv } from '@/lib/client/csv';
 import { fmtD } from '@/domain/dates';
 import { guestName, roomLabel } from '@/domain/rules';
+import { BLOCK_GUEST } from '@/domain/register';
 import type { Reservation } from '@/domain/types';
 import { useGoToReservation } from '@/components/useGoToReservation';
 import { IconSearch } from '@/components/Icons';
@@ -21,7 +22,9 @@ export default function GuestsPage() {
   }, [data]);
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
-    return data.guests.filter(g => !s || guestName(g).toLowerCase().includes(s) || g.phone.includes(s)).sort((a, b) => guestName(a).localeCompare(guestName(b), 'ro'));
+    // „Cameră blocată” e un rând tehnic, nu un oaspete
+    return data.guests.filter(g => g.id !== BLOCK_GUEST && (!s || guestName(g).toLowerCase().includes(s) || g.phone.includes(s)))
+      .sort((a, b) => guestName(a).localeCompare(guestName(b), 'ro'));
   }, [data, q]);
 
   return (

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { useData, useStore } from '@/lib/client/store';
 import { dayHeading, fmtD, money, todayIso } from '@/domain/dates';
 import { SOURCES, SRC, STATUS, STATUSES } from '@/domain/labels';
-import { alertFor, nights, paid, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
+import { alertFor, isStay, nights, paid, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
 import type { Reservation } from '@/domain/types';
 import { useGoToReservation } from '@/components/useGoToReservation';
 import { IconPlus, IconSearch } from '@/components/Icons';
@@ -35,6 +35,7 @@ export default function ReservationsPage() {
   const found = useMemo(() => {
     const s = q.trim().toLowerCase();
     return data.reservations.filter(r => {
+      if (!isStay(r)) return false;                 // camerele blocate se văd în calendar, nu în lista de rezervări
       if (prop !== 'all' && !r.roomIds.some(id => roomById(data, id)?.propertyId === prop)) return false;
       if (src && r.source !== src) return false;
       if (status && r.status !== status) return false;

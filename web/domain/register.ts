@@ -19,6 +19,9 @@ export function missingForForm(g?: Guest): string[] {
   return out;
 }
 
+/** Rândul tehnic care ține locul oaspetelui la camerele blocate; nu e o persoană. */
+export const BLOCK_GUEST = 'g_blocat';
+
 export interface RegisterRow {
   no: number; reservationId: string; name: string; doc: string; citizenship: string; address: string;
   checkIn: string; checkOut: string; nights: number; rooms: string; pax: number;
@@ -28,7 +31,7 @@ export interface RegisterRow {
 export function registerRows(s: AppState, from: string, to: string): RegisterRow[] {
   const [a, b] = from <= to ? [from, to] : [to, from];
   return s.reservations
-    .filter(r => r.status !== 'cancelled' && r.checkIn >= a && r.checkIn <= b)
+    .filter(r => r.status !== 'cancelled' && r.kind !== 'block' && r.checkIn >= a && r.checkIn <= b)
     .sort((x, y) => x.checkIn.localeCompare(y.checkIn) || x.id.localeCompare(y.id))
     .map((r, i) => {
       const g = guestById(s, r.guestId);

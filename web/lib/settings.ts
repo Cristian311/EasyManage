@@ -63,6 +63,35 @@ export async function saveCompany(db: Db, raw: unknown): Promise<Company> {
   return next;
 }
 
+/* ---------- orele de sosire și de plecare, așa cum apar pe confirmare ---------- */
+
+export interface Hours { checkIn: string; checkOut: string }
+export const DEFAULT_HOURS: Hours = { checkIn: '14:00', checkOut: '12:00' };
+const hhmm = (v: unknown, fallback: string) => { const m = /^(\d{1,2}):(\d{2})$/.exec(String(v ?? '').trim()); return m && +m[1] < 24 && +m[2] < 60 ? `${m[1].padStart(2, '0')}:${m[2]}` : fallback; };
+
+export async function getHours(db: Db): Promise<Hours> {
+  const rows = await db.query<{ name: string; value: string }>("SELECT name, `value` FROM settings WHERE name IN ('check_in_time','check_out_time')");
+  const got = new Map(rows.map(r => [r.name, r.value]));
+  return { checkIn: hhmm(got.get('check_in_time'), DEFAULT_HOURS.checkIn), checkOut: hhmm(got.get('check_out_time'), DEFAULT_HOURS.checkOut) };
+}
+
+export async function saveHours(db: Db, raw: unknown): Promise<Hours> {
+  const b = (raw ?? {}) as Record<string, unknown>, cur = await getHours(db);
+  const next: Hours = { checkIn: hhmm(b.checkIn, cur.checkIn), checkOut: hhmm(b.checkOut, cur.checkOut) };
+  await db.tx(async q => {
+    for (const [name, value] of [['check_in_time', next.checkIn], ['check_out_time', next.checkOut]])
+      await q('INSERT INTO settings (name, `value`) VALUES ($1,$2) ON DUPLICATE KEY UPDATE `value` = $2, updated_at = now()', [name, value]);
+  });
+  return next;
+}
+
+/** Ce trebuie ca să tipărești o confirmare: datele de contact ale pensiunii și orele. Le vede și recepția. */
+export interface Contact extends Hours { name: string; address: string; phone: string; email: string; iban: string; bank: string }
+export async function getContact(db: Db): Promise<Contact> {
+  const c = await getCompany(db), h = await getHours(db);
+  return { name: c.name, address: c.address, phone: c.phone, email: c.email, iban: c.iban, bank: c.bank, ...h };
+}
+
 /* ---------- șablonul mesajului de confirmare ---------- */
 
 export interface MessageTemplate { template: string; sender: string; isDefault: boolean }

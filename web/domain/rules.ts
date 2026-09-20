@@ -17,6 +17,9 @@ export const remaining = (r: Reservation) => Math.max(0, Number(r.total) - paid(
 export const nights = (r: Reservation) => diffDays(r.checkIn, r.checkOut);
 export const payStatus = (r: Reservation): PayStatus => { const p = paid(r); return p <= 0 ? 'unpaid' : p >= Number(r.total) ? 'paid' : 'partial'; };
 export const isActiveRes = (r: Reservation) => r.status !== 'cancelled';
+/** O ședere adevărată: camerele blocate pentru reparații ocupă locul, dar nu sunt oaspeți. */
+export const isStay = (r: Reservation) => r.kind !== 'block';
+export const isBlock = (r: Reservation) => r.kind === 'block';
 
 /** Price of one room for one night: the special price if there is one, otherwise the base price. */
 export const rateFor = (s: AppState, roomId: string, d: string) => s.rates[roomId]?.[d] ?? roomById(s, roomId)?.price ?? 0;
@@ -38,7 +41,7 @@ export function conflictAny(s: AppState, roomIds: string[], checkIn: string, che
 
 /** Alerts shown on the block: the receptionist should see these without opening anything. */
 export function alertFor(r: Reservation, today: string, hour = new Date().getHours()) {
-  if (!isActiveRes(r)) return null;
+  if (!isActiveRes(r) || isBlock(r)) return null;
   const notIn = r.status === 'confirmed' || r.status === 'pending';
   if (notIn && r.checkIn <= today && r.checkOut > today)
     return { level: 'warn' as const, text: r.checkIn < today ? `Trebuia să sosească pe ${fmtD(r.checkIn)} și nu e cazat` : hour >= 14 ? 'A trecut ora de check-in (14:00) și nu e cazat' : 'Sosește azi, încă nu e cazat' };
@@ -49,7 +52,7 @@ export function alertFor(r: Reservation, today: string, hour = new Date().getHou
 
 /** The one-click action available on the block today. */
 export function quickAction(r: Reservation, today: string) {
-  if (!isActiveRes(r)) return null;
+  if (!isActiveRes(r) || isBlock(r)) return null;
   if ((r.status === 'confirmed' || r.status === 'pending') && r.checkIn <= today && r.checkOut > today) return { label: 'Cazează', status: 'checked_in' as const, cls: '' };
   if (r.status === 'checked_in' && r.checkOut <= today) return { label: 'Pleacă', status: 'checked_out' as const, cls: 'leave' };
   return null;

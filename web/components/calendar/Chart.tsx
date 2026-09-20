@@ -8,7 +8,7 @@ import { useMedia } from '@/lib/client/useMedia';
 import { doQuick, finishAddRooms, offerMerge, openBlockMenu, openRoomMenu } from '@/lib/client/actions';
 import { addDays, diffDays, DOWS, fmtD, fmtDL, fromIso, MONTHS, money, todayIso } from '@/domain/dates';
 import { SRC, SRC_SHORT, STATUS } from '@/domain/labels';
-import { addOutcome, columns, conflictAny, floorById, guestById, orderedTops, paid, payStatus, propById, rateFor, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
+import { addOutcome, columns, conflictAny, floorById, guestById, isBlock, orderedTops, paid, payStatus, propById, rateFor, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
 import { layoutBlocks, type Block } from './layout';
 import HScroll from './HScroll';
 
@@ -331,7 +331,7 @@ const BlockView = memo(function BlockView({ b, COLW, today, q, lifted, flash, ad
   chartRef: React.RefObject<HTMLDivElement | null>; onPeekMeasured: (id: string, g: { w: number; h: number; ml: number; mt: number }) => void; onPeekLeave: () => void;
 }) {
   const data = useData();
-  const { r } = b, n = diffDays(r.checkIn, r.checkOut), rem = remaining(r), ps = payStatus(r);
+  const { r } = b, n = diffDays(r.checkIn, r.checkOut), rem = remaining(r), ps = payStatus(r), blk = isBlock(r);
   const ref = useRef<HTMLDivElement>(null);
   // first render of a peek: measure how tall the expanded block wants to be, then animate from the real size
   useLayoutEffect(() => {
@@ -348,7 +348,7 @@ const BlockView = memo(function BlockView({ b, COLW, today, q, lifted, flash, ad
     onPeekMeasured(r.id, { w: w1, h: h1, ml, mt });
   }, [peek?.phase]);   // eslint-disable-line react-hooks/exhaustive-deps
 
-  const cls = ['res', r.status, r.checkOut <= today ? 'past' : '', ['short', 't1', 't2', 't3', ''][b.tier], b.span > 1 ? 'multi' : '',
+  const cls = ['res', r.status, blk ? 'blk' : '', r.checkOut <= today ? 'past' : '', ['short', 't1', 't2', 't3', ''][b.tier], b.span > 1 ? 'multi' : '',
     b.alert ? 'has-alert ' + (b.alert.level === 'warn' ? 'warnlvl' : '') : '', b.segment ? 'segment' : '', pv ? 'dragging' : '', pv && !pv.valid ? 'invalid' : '',
     lifted ? 'lifted' : '', flash ? 'flash' : '', addingSrc ? 'adding-src' : '', peek ? 'peek' : '', peek?.phase === 'closing' ? 'unpeek' : ''].join(' ');
   const out = pv ? pv.cand.checkOut : r.checkOut, inD = pv ? pv.cand.checkIn : r.checkIn, n2 = pv ? diffDays(inD, out) : n;
@@ -362,16 +362,18 @@ const BlockView = memo(function BlockView({ b, COLW, today, q, lifted, flash, ad
   return (
     <div ref={ref} className={cls} style={style} data-id={r.id} title={peek ? undefined : b.alert?.text} onPointerLeave={peek ? onPeekLeave : undefined}>
       <div className="g">{b.gn}</div>
-      <div className="x"><b>{fmtD(inD)}</b> → <b>{fmtD(out)}</b> · {STATUS[r.status]}</div>
-      <div className="m m1">{nn(n2)}<span className="px"> · {r.pax} pers.</span></div>
-      <div className="m m2"><b>{Number(r.total).toLocaleString('ro-RO')} lei</b><span className="sep"> · </span>
-        {rem > 0 ? <span className="rest">rest {Number(rem).toLocaleString('ro-RO')}</span> : <span className="okp">achitat</span>}</div>
-      {r.notes && <div className="nt">{r.notes}</div>}
-      <div className="x">Încasat <b>{money(paid(r))}</b> · {SRC[r.source]}</div>
+      <div className="x"><b>{fmtD(inD)}</b> → <b>{fmtD(out)}</b> · {blk ? 'Blocată' : STATUS[r.status]}</div>
+      <div className="m m1">{nn(n2)}{!blk && <span className="px"> · {r.pax} pers.</span>}</div>
+      {!blk && <>
+        <div className="m m2"><b>{Number(r.total).toLocaleString('ro-RO')} lei</b><span className="sep"> · </span>
+          {rem > 0 ? <span className="rest">rest {Number(rem).toLocaleString('ro-RO')}</span> : <span className="okp">achitat</span>}</div>
+        {r.notes && <div className="nt">{r.notes}</div>}
+        <div className="x">Încasat <b>{money(paid(r))}</b> · {SRC[r.source]}</div>
+      </>}
       {b.alert && <span className={`al ${b.alert.level === 'warn' ? 'warn' : ''}`}>!</span>}
       <div className="ft">
         {b.showQa && b.qa ? <button className={`qa ${b.qa.cls}`} onClick={e => { e.stopPropagation(); doQuick(r.id); }}>{b.qa.label}</button> : <span className="out">→ {fmtD(out)}</span>}
-        <span className={`src ${r.source}`}>{SRC_SHORT[r.source]}</span><span className={`pay ${ps}`} />
+        {!blk && <><span className={`src ${r.source}`}>{SRC_SHORT[r.source]}</span><span className={`pay ${ps}`} /></>}
       </div>
       {b.span > 1 && b.tier > 0 && <span className="rooms">{b.span} camere</span>}
       {peek && <div className="pk"><PeekContent b={b} /></div>}

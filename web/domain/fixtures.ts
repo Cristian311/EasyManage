@@ -13,7 +13,7 @@ export const guest = (id: string, over: Partial<Guest> = {}): Guest => ({
 });
 export const pay = (amount: number, over: Partial<Payment> = {}): Payment => ({ id: `pay_${amount}`, amount, method: 'cash', date: '2026-09-10', note: '', ...over });
 export const res = (id: string, roomIds: string[], checkIn: string, checkOut: string, over: Partial<Reservation> = {}): Reservation => ({
-  id, guestId: 'g', roomIds, checkIn, checkOut, pax: 2, total: 400, source: 'direct', status: 'confirmed', notes: '', invoiceNo: '', invoiceDate: null, payments: [], createdAt: '', ...over,
+  id, guestId: 'g', roomIds, checkIn, checkOut, pax: 2, total: 400, source: 'direct', status: 'confirmed', kind: 'stay', notes: '', invoiceNo: '', invoiceDate: null, payments: [], createdAt: '', ...over,
 });
 export const expense = (over: Partial<Expense> = {}): Expense => ({ id: 'e', propertyId: null, category: 'Altele', desc: '', amount: 100, date: '2026-09-10', recurring: false, until: '', ...over });
 

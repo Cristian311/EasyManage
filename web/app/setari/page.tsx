@@ -316,7 +316,15 @@ function IcalCard() {
 function TemplateCard() {
   const data = useData(), toast = useStore(s => s.toast), loadMsg = useStore(s => s.loadMsg);
   const [t, setT] = useState<string | null>(null), [sender, setSender] = useState(''), [busy, setBusy] = useState(false);
+  const [hours, setHours] = useState<{ checkIn: string; checkOut: string } | null>(null);
   useEffect(() => { api<{ template: string; sender: string }>('/api/message-template').then(m => { setT(m.template); setSender(m.sender); }).catch(e => toast((e as Error).message, 'bad')); }, [toast]);
+  useEffect(() => { api<{ contact: { checkIn: string; checkOut: string } }>('/api/contact').then(x => setHours({ checkIn: x.contact.checkIn, checkOut: x.contact.checkOut })).catch(() => {}); }, []);
+  const saveHours = async () => {
+    setBusy(true);
+    try { const x = await api<{ contact: { checkIn: string; checkOut: string } }>('/api/contact', 'PUT', hours); setHours({ checkIn: x.contact.checkIn, checkOut: x.contact.checkOut }); toast('Orele au fost salvate', 'ok'); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+    finally { setBusy(false); }
+  };
   if (t === null) return null;
   const sample = data.reservations.find(r => r.status !== 'cancelled' && r.payments.length > 0) ?? data.reservations[0];
 
@@ -346,6 +354,17 @@ function TemplateCard() {
         <button className="btn primary" disabled={busy} onClick={() => save(t)}>Salvează mesajul</button>
         <button className="btn" disabled={busy || t === DEFAULT_TEMPLATE} onClick={() => save('')}>Înapoi la cel de la început</button>
       </div>
+      {hours && (
+        <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line-2)' }}>
+          <div className="sec-t">Orele de sosire și de plecare</div>
+          <p style={{ margin: '6px 0 10px', color: 'var(--ink-2)' }}>Apar pe confirmarea tipărită, cea deschisă din sertarul rezervării cu „Confirmare de tipărit”.</p>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+            <div className="f" style={{ margin: 0 }}><label>Sosire de la</label><input type="time" value={hours.checkIn} onChange={e => setHours({ ...hours, checkIn: e.target.value })} /></div>
+            <div className="f" style={{ margin: 0 }}><label>Plecare până la</label><input type="time" value={hours.checkOut} onChange={e => setHours({ ...hours, checkOut: e.target.value })} /></div>
+            <button className="btn" disabled={busy} onClick={saveHours}>Salvează orele</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

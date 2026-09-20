@@ -222,6 +222,15 @@ afli de la client.
 
 ---
 
+## Făcute pe lângă plan
+
+- **Curățenie**: foaia zilei pentru menajeră, pe vile, în ordinea urgenței, cu căsuțe de bifat la tipărire.
+- **Blochează** (în Calendar): camere scoase din vânzare pentru reparații. Sunt rezervări cu `kind = 'block'`,
+  deci baza de date le apără la fel; nu intră în încasări, în ocupare, în registru și nici pe foaia de curățenie.
+- **Ocupare**: raport pe luni cu nopți vândute, procent de ocupare, venit, preț mediu pe noapte și venit pe
+  cameră disponibilă, plus export Excel.
+- **Confirmare de tipărit**: o foaie A4 pentru oaspete, cu orele de sosire și plecare puse în Setări.
+
 ## Rămase pe dinafară, deocamdată
 
 - Împărțirea unei camere în unități (există în demo-ul vechi, folosită rar).

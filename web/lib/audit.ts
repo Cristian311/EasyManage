@@ -8,6 +8,7 @@ export interface AuditRow { id: number; at: string; userName: string; action: st
 
 export const ACTIONS: Record<string, string> = {
   'reservation.create': 'Rezervare nouă', 'reservation.update': 'Rezervare schimbată', 'reservation.delete': 'Rezervare ștearsă',
+  'block.create': 'Cameră blocată', 'block.delete': 'Blocare scoasă',
   'reservation.merge': 'Rezervări unite', 'reservation.import': 'Import de rezervări', 'payment.add': 'Încasare',
   'invoice.create': 'Factură emisă', 'invoice.storno': 'Factură stornată',
   'expense.create': 'Cheltuială nouă', 'expense.update': 'Cheltuială schimbată', 'expense.delete': 'Cheltuială ștearsă',
@@ -16,7 +17,7 @@ export const ACTIONS: Record<string, string> = {
   'property.create': 'Proprietate nouă', 'property.update': 'Proprietate schimbată', 'property.delete': 'Proprietate ștearsă',
   'guest.update': 'Date oaspete schimbate', 'guest.export': 'Date oaspete exportate', 'guest.anonymize': 'Date personale șterse',
   'user.create': 'Cont nou', 'user.update': 'Cont schimbat', 'user.delete': 'Cont șters', 'user.login': 'Intrare în cont', 'user.setup': 'Primul cont',
-  'settings.company': 'Datele pensiunii schimbate', 'settings.template': 'Mesajul de confirmare schimbat',
+  'settings.company': 'Datele pensiunii schimbate', 'settings.template': 'Mesajul de confirmare schimbat', 'settings.hours': 'Orele de sosire/plecare schimbate',
   'backup.create': 'Copie de siguranță', 'backup.dir': 'Folderul copiilor schimbat', 'backup.download': 'Copie descărcată', 'demo.reset': 'Date demo reîncărcate', 'demo.clean': 'Date demo șterse, camerele păstrate',
   'ical.add': 'Calendar extern adăugat', 'ical.delete': 'Calendar extern scos', 'ical.sync': 'Calendare externe citite', 'ical.renew': 'Link de calendar schimbat',
 };

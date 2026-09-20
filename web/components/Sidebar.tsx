@@ -6,7 +6,7 @@ import { useStore } from '@/lib/client/store';
 import { todayIso } from '@/domain/dates';
 import { ROLE, initials } from '@/domain/labels';
 import { isActiveRes, propById } from '@/domain/rules';
-import { IconCalendar, IconClean, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
+import { IconCalendar, IconChart, IconClean, IconFinance, IconGuests, IconInvoice, IconList, IconMoon, IconRates, IconRooms, IconSettings, IconToday } from './Icons';
 
 const NAV = [
   { href: '/azi', label: 'Azi', Icon: IconToday, badge: true },
@@ -18,6 +18,7 @@ const NAV = [
   { href: '/camere', label: 'Camere', Icon: IconRooms },
   { href: '/tarife', label: 'Tarife', Icon: IconRates },
   { href: '/financiar', label: 'Financiar', Icon: IconFinance, owner: true },
+  { href: '/ocupare', label: 'Ocupare', Icon: IconChart, owner: true },
   { href: '/facturi', label: 'Facturi', Icon: IconInvoice, owner: true },
   { href: '/setari', label: 'Setări', Icon: IconSettings, owner: true },
 ] as const;

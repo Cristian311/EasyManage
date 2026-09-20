@@ -34,6 +34,7 @@ interface Store {
   modal: ModalState | null;
   roomModal: { editId: string | null } | null;
   expModal: { editId: string | null } | null;
+  blockModal: boolean;            // fereastra „Blochează camere”
   invoiceFor: string | null;      // rezervarea pentru care se emite o factură
   guestModal: string | null;      // oaspetele ale cărui date se editează
   msg: { template: string; sender: string } | null;   // șablonul confirmării, luat o dată
@@ -58,6 +59,8 @@ interface Store {
   closeRoomModal(): void;
   openExpModal(editId?: string | null): void;
   closeExpModal(): void;
+  openBlock(): void;
+  closeBlock(): void;
   openInvoice(reservationId: string): void;
   loadMsg(force?: boolean): Promise<{ template: string; sender: string } | null>;
   openGuest(id: string): void;
@@ -101,6 +104,7 @@ export const useStore = create<Store>((set, get) => {
     modal: null,
     roomModal: null,
     expModal: null,
+    blockModal: false,
     invoiceFor: null,
     guestModal: null,
     msg: null,
@@ -146,6 +150,8 @@ export const useStore = create<Store>((set, get) => {
     closeRoomModal() { set({ roomModal: null }); },
     openExpModal(editId = null) { set({ expModal: { editId } }); },
     closeExpModal() { set({ expModal: null }); },
+    openBlock() { set({ blockModal: true, drawerId: null }); },
+    closeBlock() { set({ blockModal: false }); },
     openInvoice(reservationId) { set({ invoiceFor: reservationId }); },
     closeInvoice() { set({ invoiceFor: null }); },
     async loadMsg(force = false) {

@@ -2,6 +2,8 @@
 
 export type Source = 'direct' | 'booking' | 'travelminit' | 'airbnb' | 'phone' | 'other';
 export type Status = 'confirmed' | 'pending' | 'checked_in' | 'checked_out' | 'cancelled';
+/** O ședere adevărată sau o cameră scoasă din vânzare (reparații, folosință proprie). */
+export type ResKind = 'stay' | 'block';
 export type Method = 'cash' | 'card' | 'transfer' | 'other';
 export type PayStatus = 'unpaid' | 'partial' | 'paid';
 /** owner vede tot; reception nu vede Financiar și Setări. */
@@ -57,6 +59,7 @@ export interface Reservation {
   total: number;
   source: Source;
   status: Status;
+  kind: ResKind;
   notes: string;
   invoiceNo: string;
   invoiceDate: string | null;

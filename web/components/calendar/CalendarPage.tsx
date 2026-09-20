@@ -11,6 +11,7 @@ export default function CalendarPage() {
   const data = useData();
   const view = useStore(s => s.view), setView = useStore(s => s.setView), jumpTo = useStore(s => s.jumpTo), openModal = useStore(s => s.openModal);
   const focus = useStore(s => s.focus), setFocus = useStore(s => s.setFocus), setMenuOpen = useStore(s => s.setMenuOpen);
+  const openBlock = useStore(s => s.openBlock);
   const [period, setPeriod] = useState('');
   const onPeriod = useCallback((p: string) => setPeriod(p), []);
   const jumpRef = useRef<HTMLInputElement>(null);
@@ -64,6 +65,7 @@ export default function CalendarPage() {
           <button onClick={() => setZoom(view.zoom + 0.1)} aria-label="Mărește" style={{ padding: '6px 10px' }}>+</button>
         </div>
         <button className="btn icon" id="focusBtn" onClick={enterFocus} title="Ecran complet: doar calendarul" aria-label="Ecran complet"><IconFull /></button>
+        <button className="btn" onClick={() => openBlock()} title="Scoate o cameră din vânzare: reparații, zugrăvit">Blochează</button>
         <button className="btn primary" id="newResBtn" onClick={() => openModal()}><IconPlus />Rezervare nouă <span className="kbd kbd-hint" style={{ color: 'rgba(255,255,255,.8)', borderColor: 'rgba(255,255,255,.4)', background: 'transparent' }}>N</span></button>
       </div>
       <div className="chart-wrap">

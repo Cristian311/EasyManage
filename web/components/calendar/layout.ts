@@ -1,7 +1,7 @@
 // Where each reservation block goes on the calendar and how much text fits in it.
 import type { AppState, Reservation } from '@/domain/types';
 import { addDays, diffDays } from '@/domain/dates';
-import { alertFor, isActiveRes, nights, quickAction, resGuest, type Column } from '@/domain/rules';
+import { alertFor, isActiveRes, isBlock, nights, quickAction, resGuest, type Column } from '@/domain/rules';
 
 let mctx: CanvasRenderingContext2D | null | undefined;
 const measureCtx = () => (mctx === undefined ? (mctx = typeof document !== 'undefined' ? document.createElement('canvas').getContext('2d') : null) : mctx);
@@ -41,9 +41,10 @@ export function layoutBlocks(s: AppState, cols: Column[], d0: string, nDays: num
     // rooms that are not side by side are drawn as separate pieces of the same reservation
     const runs: [number, number][] = [];
     cis.forEach(i => { const last = runs[runs.length - 1]; if (last && i === last[0] + last[1]) last[1]++; else runs.push([i, 1]); });
-    const gn = resGuest(s, r), n = nights(r), top = diffDays(d0, r.checkIn) * ROWH, h = n * ROWH;
-    const due = (r.status === 'confirmed' || r.status === 'pending') && r.checkIn <= today && r.checkOut > today;
-    const color = r.status === 'cancelled' ? 'var(--st-cancel)' : due ? 'var(--src-due)' : `var(--src-${r.source}, var(--src-other))`;
+    const block = isBlock(r);
+    const gn = block ? (r.notes || 'Blocată') : resGuest(s, r), n = nights(r), top = diffDays(d0, r.checkIn) * ROWH, h = n * ROWH;
+    const due = !block && (r.status === 'confirmed' || r.status === 'pending') && r.checkIn <= today && r.checkOut > today;
+    const color = r.status === 'cancelled' ? 'var(--st-cancel)' : block ? 'var(--ink-3)' : due ? 'var(--src-due)' : `var(--src-${r.source}, var(--src-other))`;
     const alert = alertFor(r, today), qa = quickAction(r, today);
     // word-aware estimate of how many lines the name needs at a given width
     const linesFor = (availW: number) => {

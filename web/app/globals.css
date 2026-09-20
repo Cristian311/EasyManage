@@ -234,6 +234,9 @@ h1,h2,h3{margin:0;font-family:var(--font-d);text-wrap:balance}
 .res .src.phone{color:var(--brass);border-color:var(--brass)}
 .res .pay{width:max(6px,calc(8px*var(--z)));height:max(6px,calc(8px*var(--z)));border-radius:50%;background:var(--warn);box-shadow:0 0 0 2px var(--surface);flex:none}
 .res .pay.paid{background:var(--ok)}.res .pay.unpaid{background:var(--bad)}
+/* cameră scoasă din vânzare: dungi, ca să nu semene cu o rezervare */
+.res.blk{background:repeating-linear-gradient(135deg,var(--surface-2) 0 6px,var(--surface-3) 6px 12px)}
+.res.blk .g{color:var(--ink-2)}
 .res .rs{position:absolute;left:0;right:0;bottom:0;height:9px;cursor:ns-resize;z-index:2}
 .res .rs::after{content:"";position:absolute;left:50%;bottom:3px;width:22px;height:3px;margin-left:-11px;border-radius:2px;background:color-mix(in srgb,var(--c) 60%,transparent);opacity:0;transition:opacity .12s}
 .res:hover .rs::after{opacity:1}

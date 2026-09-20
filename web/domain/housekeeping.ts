@@ -1,6 +1,6 @@
 // Lista de curățenie a unei zile: ce camere se eliberează, în care vine cineva și unde doar se face ordine.
 import type { AppState, Reservation } from './types';
-import { bookableRooms, floorById, isActiveRes, propById, resGuest } from './rules';
+import { bookableRooms, floorById, isActiveRes, isStay, propById, resGuest } from './rules';
 
 export type CleanKind = 'turn' | 'out' | 'in' | 'stay';
 export interface CleanRow {
@@ -21,7 +21,7 @@ export const CLEAN_L: Record<CleanKind, string> = {
 };
 
 export function cleaningList(s: AppState, day: string, propId = 'all'): CleanRow[] {
-  const act = s.reservations.filter(isActiveRes), rows: CleanRow[] = [];
+  const act = s.reservations.filter(r => isActiveRes(r) && isStay(r)), rows: CleanRow[] = [];
   for (const rm of bookableRooms(s, { prop: propId, floor: 'all' })) {
     const on = (f: (r: Reservation) => boolean) => act.find(r => r.roomIds.includes(rm.id) && f(r));
     const out = on(r => r.checkOut === day), inn = on(r => r.checkIn === day), stay = on(r => r.checkIn < day && r.checkOut > day);

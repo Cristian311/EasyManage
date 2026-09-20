@@ -11,6 +11,7 @@ import RoomModal from './RoomModal';
 import ExpenseModal from './ExpenseModal';
 import InvoiceModal from './InvoiceModal';
 import GuestModal from './GuestModal';
+import BlockModal from './BlockModal';
 import Menu from './Menu';
 import Toasts from './Toasts';
 
@@ -55,7 +56,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
       {slideMenu && menuOpen && <div className="menu-back" onClick={() => setMenuOpen(false)} />}
-      {ready && <><Drawer /><ResModal /><RoomModal /><ExpenseModal /><InvoiceModal /><GuestModal /><Menu /></>}
+      {ready && <><Drawer /><ResModal /><RoomModal /><ExpenseModal /><InvoiceModal /><GuestModal /><BlockModal /><Menu /></>}
       <Toasts />
     </>
   );
