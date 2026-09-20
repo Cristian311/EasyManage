@@ -1,9 +1,9 @@
 'use client';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import type { Me, Role } from '@/domain/types';
+import type { AppState, Me, Role, Source } from '@/domain/types';
 import type { Company } from '@/domain/invoice';
-import { ROLE } from '@/domain/labels';
+import { ROLE, SRC } from '@/domain/labels';
 import { api } from '@/lib/client/api';
 import { useStore } from '@/lib/client/store';
 import Table from '@/components/Table';
@@ -66,6 +66,7 @@ export default function SettingsPage() {
         </div>
 
         <CompanyForm />
+        <IcalCard />
         <TemplateCard />
         <BackupCard />
 
@@ -214,6 +215,99 @@ function BackupCard() {
         </div>
       ))}
       <div className="hint" style={{ marginTop: 10 }}>Ca să pui o copie înapoi: oprești programul și rulezi în folderul web <code>{'npm run db:restore -- backups\\velora-....sql.gz --da'}</code>.</div>
+    </div>
+  );
+}
+
+interface IcalFeed { id: string; roomId: string; roomName: string; source: Source; url: string; lastSync: string | null; lastError: string }
+interface IcalReport { roomName: string; added: number; changed: number; cancelled: number; conflicts: string[]; error: string }
+
+/** Linkurile de calendar (.ics) de pe Booking, Airbnb, Travelminit, câte unul pe cameră. */
+function IcalCard() {
+  const data = useData(), toast = useStore(s => s.toast), setData = useStore(s => s.setData);
+  const [feeds, setFeeds] = useState<IcalFeed[] | null>(null), [busy, setBusy] = useState(false), [report, setReport] = useState<IcalReport[] | null>(null);
+  const [outRoom, setOutRoom] = useState(''), [outUrl, setOutUrl] = useState('');
+  const [roomId, setRoomId] = useState(''), [source, setSource] = useState<Source>('booking'), [url, setUrl] = useState('');
+  useEffect(() => { api<{ feeds: IcalFeed[] }>('/api/ical').then(r => setFeeds(r.feeds)).catch(e => toast((e as Error).message, 'bad')); }, [toast]);
+  if (!feeds) return null;
+
+  const add = async () => {
+    setBusy(true);
+    try { setFeeds((await api<{ feeds: IcalFeed[] }>('/api/ical', 'POST', { roomId, source, url })).feeds); setUrl(''); toast('Calendar adăugat. Apasă „Citește acum” ca să aduci rezervările.', 'ok'); }
+    catch (e) { toast((e as Error).message, 'bad'); }
+    finally { setBusy(false); }
+  };
+  const remove = async (f: IcalFeed) => {
+    if (!confirm(`Scoți calendarul ${SRC[f.source]} de la ${f.roomName}?\n\nRezervările deja aduse rămân.`)) return;
+    try { setFeeds((await api<{ feeds: IcalFeed[] }>(`/api/ical/${f.id}`, 'DELETE')).feeds); } catch (e) { toast((e as Error).message, 'bad'); }
+  };
+  const sync = async () => {
+    setBusy(true);
+    try {
+      const r = await api<{ report: IcalReport[]; feeds: IcalFeed[]; state: AppState }>('/api/ical/sync', 'POST');
+      setFeeds(r.feeds); setReport(r.report); setData(r.state);
+      const n = r.report.reduce((s, x) => s + x.added + x.changed + x.cancelled, 0), bad = r.report.some(x => x.error || x.conflicts.length);
+      toast(bad ? 'Citit, dar sunt probleme. Vezi mai jos.' : n ? `Citit: ${n} schimbări` : 'Citit: nimic nou', bad ? 'bad' : 'ok');
+    } catch (e) { toast((e as Error).message, 'bad'); }
+    finally { setBusy(false); }
+  };
+  const showLink = async (renew: boolean) => {
+    try {
+      const { path } = await api<{ path: string }>('/api/ical/token', 'POST', { roomId: outRoom, renew });
+      const full = window.location.origin + path; setOutUrl(full);
+      try { await navigator.clipboard.writeText(full); toast('Link copiat', 'ok'); } catch {}
+    } catch (e) { toast((e as Error).message, 'bad'); }
+  };
+  const when = (at: string | null) => { if (!at) return 'încă necitit'; const [d, t] = at.split(' '); return `${d.split('-').reverse().join('.')} ${t?.slice(0, 5) ?? ''}`; };
+  const rooms = data.rooms.filter(r => r.active);
+
+  return (
+    <div className="card" style={{ marginBottom: 16, padding: '14px 16px 18px' }}>
+      <div className="ch" style={{ padding: '0 0 12px', marginBottom: 12 }}>Calendare Booking, Airbnb, Travelminit<span className="cnt">{feeds.length}</span></div>
+      <p style={{ margin: '0 0 12px', color: 'var(--ink-2)' }}>
+        Pune aici linkul de calendar (.ics) al fiecărei camere, luat de pe site (la Booking: Tarife și disponibilitate → Sincronizare calendare → Exportă).
+        Programul îl citește singur din 15 în 15 minute: rezervările de acolo apar în calendar, iar camera nu mai poate fi dată a doua oară.
+        Site-urile nu trimit numele și prețul, deci pe acelea le completezi tu.
+      </p>
+      {feeds.map(f => (
+        <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0', borderTop: '1px solid var(--line-2)', flexWrap: 'wrap' }}>
+          <b style={{ minWidth: 60 }}>{f.roomName}</b><span className="urole">{SRC[f.source]}</span>
+          <span style={{ flex: 1, minWidth: 120, color: f.lastError ? 'var(--bad)' : 'var(--ink-3)', fontSize: 12.5 }}>{f.lastError || `citit: ${when(f.lastSync)}`}</span>
+          <button className="btn sm" onClick={() => remove(f)}>Scoate</button>
+        </div>
+      ))}
+      <div className="g3" style={{ marginTop: 12 }}>
+        <div className="f"><label>Camera</label>
+          <select value={roomId} onChange={e => setRoomId(e.target.value)}><option value="">Alege…</option>{rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></div>
+        <div className="f"><label>Site-ul</label>
+          <select value={source} onChange={e => setSource(e.target.value as Source)}>{(['booking', 'airbnb', 'travelminit', 'other'] as Source[]).map(s => <option key={s} value={s}>{SRC[s]}</option>)}</select></div>
+        <div className="f"><label>Linkul calendarului</label><input value={url} onChange={e => setUrl(e.target.value)} placeholder="https://…ics" /></div>
+      </div>
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+        <button className="btn" disabled={busy || !roomId || !url.trim()} onClick={add}>Adaugă calendarul</button>
+        <button className="btn primary" disabled={busy || !feeds.length} onClick={sync}>{busy ? 'Se citește…' : 'Citește acum'}</button>
+      </div>
+      <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line-2)' }}>
+        <div className="sec-t">Și invers: linkul nostru, de pus pe site</div>
+        <p style={{ margin: '6px 0 10px', color: 'var(--ink-2)' }}>
+          Ca site-ul să închidă singur nopțile rezervate la telefon, îi dai linkul camerei (la Booking: Sincronizare calendare → Importă).
+          Linkul arată doar ce nopți sunt ocupate, fără nume și fără prețuri. Merge numai când programul e pus pe internet, nu de pe calculatorul de acasă.
+        </p>
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+          <select value={outRoom} onChange={e => { setOutRoom(e.target.value); setOutUrl(''); }} style={{ maxWidth: 220 }}><option value="">Alege camera…</option>{rooms.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select>
+          <button className="btn" disabled={!outRoom} onClick={() => showLink(false)}>Arată linkul</button>
+          {outUrl && <button className="btn sm" onClick={() => { if (confirm('Fac un link nou? Cel vechi nu va mai merge și trebuie schimbat pe site.')) showLink(true); }}>Link nou</button>}
+        </div>
+        {outUrl && <input readOnly value={outUrl} onFocus={e => e.currentTarget.select()} style={{ marginTop: 8, width: '100%' }} />}
+      </div>
+      {report && report.some(r => r.error || r.conflicts.length || r.added || r.changed || r.cancelled) && (
+        <div className="notes" style={{ marginTop: 12 }}>
+          {report.map((r, i) => (
+            <div key={i}><b>{r.roomName}</b>: {r.error ? <span style={{ color: 'var(--bad)' }}>{r.error}</span> : `${r.added} noi, ${r.changed} mutate, ${r.cancelled} anulate`}
+              {r.conflicts.map((c, j) => <div key={j} style={{ color: 'var(--bad)' }}>Nu a intrat: {c}</div>)}</div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -121,7 +121,13 @@ copia datelor pensiunii, socoteala cu și fără TVA, stornare o singură dată)
 
 ---
 
-## Faza 5 — Sincronizare cu Booking.com și Airbnb (iCal)
+## Faza 5 — Sincronizare cu Booking.com și Airbnb (iCal) ✅ (făcut; exportul merge abia după publicare)
+
+> Făcut în Setări → „Calendare Booking, Airbnb, Travelminit”: linkurile se citesc din 15 în 15 minute
+> (`lib/ical.ts`), ce vine devine rezervare obișnuită, ce dispare de pe site se anulează, conflictele se văd
+> în raportul citirii. Linkul nostru pentru site-uri există (`/api/ical/export/<cod>.ics`), dar site-urile îl pot
+> citi doar când programul are adresă publică (faza 2). Nefăcut: alerta în pagina Azi. Neîncercat pe un
+> calendar adevărat de la Booking — doar pe texte de test.
 
 Problema numărul unu a oricărei pensiuni: aceeași cameră vândută de două ori, pe două site-uri.
 

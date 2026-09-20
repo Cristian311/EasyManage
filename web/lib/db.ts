@@ -115,6 +115,8 @@ export function getDb(): Promise<Db> {
       }
       // o copie de siguranță pe zi, cât timp merge serverul
       const { startAutoBackup } = await import('./backup'); startAutoBackup(db);
+      // calendarele Booking/Airbnb, citite din 15 în 15 minute
+      const { startIcalSync } = await import('./ical'); startIcalSync(db);
       return db;
     })().catch(e => { g.__veloraDb = undefined; throw e; });
   }

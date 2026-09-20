@@ -18,6 +18,7 @@ export const ACTIONS: Record<string, string> = {
   'user.create': 'Cont nou', 'user.update': 'Cont schimbat', 'user.delete': 'Cont șters', 'user.login': 'Intrare în cont', 'user.setup': 'Primul cont',
   'settings.company': 'Datele pensiunii schimbate', 'settings.template': 'Mesajul de confirmare schimbat',
   'backup.create': 'Copie de siguranță', 'backup.dir': 'Folderul copiilor schimbat', 'backup.download': 'Copie descărcată', 'demo.reset': 'Date demo reîncărcate', 'demo.clean': 'Date demo șterse, camerele păstrate',
+  'ical.add': 'Calendar extern adăugat', 'ical.delete': 'Calendar extern scos', 'ical.sync': 'Calendare externe citite', 'ical.renew': 'Link de calendar schimbat',
 };
 
 export async function audit(db: Db, user: Pick<User, 'id' | 'name'> | null, action: string, entity = '', entityId = '', summary = ''): Promise<void> {
