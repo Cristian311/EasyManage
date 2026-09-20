@@ -18,6 +18,7 @@ export interface NewReservation {
   guestId?: string; guestName?: string; roomIds: string[]; checkIn: string; checkOut: string;
   pax: number; total: number; source: string; status: string; notes: string; advance: number;
 }
+export interface MsgTemplates { template: string; templateEn: string; sender: string; isDefault: boolean; isDefaultEn: boolean }
 export interface RoomFields { name: string; type: string; capacity: number; price: number; color: string; desc: string; active: boolean; propertyId: string; floorId: string | null }
 export interface ExpenseFields { amount: number; date: string; category: string; desc: string; propertyId: string | null; recurring: boolean; until?: string }
 
@@ -37,7 +38,7 @@ interface Store {
   blockModal: boolean;            // fereastra „Blochează camere”
   invoiceFor: string | null;      // rezervarea pentru care se emite o factură
   guestModal: string | null;      // oaspetele ale cărui date se editează
-  msg: { template: string; sender: string } | null;   // șablonul confirmării, luat o dată
+  msg: MsgTemplates | null;      // șabloanele confirmării (ro + en), luate o dată
   menu: MenuState | null;
   toasts: Toast[];
   focus: boolean;
@@ -62,7 +63,7 @@ interface Store {
   openBlock(): void;
   closeBlock(): void;
   openInvoice(reservationId: string): void;
-  loadMsg(force?: boolean): Promise<{ template: string; sender: string } | null>;
+  loadMsg(force?: boolean): Promise<MsgTemplates | null>;
   openGuest(id: string): void;
   closeGuest(): void;
   saveGuest(id: string, x: Partial<Guest>): Promise<string | null>;
@@ -79,6 +80,8 @@ interface Store {
   patchReservation(id: string, patch: ResPatch, opts?: { undoLabel?: string; quiet?: boolean }): Promise<string | null>;
   mergeReservations(keepId: string, otherId: string, roomIds: string[]): Promise<void>;
   addPayment(id: string, amount: number, method: Method): Promise<string | null>;
+  addExtra(id: string, x: { label: string; qty: number; unitPrice: number }): Promise<string | null>;
+  removeExtra(id: string, extraId: string): Promise<void>;
   deleteReservation(id: string): Promise<void>;
   setRates(roomIds: string[], from: string, to: string, price: number | null, wkOnly: boolean, label: string): Promise<void>;
   admin(method: 'POST' | 'PATCH' | 'DELETE' | 'PUT', url: string, body?: unknown, okMsg?: string): Promise<string | null>;
@@ -156,7 +159,7 @@ export const useStore = create<Store>((set, get) => {
     closeInvoice() { set({ invoiceFor: null }); },
     async loadMsg(force = false) {
       if (get().msg && !force) return get().msg;
-      try { const m = await api<{ template: string; sender: string }>('/api/message-template'); set({ msg: m }); return m; }
+      try { const m = await api<MsgTemplates>('/api/message-template'); set({ msg: m }); return m; }
       catch (e) { get().toast((e as Error).message, 'bad'); return null; }
     },
     openGuest(id) { set({ guestModal: id }); },
@@ -223,6 +226,20 @@ export const useStore = create<Store>((set, get) => {
         const { reservation } = await api<{ reservation: Reservation }>(`/api/reservations/${id}/payments`, 'POST', { amount, method });
         replace(reservation); get().toast(`Încasat ${money(amount)}`, 'ok'); return null;
       } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
+    },
+
+    async addExtra(id, x) {
+      try {
+        const { reservation } = await api<{ reservation: Reservation }>(`/api/reservations/${id}/extras`, 'POST', x);
+        replace(reservation); get().toast(`${x.label} adăugat`, 'ok'); return null;
+      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
+    },
+
+    async removeExtra(id, extraId) {
+      try {
+        const { reservation } = await api<{ reservation: Reservation }>(`/api/reservations/${id}/extras/${extraId}`, 'DELETE');
+        replace(reservation); get().toast('Serviciul a fost scos');
+      } catch (e) { get().toast((e as Error).message, 'bad'); }
     },
 
     async deleteReservation(id) {

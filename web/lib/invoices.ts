@@ -68,6 +68,10 @@ export async function draftFor(db: Db, reservationId: string): Promise<Draft> {
     'SELECT buyer_name AS `buyerName`, buyer_tax_id AS `buyerTaxId`, buyer_address AS `buyerAddress` FROM invoices WHERE guest_id = $1 ORDER BY created_at DESC LIMIT 1',
     [r.guestId]);
 
+  const extras = await db.query<{ label: string; qty: number; unitPrice: number }>(
+    'SELECT label, qty, unit_price AS `unitPrice` FROM reservation_extras WHERE reservation_id = $1 ORDER BY created_at, id', [reservationId]);
+  const extrasSum = extras.reduce((t, e) => t + Number(e.qty) * Number(e.unitPrice), 0);
+
   const today = todayIso();
   return {
     reservationId,
@@ -79,7 +83,9 @@ export async function draftFor(db: Db, reservationId: string): Promise<Draft> {
     series: company.series,
     vatRate: company.vatPayer ? company.vatRate : 0,
     note: company.note,
-    lines: [stayLine(r.rooms ?? '—', r.checkIn, r.checkOut, Number(r.total), r.pax)],
+    // serviciile în plus sunt deja cuprinse în total, deci linia de cazare e restul
+    lines: [stayLine(r.rooms ?? '—', r.checkIn, r.checkOut, Math.max(0, Math.round((Number(r.total) - extrasSum) * 100) / 100), r.pax),
+      ...extras.map(e => ({ description: e.label, qty: Number(e.qty), unit: 'buc', unitPrice: Number(e.unitPrice) }))],
     company,
     missing: missingCompanyFields(company),
   };

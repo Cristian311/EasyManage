@@ -10,8 +10,10 @@ export async function GET() { return handle(async () => getTemplate(await getDb(
 
 export async function PUT(req: Request) {
   return handleOwner(async user => {
-    const db = await getDb(), out = await saveTemplate(db, ((await readJson(req)) as { template?: unknown }).template);
-    await audit(db, user, 'settings.template', 'settings');
+    const b = (await readJson(req)) as { template?: unknown; lang?: unknown };
+    const lang = b.lang === 'en' ? 'en' : 'ro';
+    const db = await getDb(), out = await saveTemplate(db, b.template, lang);
+    await audit(db, user, 'settings.template', 'settings', '', lang === 'en' ? 'engleză' : 'română');
     return out;
   });
 }

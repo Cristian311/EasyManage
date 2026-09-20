@@ -759,7 +759,19 @@ button,.btn,.tb-chip,.nav-item{touch-action:manipulation}
   .sidebar{order:2;border-right:0;border-top:1px solid var(--line);flex-direction:row;align-items:center}
   .brand,.side-foot,.nav .sec{display:none}
   .nav{flex-direction:row;justify-content:space-around;padding:6px;overflow-x:auto}
-  .nav-item{flex-direction:column;gap:3px;font-size:10px;padding:6px 8px!important}
+  /* cu multe pagini în meniu, bara de jos se derulează în loc să înghesuie scrisul */
+  .nav-item{flex-direction:column;gap:3px;font-size:10px;padding:6px 8px!important;flex:0 0 auto;min-width:64px;text-align:center}
+  .nav{justify-content:flex-start;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  /* rândurile de listă își pun butonul dedesubt, ca să nu iasă din ecran */
+  .li{flex-wrap:wrap}
+  .li .amt{margin-left:auto}
+  .li .btn{flex:none}
+  .tiles{grid-template-columns:1fr 1fr}
+  /* foaia de curățenie și fișele: mai bine se trage tabelul într-o parte decât să se înghesuie cuvintele */
+  .tbl-scroll{overflow-x:auto}
+  .tbl-scroll table{min-width:620px}
+  .invoice.sheet{padding:18px 14px}
   .app .nav-item span{display:block}
   .nav-item.soonwrap{display:none}
   .topbar{padding:8px 12px;gap:6px}

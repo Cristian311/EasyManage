@@ -1,7 +1,7 @@
 // Datele oaspetelui, șablonul confirmării și importul, pe un MySQL adevărat.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { tinyState } from '@/domain/fixtures';
-import { DEFAULT_TEMPLATE } from '@/domain/message';
+import { DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_EN } from '@/domain/message';
 import { type Db } from './db';
 import { freshDb, resetTo } from './testdb';
 import { DomainError } from './errors';
@@ -42,12 +42,17 @@ describe('datele oaspetelui', () => {
 describe('șablonul confirmării', () => {
   it('până nu scrie nimeni altul, e cel de la început, semnat cu numele firmei', async () => {
     await saveCompany(db, { name: 'Vila Test SRL' });
-    expect(await getTemplate(db)).toEqual({ template: DEFAULT_TEMPLATE, sender: 'Vila Test SRL', isDefault: true });
+    expect(await getTemplate(db)).toEqual({ template: DEFAULT_TEMPLATE, templateEn: DEFAULT_TEMPLATE_EN, sender: 'Vila Test SRL', isDefault: true, isDefaultEn: true });
   });
   it('se salvează, iar gol înseamnă înapoi la cel de la început', async () => {
     expect((await saveTemplate(db, '  Salut, {prenume}!  ')).template).toBe('Salut, {prenume}!');
     expect((await getTemplate(db)).isDefault).toBe(false);
     expect((await saveTemplate(db, '')).template).toBe(DEFAULT_TEMPLATE);
+  });
+  it('textul englezesc se ține separat: scris unul, celălalt rămâne cum era', async () => {
+    const out = await saveTemplate(db, 'Hello, {prenume}!', 'en');
+    expect(out).toMatchObject({ templateEn: 'Hello, {prenume}!', isDefaultEn: false, template: DEFAULT_TEMPLATE, isDefault: true });
+    expect((await saveTemplate(db, '', 'en')).templateEn).toBe(DEFAULT_TEMPLATE_EN);
   });
 });
 

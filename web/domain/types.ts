@@ -48,6 +48,8 @@ export interface Guest {
 }
 
 export interface Payment { id: string; amount: number; method: Method; date: string; note: string }
+/** Ce s-a mai luat pe lângă cazare. Suma lui e deja cuprinsă în totalul rezervării. */
+export interface Extra { id: string; label: string; qty: number; unitPrice: number }
 
 export interface Reservation {
   id: string;
@@ -64,6 +66,7 @@ export interface Reservation {
   invoiceNo: string;
   invoiceDate: string | null;
   payments: Payment[];
+  extras: Extra[];
   createdAt: string;
 }
 

@@ -1,7 +1,7 @@
 // Reading and changing data. Every change checks the rules first (clear messages), then the database
 // constraint catches anything that slipped through (two receptionists booking the same room at once).
 import type { Db, Q } from './db';
-import type { AppState, Expense, Floor, Guest, Method, Payment, Property, Reservation, Room, Source, Status } from '@/domain/types';
+import type { AppState, Expense, Extra, Floor, Guest, Method, Payment, Property, Reservation, Room, Source, Status } from '@/domain/types';
 import { fmtD, isIsoDate, todayIso } from '@/domain/dates';
 import { METHOD, SRC, STATUS } from '@/domain/labels';
 import { validateReservation } from '@/domain/rules';
@@ -10,15 +10,17 @@ import { newId } from './ids';
 
 const RES_COLS = `r.id, r.guest_id AS \`guestId\`, r.check_in AS \`checkIn\`, r.check_out AS \`checkOut\`, r.pax,
   r.total AS total, r.source, r.status, r.kind, r.notes, r.invoice_no AS \`invoiceNo\`, r.invoice_date AS \`invoiceDate\`, r.created_at AS \`createdAt\``;
-type ResRow = Omit<Reservation, 'roomIds' | 'payments'>;
+type ResRow = Omit<Reservation, 'roomIds' | 'payments' | 'extras'>;
 type PayRow = Payment & { reservationId: string };
 const PAY_COLS = 'id, reservation_id AS `reservationId`, amount, method, paid_on AS `date`, note';
+type ExtraRow = Extra & { reservationId: string };
+const EXTRA_COLS = 'id, reservation_id AS `reservationId`, label, qty, unit_price AS `unitPrice`';
 
 export const GUEST_COLS = 'id, first_name AS `firstName`, last_name AS `lastName`, phone, email, country, notes, birth_date AS `birthDate`, ' +
   'birth_place AS `birthPlace`, citizenship, address, id_type AS `idType`, id_series AS `idSeries`, id_number AS `idNumber`';
 
 export async function loadState(db: Db): Promise<AppState> {
-  const [properties, floors, rooms, guests, res, rr, pays, rates, expenses] = await Promise.all([
+  const [properties, floors, rooms, guests, res, rr, pays, extras, rates, expenses] = await Promise.all([
     db.query<Property>('SELECT id, name, city FROM properties ORDER BY sort, created_at, id'),
     db.query<Floor>('SELECT id, property_id AS `propertyId`, name FROM floors ORDER BY sort, id'),
     db.query<Room>('SELECT id, property_id AS `propertyId`, floor_id AS `floorId`, parent_id AS `parentId`, name, type, capacity, price, color, ' +
@@ -27,14 +29,16 @@ export async function loadState(db: Db): Promise<AppState> {
     db.query<ResRow>(`SELECT ${RES_COLS} FROM reservations r ORDER BY r.check_in, r.id`),
     db.query<{ reservationId: string; roomId: string }>('SELECT reservation_id AS `reservationId`, room_id AS `roomId` FROM reservation_rooms ORDER BY reservation_id, position'),
     db.query<PayRow>(`SELECT ${PAY_COLS} FROM payments ORDER BY paid_on, created_at`),
+    db.query<ExtraRow>(`SELECT ${EXTRA_COLS} FROM reservation_extras ORDER BY created_at, id`),
     db.query<{ roomId: string; night: string; price: number }>('SELECT room_id AS `roomId`, night, price FROM rates'),
     db.query<Expense>('SELECT id, property_id AS `propertyId`, category, description AS `desc`, amount, spent_on AS `date`, ' +
       'recurring, COALESCE(`until`, \'\') AS `until` FROM expenses ORDER BY spent_on, id'),
   ]);
   const byId = new Map<string, Reservation>();
-  const reservations = res.map(r => { const x: Reservation = { ...r, roomIds: [], payments: [] }; byId.set(r.id, x); return x; });
+  const reservations = res.map(r => { const x: Reservation = { ...r, roomIds: [], payments: [], extras: [] }; byId.set(r.id, x); return x; });
   rr.forEach(x => byId.get(x.reservationId)?.roomIds.push(x.roomId));
   pays.forEach(({ reservationId, ...p }) => byId.get(reservationId)?.payments.push(p));
+  extras.forEach(({ reservationId, ...e }) => byId.get(reservationId)?.extras.push(e));
   const rateMap: AppState['rates'] = {};
   rates.forEach(x => { (rateMap[x.roomId] ??= {})[x.night] = x.price; });
   return { properties, floors, rooms, guests, reservations, rates: rateMap, expenses };
@@ -45,7 +49,8 @@ async function getReservation(q: Q, id: string): Promise<Reservation | null> {
   if (!r) return null;
   const rooms = await q<{ roomId: string }>('SELECT room_id AS `roomId` FROM reservation_rooms WHERE reservation_id = $1 ORDER BY position', [id]);
   const pays = await q<PayRow>(`SELECT ${PAY_COLS} FROM payments WHERE reservation_id = $1 ORDER BY paid_on, created_at`, [id]);
-  return { ...r, roomIds: rooms.map(x => x.roomId), payments: pays.map(({ reservationId: _, ...p }) => p) };
+  const extras = await q<ExtraRow>(`SELECT ${EXTRA_COLS} FROM reservation_extras WHERE reservation_id = $1 ORDER BY created_at, id`, [id]);
+  return { ...r, roomIds: rooms.map(x => x.roomId), payments: pays.map(({ reservationId: _, ...p }) => p), extras: extras.map(({ reservationId: _, ...e }) => e) };
 }
 
 /* ---------- reading the request body without trusting it ---------- */
@@ -201,3 +206,39 @@ export async function updateGuest(db: Db, id: string, raw: unknown): Promise<{ g
 }
 
 export const LABELS = { STATUS, SRC };
+
+/* ---------- servicii pe lângă cazare ---------- */
+
+const EXTRA_MAX = 99999;
+
+/**
+ * Adaugă un serviciu și crește totalul rezervării cu el, în aceeași tranzacție: așa restul de plată,
+ * încasările și facturile rămân socotite dintr-un singur loc, `reservations.total`.
+ */
+export async function addExtra(db: Db, id: string, raw: unknown): Promise<{ reservation: Reservation }> {
+  const b = asBody(raw);
+  const label = str(b.label, 120) ?? '', qty = num(b.qty) ?? 1, unitPrice = num(b.unitPrice) ?? 0;
+  if (!label) throw new DomainError(400, 'Scrie ce anume a mai luat oaspetele.');
+  if (!(qty > 0) || qty > EXTRA_MAX) throw new DomainError(400, 'Cantitatea nu este validă.');
+  if (!(unitPrice >= 0) || unitPrice > EXTRA_MAX) throw new DomainError(400, 'Prețul nu este valid.');
+  return db.tx(async q => {
+    const cur = await getReservation(q, id); if (!cur) throw new DomainError(404, 'Rezervarea nu mai există.');
+    const add = Math.round(qty * unitPrice * 100) / 100;
+    await q('INSERT INTO reservation_extras (id, reservation_id, label, qty, unit_price) VALUES ($1,$2,$3,$4,$5)', [newId('ex_'), id, label, qty, unitPrice]);
+    await q('UPDATE reservations SET total = total + $2, updated_at = now() WHERE id = $1', [id, add]);
+    return { reservation: (await getReservation(q, id))! };
+  });
+}
+
+/** Scoate serviciul și scade la loc din total. */
+export async function deleteExtra(db: Db, id: string, extraId: string): Promise<{ reservation: Reservation }> {
+  return db.tx(async q => {
+    const [x] = await q<{ qty: number; unitPrice: number }>('SELECT qty, unit_price AS `unitPrice` FROM reservation_extras WHERE id = $1 AND reservation_id = $2', [extraId, id]);
+    if (!x) throw new DomainError(404, 'Serviciul nu mai există.');
+    const back = Math.round(Number(x.qty) * Number(x.unitPrice) * 100) / 100;
+    await q('DELETE FROM reservation_extras WHERE id = $1', [extraId]);
+    // totalul nu are voie să scadă sub zero, oricât de amestecate ar fi datele
+    await q('UPDATE reservations SET total = GREATEST(0, total - $2), updated_at = now() WHERE id = $1', [id, back]);
+    return { reservation: (await getReservation(q, id))! };
+  });
+}

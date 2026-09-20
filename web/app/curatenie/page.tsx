@@ -34,7 +34,7 @@ export default function CleaningPage() {
             <div key={k} style={{ marginTop: 18 }}>
               <div className="lbl">{CLEAN_L[k]} · {list.length}</div>
               {/* lățimi fixe, ca în cele patru tabele coloanele să cadă una sub alta */}
-              <table className="inv-t" style={{ tableLayout: 'fixed' }}>
+              <div className="tbl-scroll"><table className="inv-t" style={{ tableLayout: 'fixed' }}>
                 <thead><tr><th style={{ width: 28 }}>✓</th><th style={{ width: '15%' }}>Cameră</th><th style={{ width: '19%' }}>Unde</th><th style={{ width: '16%' }}>Pleacă</th><th style={{ width: '27%' }}>Vine / stă</th><th>Observații</th></tr></thead>
                 <tbody>{list.map(r => (
                   <tr key={r.roomId}>
@@ -46,7 +46,7 @@ export default function CleaningPage() {
                     <td style={{ whiteSpace: 'normal' }}>{r.notes}</td>
                   </tr>
                 ))}</tbody>
-              </table>
+              </table></div>
             </div>
           ) : null; })}
         </div>

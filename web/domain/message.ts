@@ -14,14 +14,36 @@ Vă confirmăm rezervarea la {pensiune}:
 
 Vă așteptăm cu drag!`;
 
+/** Aceleași paranteze, ca oricare dintre texte să meargă în ambele limbi. */
+export const DEFAULT_TEMPLATE_EN = `Hello, {prenume}!
+
+Your booking at {pensiune} is confirmed:
+• arrival: {sosire}
+• departure: {plecare} ({nopti})
+• room: {camere}, {persoane}
+• total: {total}{avans}
+
+We look forward to welcoming you!`;
+
+export type Lang = 'ro' | 'en';
+const RO_COUNTRIES = ['', 'romania', 'românia', 'ro', 'moldova', 'republica moldova', 'md'];
+/** Oaspeții din România primesc textul românesc; ceilalți, pe cel englezesc. */
+export const langFor = (country: string | undefined): Lang =>
+  RO_COUNTRIES.includes((country ?? '').trim().toLowerCase()) ? 'ro' : 'en';
+
 export const PLACEHOLDERS: [string, string][] = [
   ['{prenume}', 'prenumele oaspetelui'], ['{nume}', 'numele întreg'], ['{pensiune}', 'numele pensiunii'],
   ['{sosire}', 'data sosirii'], ['{plecare}', 'data plecării'], ['{nopti}', '„3 nopți”'], ['{camere}', 'camera sau camerele'],
   ['{persoane}', '„2 persoane”'], ['{total}', 'totalul'], ['{avans}', 'avansul și restul, dacă s-a plătit ceva'], ['{rest}', 'restul de plată'],
 ];
 
+const MONTHS_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const fmtLongEn = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return `${MONTHS_EN[m - 1]} ${d}, ${y}`; };
+const eur = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' RON';
+
 /** Valorile care intră în șablon pentru o rezervare. */
-export function messageVars(s: AppState, r: Reservation, sender: string): Record<string, string> {
+export function messageVars(s: AppState, r: Reservation, sender: string, lang: Lang = 'ro'): Record<string, string> {
+  if (lang === 'en') return messageVarsEn(s, r, sender);
   const g = guestById(s, r.guestId), n = nights(r), p = paid(r), rest = remaining(r);
   const prop = propById(s, roomById(s, r.roomIds[0])?.propertyId ?? null);
   return {
@@ -32,6 +54,20 @@ export function messageVars(s: AppState, r: Reservation, sender: string): Record
     camere: roomLabel(s, r), persoane: `${r.pax} ${r.pax === 1 ? 'persoană' : 'persoane'}`,
     total: lei2(Number(r.total)), rest: lei2(rest),
     avans: p > 0 ? `\n• avans primit: ${lei2(p)}, rest de plată: ${lei2(rest)}` : '',
+  };
+}
+
+function messageVarsEn(s: AppState, r: Reservation, sender: string): Record<string, string> {
+  const g = guestById(s, r.guestId), n = nights(r), p = paid(r), rest = remaining(r);
+  const prop = propById(s, roomById(s, r.roomIds[0])?.propertyId ?? null);
+  return {
+    prenume: g?.firstName ?? '', nume: g ? `${g.firstName} ${g.lastName}`.trim() : '',
+    pensiune: sender.trim() || prop?.name || 'our guesthouse',
+    sosire: fmtLongEn(r.checkIn), plecare: fmtLongEn(r.checkOut),
+    nopti: `${n} ${n === 1 ? 'night' : 'nights'}`,
+    camere: roomLabel(s, r), persoane: `${r.pax} ${r.pax === 1 ? 'guest' : 'guests'}`,
+    total: eur(Number(r.total)), rest: eur(rest),
+    avans: p > 0 ? `\n• deposit received: ${eur(p)}, balance due: ${eur(rest)}` : '',
   };
 }
 

@@ -9,7 +9,7 @@ export interface AuditRow { id: number; at: string; userName: string; action: st
 export const ACTIONS: Record<string, string> = {
   'reservation.create': 'Rezervare nouă', 'reservation.update': 'Rezervare schimbată', 'reservation.delete': 'Rezervare ștearsă',
   'block.create': 'Cameră blocată', 'block.delete': 'Blocare scoasă',
-  'reservation.merge': 'Rezervări unite', 'reservation.import': 'Import de rezervări', 'payment.add': 'Încasare',
+  'reservation.merge': 'Rezervări unite', 'reservation.import': 'Import de rezervări', 'payment.add': 'Încasare', 'extra.add': 'Serviciu adăugat', 'extra.delete': 'Serviciu scos',
   'invoice.create': 'Factură emisă', 'invoice.storno': 'Factură stornată',
   'expense.create': 'Cheltuială nouă', 'expense.update': 'Cheltuială schimbată', 'expense.delete': 'Cheltuială ștearsă',
   'rates.set': 'Prețuri schimbate', 'room.create': 'Cameră nouă', 'room.update': 'Cameră schimbată', 'room.delete': 'Cameră ștearsă', 'room.order': 'Camere rearanjate',

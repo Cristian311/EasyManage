@@ -71,7 +71,7 @@ export function buildDemo(TODAY = todayIso()): AppState {
     const total = opts.total ?? roomIds.reduce((t, id) => t + rooms.find(q => q.id === id)!.price, 0) * n;
     const payments = (opts.pay || []).map(p => ({ id: newId('pay_'), amount: p[0], method: p[1], date: p[2] ?? checkIn, note: p[3] ?? '' }));
     return { id: newId('res_'), guestId: guests[gi].id, roomIds, checkIn, checkOut, pax: opts.pax ?? Math.min(2, rm.capacity), total, source: opts.src ?? 'direct',
-      status: opts.status ?? 'confirmed', kind: 'stay', notes: opts.notes ?? '', payments, invoiceNo: opts.inv ?? '', invoiceDate: null, createdAt: '' };
+      status: opts.status ?? 'confirmed', kind: 'stay', notes: opts.notes ?? '', payments, extras: [], invoiceNo: opts.inv ?? '', invoiceDate: null, createdAt: '' };
   };
   const reservations: Reservation[] = [];
   const busy = (id: string, a: string, b: string) => reservations.some(x => x.status !== 'cancelled' && x.roomIds.includes(id) && a < x.checkOut && x.checkIn < b);

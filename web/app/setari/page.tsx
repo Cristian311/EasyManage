@@ -5,9 +5,9 @@ import type { AppState, Me, Role, Source } from '@/domain/types';
 import type { Company } from '@/domain/invoice';
 import { ROLE, SRC } from '@/domain/labels';
 import { api } from '@/lib/client/api';
-import { useStore } from '@/lib/client/store';
+import { useStore, type MsgTemplates } from '@/lib/client/store';
 import Table from '@/components/Table';
-import { DEFAULT_TEMPLATE, PLACEHOLDERS, fillTemplate, messageVars } from '@/domain/message';
+import { DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_EN, PLACEHOLDERS, fillTemplate, messageVars } from '@/domain/message';
 import { useData } from '@/lib/client/store';
 
 type U = Me & { active: boolean };
@@ -315,9 +315,11 @@ function IcalCard() {
 /** Mesajul de confirmare trimis oaspetelui pe WhatsApp sau pe email, cu previzualizare pe o rezervare adevărată. */
 function TemplateCard() {
   const data = useData(), toast = useStore(s => s.toast), loadMsg = useStore(s => s.loadMsg);
-  const [t, setT] = useState<string | null>(null), [sender, setSender] = useState(''), [busy, setBusy] = useState(false);
+  const [m, setM] = useState<MsgTemplates | null>(null), [lang, setLang] = useState<'ro' | 'en'>('ro'), [t, setT] = useState<string | null>(null), [busy, setBusy] = useState(false);
   const [hours, setHours] = useState<{ checkIn: string; checkOut: string } | null>(null);
-  useEffect(() => { api<{ template: string; sender: string }>('/api/message-template').then(m => { setT(m.template); setSender(m.sender); }).catch(e => toast((e as Error).message, 'bad')); }, [toast]);
+  const take = (x: MsgTemplates, l = lang) => { setM(x); setT(l === 'en' ? x.templateEn : x.template); };
+  const switchTo = (l: 'ro' | 'en') => { if (m) { setLang(l); setT(l === 'en' ? m.templateEn : m.template); } };
+  useEffect(() => { api<MsgTemplates>('/api/message-template').then(x => take(x)).catch(e => toast((e as Error).message, 'bad')); }, [toast]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { api<{ contact: { checkIn: string; checkOut: string } }>('/api/contact').then(x => setHours({ checkIn: x.contact.checkIn, checkOut: x.contact.checkOut })).catch(() => {}); }, []);
   const saveHours = async () => {
     setBusy(true);
@@ -325,20 +327,26 @@ function TemplateCard() {
     catch (e) { toast((e as Error).message, 'bad'); }
     finally { setBusy(false); }
   };
-  if (t === null) return null;
+  if (t === null || !m) return null;
   const sample = data.reservations.find(r => r.status !== 'cancelled' && r.payments.length > 0) ?? data.reservations[0];
 
   const save = async (text: string) => {
     setBusy(true);
-    try { const m = await api<{ template: string }>('/api/message-template', 'PUT', { template: text }); setT(m.template); await loadMsg(true); toast('Mesajul a fost salvat', 'ok'); }
+    try { take(await api<MsgTemplates>('/api/message-template', 'PUT', { template: text, lang })); await loadMsg(true); toast('Mesajul a fost salvat', 'ok'); }
     catch (e) { toast((e as Error).message, 'bad'); }
     finally { setBusy(false); }
   };
 
   return (
     <div className="card" style={{ marginBottom: 16, padding: '14px 16px 18px' }}>
-      <div className="ch" style={{ padding: '0 0 12px', marginBottom: 12 }}>Mesajul de confirmare pentru oaspeți</div>
-      <p style={{ margin: '0 0 12px', color: 'var(--ink-2)' }}>Din sertarul unei rezervări, „Confirmă pe WhatsApp” deschide conversația cu acest text deja scris. Nu costă nimic și nu se trimite nimic fără să apeși tu „Trimite”.</p>
+      <div className="ch" style={{ padding: '0 0 12px', marginBottom: 12 }}>Mesajul de confirmare pentru oaspeți
+        <div className="seg" style={{ marginLeft: 'auto' }}>
+          <button className={lang === 'ro' ? 'on' : ''} onClick={() => switchTo('ro')}>Română</button>
+          <button className={lang === 'en' ? 'on' : ''} onClick={() => switchTo('en')}>English</button>
+        </div>
+      </div>
+      <p style={{ margin: '0 0 12px', color: 'var(--ink-2)' }}>Din sertarul unei rezervări, „Confirmă pe WhatsApp” deschide conversația cu acest text deja scris. Nu costă nimic și nu se trimite nimic fără să apeși tu „Trimite”.
+        Oaspeții cu altă țară decât România primesc singuri textul în engleză.</p>
       <div className="g2">
         <div className="f">
           <label>Textul</label>
@@ -347,12 +355,12 @@ function TemplateCard() {
         </div>
         <div className="f">
           <label>Cum arată pentru {sample ? 'o rezervare de-a ta' : 'oaspete'}</label>
-          <div className="notes" style={{ whiteSpace: 'pre-wrap', minHeight: 230, margin: 0 }}>{sample ? fillTemplate(t, messageVars(data, sample, sender)) : t}</div>
+          <div className="notes" style={{ whiteSpace: 'pre-wrap', minHeight: 230, margin: 0 }}>{sample ? fillTemplate(t, messageVars(data, sample, m.sender, lang)) : t}</div>
         </div>
       </div>
       <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
         <button className="btn primary" disabled={busy} onClick={() => save(t)}>Salvează mesajul</button>
-        <button className="btn" disabled={busy || t === DEFAULT_TEMPLATE} onClick={() => save('')}>Înapoi la cel de la început</button>
+        <button className="btn" disabled={busy || t === (lang === 'en' ? DEFAULT_TEMPLATE_EN : DEFAULT_TEMPLATE)} onClick={() => save('')}>Înapoi la cel de la început</button>
       </div>
       {hours && (
         <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid var(--line-2)' }}>

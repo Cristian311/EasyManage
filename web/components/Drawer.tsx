@@ -7,9 +7,58 @@ import { fmtD, fmtDL, money, todayIso } from '@/domain/dates';
 import { METHOD, PAY_L, SRC, STATUS } from '@/domain/labels';
 import { guestById, guestName, isBlock, neighbours, nights, paid, payStatus, remaining, resGuest, roomById, roomLabel } from '@/domain/rules';
 import { growRoom, shrinkRoom } from '@/lib/client/actions';
-import type { Method, Status } from '@/domain/types';
-import { fillTemplate, mailLink, messageVars, waLink } from '@/domain/message';
+import type { Method, Reservation, Status } from '@/domain/types';
+import { fillTemplate, langFor, mailLink, messageVars, waLink } from '@/domain/message';
 import { IconClose } from './Icons';
+
+const PRESETS: [string, number][] = [['Mic dejun', 35], ['Pat suplimentar', 60], ['Taxă de stațiune', 5], ['Parcare', 20], ['Late check-out', 50]];
+
+/** Ce s-a mai luat pe lângă cazare. Fiecare rând urcă totalul rezervării, deci restul de plată se schimbă singur. */
+function Extras({ r }: { r: Reservation }) {
+  const add = useStore(s => s.addExtra), remove = useStore(s => s.removeExtra), toast = useStore(s => s.toast);
+  const [open, setOpen] = useState(false), [label, setLabel] = useState(PRESETS[0][0]), [qty, setQty] = useState('1'), [price, setPrice] = useState(String(PRESETS[0][1]));
+  const [busy, setBusy] = useState(false);
+  const sum = r.extras.reduce((t, e) => t + Number(e.qty) * Number(e.unitPrice), 0);
+  const field = { border: '1px solid var(--line)', borderRadius: 9, padding: '7px 10px', background: 'var(--surface)' };
+
+  const submit = async () => {
+    const q = Number(qty.replace(',', '.')), p = Number(price.replace(',', '.'));
+    if (!label.trim()) { toast('Scrie ce a mai luat oaspetele', 'bad'); return; }
+    if (!(q > 0) || !(p >= 0)) { toast('Cantitatea și prețul nu sunt valide', 'bad'); return; }
+    setBusy(true);
+    const err = await add(r.id, { label: label.trim(), qty: q, unitPrice: p });
+    setBusy(false);
+    if (!err) { setOpen(false); setQty('1'); }
+  };
+
+  return (
+    <div>
+      <div className="sec-t">Servicii în plus {sum > 0 && <span style={{ textTransform: 'none', letterSpacing: 0, fontWeight: 600 }}>{money(sum)}, deja în total</span>}</div>
+      <div className="plist" style={{ marginTop: 8 }}>
+        {r.extras.length ? r.extras.map(e => (
+          <div className="pitem" key={e.id}>
+            <div><div>{e.label}</div><div className="pm">{Number(e.qty)} × {money(Number(e.unitPrice))}</div></div>
+            <b>{money(Number(e.qty) * Number(e.unitPrice))}</b>
+            {r.status !== 'cancelled' && <button className="btn sm ghost" title="Scoate" onClick={() => { if (confirm(`Scoți „${e.label}”? Totalul scade cu ${money(Number(e.qty) * Number(e.unitPrice))}.`)) remove(r.id, e.id); }}>−</button>}
+          </div>
+        )) : <div className="empty" style={{ padding: 8 }}>Nimic în plus față de cazare</div>}
+      </div>
+      {r.status !== 'cancelled' && (open ? (
+        <div style={{ marginTop: 8, display: 'grid', gap: 6 }}>
+          <input list="extra-presets" value={label} placeholder="ex: Mic dejun"
+            onChange={e => { setLabel(e.target.value); const p = PRESETS.find(x => x[0] === e.target.value); if (p) setPrice(String(p[1])); }} style={field} />
+          <datalist id="extra-presets">{PRESETS.map(([n, p]) => <option key={n} value={n}>{p} lei</option>)}</datalist>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 6 }}>
+            <input type="number" min={0.5} step={0.5} value={qty} onChange={e => setQty(e.target.value)} placeholder="Câte" style={field} />
+            <input type="number" min={0} step={1} value={price} onChange={e => setPrice(e.target.value)} placeholder="Preț bucata" style={field} />
+            <button className="btn ok" onClick={submit} disabled={busy}>Adaugă</button>
+          </div>
+          <button className="btn sm ghost" onClick={() => setOpen(false)}>Renunță</button>
+        </div>
+      ) : <button className="btn sm" style={{ marginTop: 8 }} onClick={() => setOpen(true)}>+ Serviciu în plus</button>)}
+    </div>
+  );
+}
 
 export default function Drawer() {
   const data = useData();
@@ -64,8 +113,11 @@ export default function Drawer() {
   /** Deschide WhatsApp sau programul de email cu mesajul de confirmare gata scris; omul doar apasă „Trimite”. */
   const confirmTo = async (how: 'wa' | 'mail') => {
     const m = await loadMsg(); if (!m || !g) return;
-    const text = fillTemplate(m.template, messageVars(data, r, m.sender));
-    const url = how === 'wa' ? waLink(g.phone, text) : mailLink(g.email, `Confirmare rezervare ${fmtD(r.checkIn)} – ${fmtD(r.checkOut)}`, text);
+    // oaspeții din afara țării primesc textul în engleză
+    const lang = langFor(g.country);
+    const text = fillTemplate(lang === 'en' ? m.templateEn : m.template, messageVars(data, r, m.sender, lang));
+    const subject = lang === 'en' ? `Booking confirmation ${fmtD(r.checkIn)} – ${fmtD(r.checkOut)}` : `Confirmare rezervare ${fmtD(r.checkIn)} – ${fmtD(r.checkOut)}`;
+    const url = how === 'wa' ? waLink(g.phone, text) : mailLink(g.email, subject, text);
     if (!url) { toast(how === 'wa' ? 'Oaspetele nu are un număr de telefon valid' : 'Oaspetele nu are o adresă de email validă', 'bad'); openGuest(g.id); return; }
     window.open(url, '_blank', 'noopener');
   };
@@ -125,6 +177,7 @@ export default function Drawer() {
             </div>
           )}
         </div>
+        <Extras r={r} />
         {r.notes && <div><div className="sec-t">Observații</div><div className="notes" style={{ marginTop: 8 }}>{r.notes}</div></div>}
         {me?.role === 'owner' && <div><div className="sec-t">Factură</div>
           {r.invoiceNo ? (
