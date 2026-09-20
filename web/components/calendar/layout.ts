@@ -58,19 +58,23 @@ export function layoutBlocks(s: AppState, cols: Column[], d0: string, nDays: num
     };
     runs.forEach(([ci, span], ri) => {
       const blockW = span * COLW - 8, padL = Math.max(9, 12 * zoom), padR = Math.max(6, 9 * zoom);
+      const wantQa = !!qa && COLW * span >= 104;
       let tier = 0, nl = 1, room = (h - 4) - Math.max(4, 7 * zoom) - Math.max(18, 24 * zoom);
       if (room < lnName) {
         const footerW = blockW < 74 ? 0 : Math.max(52, 70 * zoom) + (alert ? Math.max(10, 14 * zoom) : 0);
         nl = Math.min(linesFor(blockW - padL - padR - footerW), Math.max(1, Math.floor(((h - 4) - 10) / lnName)));
       } else {
         const need = linesFor(blockW - padL - padR - (alert ? Math.max(14, 20 * zoom) : 0) - (span > 1 ? 44 : 0));
+        // the quick-action button is taller than the plain "→ date" footer: one line of the name always fits above it,
+        // more lines and the details only in the room that is left
+        if (wantQa) room -= Math.max(6, 8 * zoom);
         nl = Math.max(1, Math.min(need, Math.floor(room / lnName)));
         room -= nl * lnName; tier = 1;
         if (room >= lnDet) { tier = 2; room -= lnDet; }
         if (tier === 2 && room >= lnDet) { tier = 3; room -= lnDet; }
         if (tier === 3 && r.notes && room >= lnNote) tier = 4;
       }
-      blocks.push({ key: `${r.id}:${ri}`, r, gn, ci, span, top, h, tier, nl, color, alert, qa, showQa: !!qa && tier > 0 && COLW * span >= 104, segment: runs.length > 1 });
+      blocks.push({ key: `${r.id}:${ri}`, r, gn, ci, span, top, h, tier, nl, color, alert, qa, showQa: wantQa && tier > 0, segment: runs.length > 1 });
       placed.push({ r, c0: ci, c1: ci + span - 1, y0: top + 2, y1: top + h - 2, color });
     });
   }
