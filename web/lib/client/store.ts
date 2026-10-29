@@ -2,9 +2,8 @@
 // Everything the browser keeps in memory: the data from the server, what the calendar shows, open windows, toasts.
 // Changes show at once (optimistic) and go back if the server refuses them.
 import { create } from 'zustand';
-import type { AppState, Expense, Guest, Invoice, InvoiceCustomer, InvoiceLine, Method, Rates, Reservation, Settings } from '@/domain/types';
+import type { AppState, Expense, Guest, Me, Method, Rates, Reservation } from '@/domain/types';
 import { addDays, money, todayIso } from '@/domain/dates';
-import { invoiceNo } from '@/domain/invoice';
 import { api } from './api';
 
 export interface View { prop: string; floor: string; start: string; extra: number; zoom: number; q: string; jump: number }
@@ -19,19 +18,27 @@ export interface NewReservation {
   guestId?: string; guestName?: string; roomIds: string[]; checkIn: string; checkOut: string;
   pax: number; total: number; source: string; status: string; notes: string; advance: number;
 }
+export interface MsgTemplates { template: string; templateEn: string; sender: string; isDefault: boolean; isDefaultEn: boolean }
 export interface RoomFields { name: string; type: string; capacity: number; price: number; color: string; desc: string; active: boolean; propertyId: string; floorId: string | null }
 export interface ExpenseFields { amount: number; date: string; category: string; desc: string; propertyId: string | null; recurring: boolean; until?: string }
-export interface NewInvoice { reservationId: string | null; issuedOn: string; dueOn: string | null; customer: InvoiceCustomer; lines: InvoiceLine[]; notes: string }
+
+/** unknown = încă întrebăm serverul; login/setup = trebuie dus la pagina aceea. */
+export type AuthState = 'unknown' | 'ok' | 'login' | 'setup';
 
 interface Store {
   data: AppState | null;
+  me: Me | null;
+  auth: AuthState;
   loadError: string | null;
   view: View;
   drawerId: string | null;
   modal: ModalState | null;
   roomModal: { editId: string | null } | null;
   expModal: { editId: string | null } | null;
-  invModal: { reservationId: string | null } | null;
+  blockModal: boolean;            // fereastra „Blochează camere”
+  invoiceFor: string | null;      // rezervarea pentru care se emite o factură
+  guestModal: string | null;      // oaspetele ale cărui date se editează
+  msg: MsgTemplates | null;      // șabloanele confirmării (ro + en), luate o dată
   menu: MenuState | null;
   toasts: Toast[];
   focus: boolean;
@@ -40,6 +47,7 @@ interface Store {
   flashId: string | null;
   fin: Fin;
   load(): Promise<void>;
+  logout(): Promise<void>;
   setData(d: AppState): void;
   setView(p: Partial<View>): void;
   jumpTo(d: string): void;
@@ -52,8 +60,14 @@ interface Store {
   closeRoomModal(): void;
   openExpModal(editId?: string | null): void;
   closeExpModal(): void;
-  openInvModal(reservationId?: string | null): void;
-  closeInvModal(): void;
+  openBlock(): void;
+  closeBlock(): void;
+  openInvoice(reservationId: string): void;
+  loadMsg(force?: boolean): Promise<MsgTemplates | null>;
+  openGuest(id: string): void;
+  closeGuest(): void;
+  saveGuest(id: string, x: Partial<Guest>): Promise<string | null>;
+  closeInvoice(): void;
   openMenu(m: MenuState): void;
   closeMenu(): void;
   toast(msg: string, kind?: Toast['kind'], action?: Toast['action'], ms?: number): number;
@@ -66,14 +80,13 @@ interface Store {
   patchReservation(id: string, patch: ResPatch, opts?: { undoLabel?: string; quiet?: boolean }): Promise<string | null>;
   mergeReservations(keepId: string, otherId: string, roomIds: string[]): Promise<void>;
   addPayment(id: string, amount: number, method: Method): Promise<string | null>;
+  addExtra(id: string, x: { label: string; qty: number; unitPrice: number }): Promise<string | null>;
+  removeExtra(id: string, extraId: string): Promise<void>;
   deleteReservation(id: string): Promise<void>;
   setRates(roomIds: string[], from: string, to: string, price: number | null, wkOnly: boolean, label: string): Promise<void>;
   admin(method: 'POST' | 'PATCH' | 'DELETE' | 'PUT', url: string, body?: unknown, okMsg?: string): Promise<string | null>;
   saveExpense(id: string | null, x: ExpenseFields): Promise<string | null>;
   deleteExpense(id: string, undoable?: boolean): Promise<void>;
-  saveSettings(x: Settings): Promise<string | null>;
-  createInvoice(x: NewInvoice): Promise<{ error: string | null; invoice?: Invoice }>;
-  cancelInvoice(id: string): Promise<void>;
   resetDemo(): Promise<void>;
 }
 
@@ -86,13 +99,18 @@ export const useStore = create<Store>((set, get) => {
 
   return {
     data: null,
+    me: null,
+    auth: 'unknown',
     loadError: null,
     view: { prop: 'all', floor: 'all', start: addDays(todayIso(), -2), extra: 0, zoom: 1, q: '', jump: 0 },
     drawerId: null,
     modal: null,
     roomModal: null,
     expModal: null,
-    invModal: null,
+    blockModal: false,
+    invoiceFor: null,
+    guestModal: null,
+    msg: null,
     menu: null,
     toasts: [],
     focus: false,
@@ -104,9 +122,20 @@ export const useStore = create<Store>((set, get) => {
     async load() {
       try { const saved = JSON.parse(localStorage.getItem(VIEW_KEY) || 'null'); if (saved) set(s => ({ view: { ...s.view, ...saved } })); } catch {}
       try { const f = JSON.parse(localStorage.getItem(FIN_KEY) || 'null'); if (f) set(s => ({ fin: { ...s.fin, cur: f.cur === 'EUR' ? 'EUR' : 'RON', rate: f.rate > 0 ? f.rate : s.fin.rate } })); } catch {}
-      try { set({ data: await api<AppState>('/api/state'), loadError: null }); }
-      catch (e) { set({ loadError: (e as Error).message }); }
+      try {
+        // întâi cine suntem: fără cont nu are rost să cerem rezervările
+        const who = await api<{ user: Me | null; setup: boolean }>('/api/auth/me');
+        if (!who.user) { set({ me: null, data: null, auth: who.setup ? 'setup' : 'login' }); return; }
+        set({ me: who.user, auth: 'ok' });
+        set({ data: await api<AppState>('/api/state'), loadError: null });
+      } catch (e) { set({ loadError: (e as Error).message }); }
     },
+
+    async logout() {
+      try { await api('/api/auth/logout', 'POST'); } catch {}
+      set({ me: null, data: null, auth: 'login' });
+    },
+
     setData(d) { set({ data: d }); },
     setView(p) { const v = { ...get().view, ...p }; set({ view: v }); saveView(v); },
     jumpTo(d) { set(s => ({ view: { ...s.view, start: addDays(d, -2), extra: 0, jump: s.view.jump + 1 } })); },
@@ -124,8 +153,24 @@ export const useStore = create<Store>((set, get) => {
     closeRoomModal() { set({ roomModal: null }); },
     openExpModal(editId = null) { set({ expModal: { editId } }); },
     closeExpModal() { set({ expModal: null }); },
-    openInvModal(reservationId = null) { set({ invModal: { reservationId } }); },
-    closeInvModal() { set({ invModal: null }); },
+    openBlock() { set({ blockModal: true, drawerId: null }); },
+    closeBlock() { set({ blockModal: false }); },
+    openInvoice(reservationId) { set({ invoiceFor: reservationId }); },
+    closeInvoice() { set({ invoiceFor: null }); },
+    async loadMsg(force = false) {
+      if (get().msg && !force) return get().msg;
+      try { const m = await api<MsgTemplates>('/api/message-template'); set({ msg: m }); return m; }
+      catch (e) { get().toast((e as Error).message, 'bad'); return null; }
+    },
+    openGuest(id) { set({ guestModal: id }); },
+    closeGuest() { set({ guestModal: null }); },
+    async saveGuest(id, x) {
+      try {
+        const { guest } = await api<{ guest: Guest }>(`/api/guests/${id}`, 'PATCH', x);
+        set(s => s.data ? { data: { ...s.data, guests: s.data.guests.map(g => (g.id === id ? guest : g)) } } : {});
+        return null;
+      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
+    },
     openMenu(m) { set({ menu: m }); },
     closeMenu() { set({ menu: null }); },
     toast(msg, kind = '', action, ms = action ? 6000 : 2800) {
@@ -183,6 +228,20 @@ export const useStore = create<Store>((set, get) => {
       } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
     },
 
+    async addExtra(id, x) {
+      try {
+        const { reservation } = await api<{ reservation: Reservation }>(`/api/reservations/${id}/extras`, 'POST', x);
+        replace(reservation); get().toast(`${x.label} adăugat`, 'ok'); return null;
+      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
+    },
+
+    async removeExtra(id, extraId) {
+      try {
+        const { reservation } = await api<{ reservation: Reservation }>(`/api/reservations/${id}/extras/${extraId}`, 'DELETE');
+        replace(reservation); get().toast('Serviciul a fost scos');
+      } catch (e) { get().toast((e as Error).message, 'bad'); }
+    },
+
     async deleteReservation(id) {
       try {
         await api(`/api/reservations/${id}`, 'DELETE');
@@ -226,32 +285,6 @@ export const useStore = create<Store>((set, get) => {
         await api(`/api/expenses/${id}`, 'DELETE');
         set(s => s.data ? { data: { ...s.data, expenses: s.data.expenses.filter(e => e.id !== id) } } : {});
         if (undoable) get().toast(`Cheltuială ștearsă: ${x.desc || x.category}`, '', { label: 'Anulează', run: () => { get().saveExpense(null, { amount: x.amount, date: x.date, category: x.category, desc: x.desc, propertyId: x.propertyId, recurring: x.recurring, until: x.until }); } });
-      } catch (e) { get().toast((e as Error).message, 'bad'); }
-    },
-
-    async saveSettings(x) {
-      try {
-        const { settings } = await api<{ settings: Settings }>('/api/settings', 'PUT', x);
-        set(s => s.data ? { data: { ...s.data, settings } } : {}); get().toast('Setările au fost salvate', 'ok'); return null;
-      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return m; }
-    },
-
-    async createInvoice(x) {
-      try {
-        const { invoice, reservation } = await api<{ invoice: Invoice; reservation: Reservation | null }>('/api/invoices', 'POST', x);
-        set(s => s.data ? { data: { ...s.data, invoices: [...s.data.invoices, invoice], settings: { ...s.data.settings, invoiceNext: invoice.number + 1 } } } : {});
-        if (reservation) replace(reservation);
-        get().toast(`Factura ${invoiceNo(invoice)} a fost emisă`, 'ok');
-        return { error: null, invoice };
-      } catch (e) { const m = (e as Error).message; get().toast(m, 'bad'); return { error: m }; }
-    },
-
-    async cancelInvoice(id) {
-      try {
-        const { invoice, reservation } = await api<{ invoice: Invoice; reservation: Reservation | null }>(`/api/invoices/${id}`, 'PATCH', { status: 'cancelled' });
-        set(s => s.data ? { data: { ...s.data, invoices: s.data.invoices.map(i => (i.id === id ? invoice : i)) } } : {});
-        if (reservation) replace(reservation);
-        get().toast(`Factura ${invoiceNo(invoice)} a fost anulată`);
       } catch (e) { get().toast((e as Error).message, 'bad'); }
     },
 

@@ -13,12 +13,13 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "db:reset": "node scripts/db-reset.mjs",
-    "db:sql": "node scripts/db-sql.mjs"
+    "db:sql": "node scripts/db-sql.mjs",
+    "db:restore": "node scripts/db-restore.mjs",
+    "user:password": "node scripts/user-password.mjs"
   },
   "dependencies": {
-    "@electric-sql/pglite": "0.5.8",
+    "mysql2": "^3.24.4",
     "next": "15.5.25",
-    "postgres": "3.4.9",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "zustand": "5.0.15"

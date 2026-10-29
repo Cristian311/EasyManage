@@ -1,10 +1,8 @@
 // Demo data: the same villas, rooms, guests and bookings as velora-stay-demo.html (same random sequence).
 // August is full; after that bookings thin out the further ahead they are.
 import type { Db, Q } from './db';
-import type { AppState, Expense, Floor, Guest, Invoice, Method, Property, Rates, Reservation, Room, Settings, Source, Status } from '@/domain/types';
+import type { AppState, Expense, Floor, Guest, Method, Property, Rates, Reservation, Room, Source, Status } from '@/domain/types';
 import { addDays, diffDays, fromIso, todayIso } from '@/domain/dates';
-import { invoiceTotals, stayLines } from '@/domain/invoice';
-import { guestName } from '@/domain/rules';
 import { newId } from './ids';
 
 type Pay = [number, Method, string?, string?];
@@ -73,7 +71,7 @@ export function buildDemo(TODAY = todayIso()): AppState {
     const total = opts.total ?? roomIds.reduce((t, id) => t + rooms.find(q => q.id === id)!.price, 0) * n;
     const payments = (opts.pay || []).map(p => ({ id: newId('pay_'), amount: p[0], method: p[1], date: p[2] ?? checkIn, note: p[3] ?? '' }));
     return { id: newId('res_'), guestId: guests[gi].id, roomIds, checkIn, checkOut, pax: opts.pax ?? Math.min(2, rm.capacity), total, source: opts.src ?? 'direct',
-      status: opts.status ?? 'confirmed', notes: opts.notes ?? '', payments, invoiceNo: opts.inv ?? '', invoiceDate: opts.inv ? checkOut : null, createdAt: '' };
+      status: opts.status ?? 'confirmed', kind: 'stay', notes: opts.notes ?? '', payments, extras: [], invoiceNo: opts.inv ?? '', invoiceDate: null, createdAt: '' };
   };
   const reservations: Reservation[] = [];
   const busy = (id: string, a: string, b: string) => reservations.some(x => x.status !== 'cancelled' && x.roomIds.includes(id) && a < x.checkOut && x.checkIn < b);
@@ -148,28 +146,7 @@ export function buildDemo(TODAY = todayIso()): AppState {
       day = out;
     }
   });
-  const state: AppState = { properties, floors, rooms, guests, reservations, rates: demoRates(rooms, TODAY), expenses: demoExpenses(properties, TODAY), settings: demoSettings(y), invoices: [] };
-  state.invoices = demoInvoices(state);
-  state.settings.invoiceNext = Math.max(0, ...state.invoices.map(i => i.number)) + 1;
-  return state;
-}
-
-function demoSettings(y: number): Settings {
-  return { name: 'Velora Stay SRL', cui: 'RO43218765', regCom: 'J08/1234/2019', address: 'Str. Lungă 12, Brașov, jud. Brașov', iban: 'RO49AAAA1B31007593840000', bank: 'Banca Transilvania',
-    phone: '0268 123 456', email: 'contact@velorastay.ro', vatPayer: true, vatRate: 11, invoiceSeries: `VS-${y}`, invoiceNext: 1,
-    checkInTime: '14:00', checkOutTime: '11:00',
-    confirmText: 'Rezervarea se confirmă la plata avansului de 30% în cel mult 3 zile. Anulare gratuită cu 7 zile înainte de sosire; după, avansul nu se returnează.' };
-}
-
-// the stays that already carry an invoice number (VS-2026-0141 and so on) get a real invoice in the register
-function demoInvoices(s: AppState): Invoice[] {
-  const { name, cui, regCom, address, iban, bank, phone, email, vatPayer } = s.settings;
-  return s.reservations.filter(r => r.invoiceNo).map(r => {
-    const lines = stayLines(s, r, s.settings.vatRate), t = invoiceTotals(lines), g = s.guests.find(x => x.id === r.guestId);
-    return { id: newId('inv_'), series: s.settings.invoiceSeries, number: Number(r.invoiceNo.slice(r.invoiceNo.lastIndexOf('-') + 1)), reservationId: r.id, issuedOn: r.invoiceDate ?? r.checkOut, dueOn: null,
-      status: 'issued', supplier: { name, cui, regCom, address, iban, bank, phone, email, vatPayer }, customer: { name: guestName(g), cui: '', regCom: '', address: g?.country ?? '' },
-      lines, ...t, notes: '', createdAt: '' };
-  });
+  return { properties, floors, rooms, guests, reservations, rates: demoRates(rooms, TODAY), expenses: demoExpenses(properties, TODAY) };
 }
 
 // sample seasons: August +20%, September weekends +30 lei, November -15%
@@ -209,7 +186,7 @@ async function insertMany(q: Q, table: string, cols: string[], rows: unknown[][]
   for (let i = 0; i < rows.length; i += chunk) {
     const params: unknown[] = [];
     const values = rows.slice(i, i + chunk).map(r => '(' + r.map(v => { params.push(v); return '$' + params.length; }).join(',') + ')').join(',');
-    await q(`INSERT INTO ${table} (${cols.join(',')}) VALUES ${values}`, params);
+    await q(`INSERT INTO ${table} (${cols.map(c => '`' + c + '`').join(',')}) VALUES ${values}`, params);
   }
 }
 
@@ -230,13 +207,6 @@ export async function insertState(q: Q, s: AppState) {
   await insertMany(q, 'rates', ['room_id', 'night', 'price'], Object.entries(s.rates).flatMap(([id, m]) => Object.entries(m).map(([d, v]) => [id, d, v])), 500);
   await insertMany(q, 'expenses', ['id', 'property_id', 'category', 'description', 'amount', 'spent_on', 'recurring', 'until'],
     s.expenses.map(e => [e.id, e.propertyId, e.category, e.desc, e.amount, e.date, e.recurring, e.until || null]));
-  const st = s.settings;
-  await q(`UPDATE settings SET company_name=$1, cui=$2, reg_com=$3, address=$4, iban=$5, bank=$6, phone=$7, email=$8, vat_payer=$9, vat_rate=$10, invoice_series=$11, invoice_next=$12,
-    check_in_time=$13, check_out_time=$14, confirm_text=$15 WHERE id = 'main'`,
-    [st.name, st.cui, st.regCom, st.address, st.iban, st.bank, st.phone, st.email, st.vatPayer, st.vatRate, st.invoiceSeries, st.invoiceNext, st.checkInTime, st.checkOutTime, st.confirmText]);
-  for (const i of s.invoices) await q(`INSERT INTO invoices (id, series, number, reservation_id, issued_on, due_on, status, supplier, customer, lines, subtotal, vat, total, notes)
-    VALUES ($1,$2,$3,$4,$5,$6,$7,$8::text::jsonb,$9::text::jsonb,$10::text::jsonb,$11,$12,$13,$14)`,
-    [i.id, i.series, i.number, i.reservationId, i.issuedOn, i.dueOn, i.status, JSON.stringify(i.supplier), JSON.stringify(i.customer), JSON.stringify(i.lines), i.subtotal, i.vat, i.total, i.notes]);
 }
 
 export async function seedDemo(db: Db) {
@@ -245,8 +215,19 @@ export async function seedDemo(db: Db) {
   return s;
 }
 
+/** Trecerea pe date reale: vilele, etajele și camerele rămân, tot ce e inventat (rezervări, oaspeți, prețuri speciale, cheltuieli) pleacă. */
+export async function startClean(db: Db) {
+  await db.tx(async q => {
+    for (const sql of ['DELETE FROM reservations', 'DELETE FROM rates', 'DELETE FROM expenses', 'DELETE FROM guests']) await q(sql);
+  });
+}
+
 /** Empties every table and loads the demo again. */
 export async function resetDemo(db: Db) {
-  await db.exec('TRUNCATE invoices, payments, reservation_rooms, reservations, rates, expenses, guests, rooms, floors, properties CASCADE');
+  await db.tx(async q => {
+    // rezervările duc cu ele camerele, nopțile și plățile; unitățile pleacă înaintea camerelor-părinte
+    for (const sql of ['DELETE FROM reservations', 'DELETE FROM rates', 'DELETE FROM expenses', 'DELETE FROM guests',
+      'DELETE FROM rooms WHERE parent_id IS NOT NULL', 'DELETE FROM rooms', 'DELETE FROM floors', 'DELETE FROM properties']) await q(sql);
+  });
   return seedDemo(db);
 }

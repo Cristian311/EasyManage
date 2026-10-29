@@ -4,11 +4,13 @@ import { useMemo, useState } from 'react';
 import { useData, useStore } from '@/lib/client/store';
 import { dayHeading, fmtD, money, todayIso } from '@/domain/dates';
 import { SOURCES, SRC, STATUS, STATUSES } from '@/domain/labels';
-import { alertFor, nights, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
+import { alertFor, isStay, nights, paid, remaining, resGuest, roomById, roomLabel, shortProp } from '@/domain/rules';
 import type { Reservation } from '@/domain/types';
 import { useGoToReservation } from '@/components/useGoToReservation';
 import { IconPlus, IconSearch } from '@/components/Icons';
+import Link from 'next/link';
 import Table, { type Col } from '@/components/Table';
+import { downloadCsv } from '@/lib/client/csv';
 
 type Seg = 'next' | 'in' | 'past' | 'cancelled' | 'all';
 const SEGS: { k: Seg; t: string }[] = [
@@ -33,6 +35,7 @@ export default function ReservationsPage() {
   const found = useMemo(() => {
     const s = q.trim().toLowerCase();
     return data.reservations.filter(r => {
+      if (!isStay(r)) return false;                 // camerele blocate se văd în calendar, nu în lista de rezervări
       if (prop !== 'all' && !r.roomIds.some(id => roomById(data, id)?.propertyId === prop)) return false;
       if (src && r.source !== src) return false;
       if (status && r.status !== status) return false;
@@ -75,6 +78,13 @@ export default function ReservationsPage() {
     <section className="page on" id="page-reservations">
       <div className="topbar"><h1>Rezervări</h1><div className="spacer" />
         <div className="search"><IconSearch /><input placeholder="Nume, cameră, factură…" value={q} onChange={e => setQ(e.target.value)} /></div>
+        <Link className="btn" href="/registru">Registrul turiștilor</Link>
+        <Link className="btn" href="/import">Importă</Link>
+        <button className="btn" onClick={() => downloadCsv('rezervari', list, [
+          ['Oaspete', r => resGuest(data, r)], ['Cameră', r => roomLabel(data, r)], ['Check-in', r => r.checkIn], ['Check-out', r => r.checkOut],
+          ['Nopți', r => nights(r)], ['Persoane', r => r.pax], ['Sursă', r => SRC[r.source]], ['Status', r => STATUS[r.status]],
+          ['Total (lei)', r => r.total], ['Încasat (lei)', r => paid(r)], ['Rest (lei)', r => remaining(r)], ['Factură', r => r.invoiceNo], ['Observații', r => r.notes],
+        ])}>Descarcă Excel</button>
         <button className="btn primary" onClick={() => openModal()}><IconPlus />Rezervare nouă</button></div>
       <div className="scroll">
         <div className="propbar">

@@ -1,6 +1,18 @@
+import { audit } from '@/lib/audit';
 import { getDb } from '@/lib/db';
-import { handle, readJson } from '@/lib/http';
-import { loadSettings, updateSettings } from '@/lib/repo-invoices';
+import { handleOwner, readJson } from '@/lib/http';
+import { getCompany, saveCompany } from '@/lib/settings';
+
 export const dynamic = 'force-dynamic';
-export async function GET() { return handle(async () => ({ settings: await loadSettings((await getDb()).query) })); }
-export async function PUT(req: Request) { return handle(async () => updateSettings(await getDb(), await readJson(req))); }
+
+export async function GET() {
+  return handleOwner(async () => ({ company: await getCompany(await getDb()) }));
+}
+
+export async function PUT(req: Request) {
+  return handleOwner(async user => {
+    const db = await getDb(), company = await saveCompany(db, await readJson(req));
+    await audit(db, user, 'settings.company', 'settings', '', company.name);
+    return { company };
+  });
+}

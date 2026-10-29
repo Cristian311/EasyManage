@@ -1,44 +1,105 @@
-// Invoices: numbering, amounts and the default lines for a stay. Pure functions, used in the browser and on the server.
-import type { AppState, InvoiceCustomer, InvoiceLine, Reservation } from './types';
-import { fmtD, isIsoDate } from './dates';
-import { nights, roomLabel } from './rules';
+// Facturi: forma lor și socoteala, fără bază de date și fără interfață, ca să poată fi verificate
+// cu teste și folosite la fel pe server și în browser.
+import { addDays, diffDays, fromIso, MONTHS_L, pad } from './dates';
 
-export const r2 = (n: number) => Math.round(n * 100) / 100;
-export const invoiceNo = (i: { series: string; number: number }) => `${i.series}-${String(i.number).padStart(4, '0')}`;
-export const amount = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-/** Prices include VAT, like the prices of the rooms; the net part is taken out of the total. */
-export function lineTotals(l: InvoiceLine) {
-  const total = r2(l.qty * l.price), net = r2(total / (1 + l.vat / 100));
-  return { net, vat: r2(total - net), total };
-}
-export function invoiceTotals(lines: InvoiceLine[]) {
-  const t = { subtotal: 0, vat: 0, total: 0 };
-  lines.forEach(l => { const x = lineTotals(l); t.subtotal += x.net; t.vat += x.vat; t.total += x.total; });
-  return { subtotal: r2(t.subtotal), vat: r2(t.vat), total: r2(t.total) };
+export interface Company {
+  name: string; taxId: string; regNo: string; address: string;
+  iban: string; bank: string; email: string; phone: string;
+  vatPayer: boolean; vatRate: number; series: string; dueDays: number; note: string;
 }
 
-/** One line for the stay: per night when the total splits evenly, otherwise the whole stay as one item. */
-export function stayLines(s: AppState, r: Reservation, vat: number): InvoiceLine[] {
-  const n = nights(r), rooms = roomLabel(s, r), when = `${fmtD(r.checkIn)} – ${fmtD(r.checkOut)} ${r.checkOut.slice(0, 4)}`;
-  const label = r.roomIds.length > 1 ? `camerele ${rooms}` : `camera ${rooms}`;
-  const perNight = r2(r.total / n);
-  if (r2(perNight * n) === r2(r.total)) return [{ desc: `Cazare ${label}, ${when}`, qty: n, unit: n === 1 ? 'noapte' : 'nopți', price: perNight, vat }];
-  return [{ desc: `Cazare ${label}, ${n} ${n === 1 ? 'noapte' : 'nopți'}, ${when}`, qty: 1, unit: 'sejur', price: r2(r.total), vat }];
+export interface InvoiceLine {
+  description: string;
+  qty: number;
+  unit: string;
+  unitPrice: number;
+  net: number;
+  vat: number;
+  total: number;
 }
 
-export interface InvoiceFields { customer: InvoiceCustomer; lines: InvoiceLine[]; issuedOn: string; dueOn: string | null }
-/** The message for the receptionist when something is missing, or null when the invoice can be issued. */
-export function validateInvoice(x: InvoiceFields): string | null {
-  if (!x.customer.name.trim()) return 'Scrie numele clientului.';
-  if (!isIsoDate(x.issuedOn)) return 'Data facturii nu este validă.';
-  if (x.dueOn && (!isIsoDate(x.dueOn) || x.dueOn < x.issuedOn)) return 'Scadența trebuie să fie după data facturii.';
-  if (!x.lines.length) return 'Factura trebuie să aibă cel puțin un rând.';
-  for (const l of x.lines) {
-    if (!l.desc.trim()) return 'Fiecare rând are nevoie de o descriere.';
-    if (!(l.qty > 0) || !Number.isFinite(l.qty)) return `Cantitatea de la „${l.desc}” nu este validă.`;
-    if (!(l.price >= 0) || !Number.isFinite(l.price)) return `Prețul de la „${l.desc}” nu este valid.`;
-    if (!(l.vat >= 0 && l.vat < 100)) return 'Cota de TVA nu este validă.';
-  }
-  return null;
+export interface Invoice {
+  id: string;
+  series: string;
+  number: number;
+  kind: 'invoice' | 'storno';
+  stornoOf: string | null;
+  reservationId: string | null;
+  guestId: string | null;
+  issuedOn: string;
+  dueOn: string | null;
+  buyerName: string;
+  buyerTaxId: string;
+  buyerAddress: string;
+  seller: Company;
+  vatRate: number;
+  net: number;
+  vat: number;
+  total: number;
+  note: string;
+  lines: InvoiceLine[];
 }
+
+export const EMPTY_COMPANY: Company = {
+  name: '', taxId: '', regNo: '', address: '', iban: '', bank: '', email: '', phone: '',
+  vatPayer: false, vatRate: 0, series: 'VS', dueDays: 0, note: '',
+};
+
+/** „VS 0042” — numărul se scrie cu cel puțin patru cifre, ca facturile să se aranjeze frumos în listă. */
+export const invoiceNo = (series: string, number: number) => `${series} ${String(number).padStart(4, '0')}`;
+
+export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+
+/** O sumă în lei, scrisă românește: 1.234,50 lei */
+export const lei2 = (n: number) => n.toLocaleString('ro-RO', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' lei';
+
+export const fmtLong = (s: string) => { const d = fromIso(s); return `${d.getDate()} ${MONTHS_L[d.getMonth()].toLowerCase()} ${d.getFullYear()}`; };
+
+/**
+ * Completează o linie: din cantitate și preț ies valoarea fără TVA, TVA-ul și totalul.
+ * Prețul scris de om e cel pe care îl vede clientul, adică **cu TVA inclus**, așa cum e obiceiul la
+ * cazare; de aceea TVA-ul se scoate din el, nu se adaugă peste.
+ */
+export function fillLine(x: { description: string; qty: number; unit: string; unitPrice: number }, vatRate: number): InvoiceLine {
+  const total = round2(x.qty * x.unitPrice);
+  const net = round2(total / (1 + vatRate / 100));
+  return { ...x, net, vat: round2(total - net), total };
+}
+
+/** Totalurile facturii, adunate din linii, ca să nu depindă de rotunjiri pe drum. */
+export function totals(lines: InvoiceLine[]) {
+  const net = round2(lines.reduce((t, l) => t + l.net, 0));
+  const total = round2(lines.reduce((t, l) => t + l.total, 0));
+  return { net, vat: round2(total - net), total };
+}
+
+/** Data scadenței: numărul de zile din setări, iar 0 înseamnă „la emitere”. */
+export const dueDate = (issuedOn: string, dueDays: number) => (dueDays > 0 ? addDays(issuedOn, dueDays) : null);
+
+/**
+ * Linia propusă pentru o ședere: „Cazare 101 + 102, 3 nopți (12–15 aug 2026)”, cu prețul pe noapte
+ * scos din totalul rezervării, ca factura să spună exact cât s-a înțeles cu oaspetele.
+ */
+export function stayLine(rooms: string, checkIn: string, checkOut: string, total: number, pax: number) {
+  const n = Math.max(1, diffDays(checkIn, checkOut));
+  return {
+    description: `Cazare ${rooms}, ${n} ${n === 1 ? 'noapte' : 'nopți'} (${fmtLong(checkIn)} – ${fmtLong(checkOut)}), ${pax} ${pax === 1 ? 'persoană' : 'persoane'}`,
+    qty: n,
+    unit: n === 1 ? 'noapte' : 'nopți',
+    unitPrice: round2(total / n),
+  };
+}
+
+/** Luna unei facturi, pentru grupare: „2026-08”. */
+export const invoiceMonth = (issuedOn: string) => issuedOn.slice(0, 7);
+
+/** Ce lipsește din datele pensiunii ca să poți emite o factură. */
+export function missingCompanyFields(c: Company): string[] {
+  const out: string[] = [];
+  if (!c.name.trim()) out.push('numele pensiunii sau al firmei');
+  if (!c.taxId.trim()) out.push('CUI-ul');
+  if (!c.address.trim()) out.push('adresa');
+  return out;
+}
+
+export const monthKey = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}`;

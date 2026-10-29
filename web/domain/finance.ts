@@ -30,6 +30,7 @@ export function finMonth(s: AppState, m: string, prop: string): MonthFin {
   const bySrc: MonthFin['bySrc'] = {}, byMethod: MonthFin['byMethod'] = {}, pays: MonthFin['pays'] = [];
   s.reservations.forEach(r => {
     if (prop !== 'all' && resProp(s, r) !== prop) return;
+    if (r.kind === 'block') return;              // cameră scoasă din vânzare: nu e nici venit, nici noapte vândută
     r.payments.forEach(pm => { if (pm.date >= a && pm.date < b) { pays.push({ r, pm }); cashed += Number(pm.amount); byMethod[pm.method] = (byMethod[pm.method] || 0) + Number(pm.amount); } });
     if (r.status === 'cancelled') return;
     // the nights of this month, as a share of the whole stay
@@ -50,7 +51,7 @@ export function occupancyByDay(s: AppState, m: string, prop: string) {
   const a = m + '-01', b = addDays(monthEnd(m), 1), n = diffDays(a, b), used = Array<number>(n).fill(0);
   const rooms = s.rooms.filter(r => r.active && !s.rooms.some(u => u.parentId === r.id) && (prop === 'all' || r.propertyId === prop)).length;
   s.reservations.forEach(r => {
-    if (r.status === 'cancelled' || (prop !== 'all' && resProp(s, r) !== prop)) return; const k = r.roomIds.length;
+    if (r.status === 'cancelled' || r.kind === 'block' || (prop !== 'all' && resProp(s, r) !== prop)) return; const k = r.roomIds.length;
     for (let d = r.checkIn > a ? r.checkIn : a; d < r.checkOut && d < b; d = addDays(d, 1)) used[diffDays(a, d)] += k;
   });
   return { a, n, rooms, used };

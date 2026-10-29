@@ -1,7 +1,27 @@
+import { audit, changed } from '@/lib/audit';
 import { getDb } from '@/lib/db';
 import { handle, readJson } from '@/lib/http';
 import { deleteFloor, updateFloor } from '@/lib/repo-admin';
+
 export const dynamic = 'force-dynamic';
 type Ctx = { params: Promise<{ id: string }> };
-export async function PATCH(req: Request, { params }: Ctx) { const { id } = await params; return handle(async () => updateFloor(await getDb(), id, await readJson(req))); }
-export async function DELETE(_req: Request, { params }: Ctx) { const { id } = await params; return handle(async () => deleteFloor(await getDb(), id)); }
+const FIELDS = { name: 'numele', city: 'orașul', type: 'tipul', capacity: 'capacitatea', price: 'prețul', color: 'culoarea', desc: 'descrierea', active: 'activă sau nu', propertyId: 'proprietatea', floorId: 'etajul', move: 'ordinea' };
+const nameOf = async (id: string) => (await (await getDb()).query<{ name: string }>('SELECT name FROM floors WHERE id = $1', [id]))[0]?.name ?? id;
+
+export async function PATCH(req: Request, { params }: Ctx) {
+  const { id } = await params;
+  return handle(async user => {
+    const db = await getDb(), body = await readJson(req), out = await updateFloor(db, id, body);
+    await audit(db, user, 'floor.update', 'floor', id, `${await nameOf(id)} · a schimbat: ${changed(body, FIELDS) || '—'}`);
+    return out;
+  });
+}
+
+export async function DELETE(_req: Request, { params }: Ctx) {
+  const { id } = await params;
+  return handle(async user => {
+    const db = await getDb(), name = await nameOf(id), out = await deleteFloor(db, id);
+    await audit(db, user, 'floor.delete', 'floor', id, name);
+    return out;
+  });
+}

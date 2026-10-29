@@ -2,8 +2,15 @@
 
 export type Source = 'direct' | 'booking' | 'travelminit' | 'airbnb' | 'phone' | 'other';
 export type Status = 'confirmed' | 'pending' | 'checked_in' | 'checked_out' | 'cancelled';
+/** O ședere adevărată sau o cameră scoasă din vânzare (reparații, folosință proprie). */
+export type ResKind = 'stay' | 'block';
 export type Method = 'cash' | 'card' | 'transfer' | 'other';
 export type PayStatus = 'unpaid' | 'partial' | 'paid';
+/** owner vede tot; reception nu vede Financiar și Setări. */
+export type Role = 'owner' | 'reception';
+
+/** Contul cu care ești intrat în program. */
+export interface Me { id: string; email: string; name: string; role: Role }
 
 export interface Property { id: string; name: string; city: string }
 export interface Floor { id: string; propertyId: string; name: string }
@@ -30,9 +37,19 @@ export interface Guest {
   email: string;
   country: string;
   notes: string;
+  // pentru fișa de cazare; se completează la sosire, deci pot lipsi
+  birthDate?: string | null;
+  birthPlace?: string;
+  citizenship?: string;
+  address?: string;
+  idType?: string;
+  idSeries?: string;
+  idNumber?: string;
 }
 
 export interface Payment { id: string; amount: number; method: Method; date: string; note: string }
+/** Ce s-a mai luat pe lângă cazare. Suma lui e deja cuprinsă în totalul rezervării. */
+export interface Extra { id: string; label: string; qty: number; unitPrice: number }
 
 export interface Reservation {
   id: string;
@@ -44,10 +61,12 @@ export interface Reservation {
   total: number;
   source: Source;
   status: Status;
+  kind: ResKind;
   notes: string;
   invoiceNo: string;
   invoiceDate: string | null;
   payments: Payment[];
+  extras: Extra[];
   createdAt: string;
 }
 
@@ -65,34 +84,6 @@ export interface Expense {
 /** Special prices: rates[roomId][YYYY-MM-DD] = lei. Nights without an entry use the room's base price. */
 export type Rates = Record<string, Record<string, number>>;
 
-/** The business that issues invoices, as printed on them. */
-export interface Company { name: string; cui: string; regCom: string; address: string; iban: string; bank: string; phone: string; email: string }
-export interface Settings extends Company {
-  vatPayer: boolean; vatRate: number; invoiceSeries: string; invoiceNext: number;
-  checkInTime: string; checkOutTime: string; confirmText: string;   // on the reservation confirmation
-}
-
-export interface InvoiceLine { desc: string; qty: number; unit: string; price: number; vat: number }   // price per unit, VAT included
-export interface InvoiceCustomer { name: string; cui: string; regCom: string; address: string }
-export type InvoiceStatus = 'issued' | 'cancelled';
-export interface Invoice {
-  id: string;
-  series: string;
-  number: number;
-  reservationId: string | null;
-  issuedOn: string;
-  dueOn: string | null;
-  status: InvoiceStatus;
-  supplier: Company & { vatPayer: boolean };   // copied at issue time
-  customer: InvoiceCustomer;
-  lines: InvoiceLine[];
-  subtotal: number;          // without VAT
-  vat: number;
-  total: number;
-  notes: string;
-  createdAt: string;
-}
-
 export interface AppState {
   properties: Property[];
   floors: Floor[];
@@ -101,8 +92,6 @@ export interface AppState {
   reservations: Reservation[];
   rates: Rates;
   expenses: Expense[];
-  settings: Settings;
-  invoices: Invoice[];
 }
 
 /** What the calendar is filtered on: a property and a floor, or 'all'. */
